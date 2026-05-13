@@ -263,14 +263,18 @@ html.night .ct-d-badge.st-dnf{background:hsl(0 35% 20%);color:hsl(0 55% 70%);bor
   background:var(--bar-bg);backdrop-filter:blur(12px);
   border:1px solid var(--bar-border);border-radius:12px;padding:5px;
   box-shadow:0 4px 20px var(--bar-shadow);
+  min-width:750px;
 }
 .view-bar-main{display:flex;align-items:center;gap:4px}
+.view-modes{display:flex;gap:4px;width:416px}
+.view-modes .view-bar-btn{flex:1 1 0;min-width:0;width:0;padding:7px 12px}
 .view-bar-sort{display:flex;align-items:center;gap:2px;padding:4px 0 1px;border-top:1px solid var(--bar-sep);margin-top:4px;width:100%;justify-content:center}
 .view-bar-sort-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.06em;color:var(--bar-text);opacity:0.5;margin-right:4px;white-space:nowrap}
 .view-bar-btn{
   padding:7px 18px;border:none;border-radius:8px;cursor:pointer;
   font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.04em;line-height:1;
   color:var(--bar-text);background:none;transition:all .2s ease;white-space:nowrap;
+  min-width:72px;text-align:center;
 }
 .view-bar-btn:hover{color:var(--bar-text-h);background:var(--bar-pill)}
 .view-bar-btn.active{color:var(--bar-text-a);background:hsla(270,50%,55%,0.3);box-shadow:0 0 10px hsla(270,50%,55%,0.15)}
@@ -308,7 +312,8 @@ html.night .sort-hl{color:hsla(270,70%,75%,1)!important;text-shadow:0 0 10px hsl
   border:1px solid var(--bar-border);margin-left:2px;
 }
 .lang-toggle-label{
-  position:relative;z-index:1;padding:4px 7px;color:var(--bar-text);transition:color .2s;user-select:none;
+  position:relative;z-index:1;padding:4px 10px;color:var(--bar-text);transition:color .2s;user-select:none;
+  min-width:40px;text-align:center;cursor:pointer;white-space:nowrap;
 }
 .lang-toggle-label.active{color:var(--bar-text-a)}
 .lang-toggle-pill{
@@ -319,6 +324,22 @@ html.night .sort-hl{color:hsla(270,70%,75%,1)!important;text-shadow:0 0 10px hsl
 .lang-toggle-pill.ja{left:2px}
 .lang-toggle-pill.en{left:calc(100%/3)}
 .lang-toggle-pill.jp{left:calc(200%/3 - 2px)}
+.cur-float{
+  position:fixed;z-index:101;
+  display:flex;align-items:center;gap:2px;
+  transform:translateY(-50%);
+}
+.hdr-cur-toggle{
+  display:flex;align-items:center;gap:2px;pointer-events:auto;
+  font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.08em;
+}
+.hdr-cur-btn{
+  padding:4px 8px;border-radius:4px;cursor:pointer;
+  color:var(--muted);border:1px solid var(--border);
+  transition:all .2s;user-select:none;
+}
+.hdr-cur-btn:hover{color:var(--ink);border-color:var(--ink)}
+.hdr-cur-btn.active{color:var(--bg);background:var(--ink);border-color:var(--ink)}
 .cur-toggle{
   position:relative;display:flex;align-items:center;
   background:var(--bar-pill);border-radius:6px;padding:2px;cursor:pointer;
@@ -397,9 +418,11 @@ html.night .st-dnf{background:hsl(0 35% 20%);color:hsl(0 55% 70%);border:none}
 
 /* L1 industry group */
 .node.l1 .node-card{padding:10px 16px;width:480px;min-height:42px;height:auto;position:relative}
-.node.l1 .row{flex-wrap:nowrap;white-space:nowrap}
-.node.l1 .label{font-family:'Fraunces',serif;font-size:15px;font-weight:500;letter-spacing:-0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:100px}
-.node.l1 .cat-tag{max-width:180px;overflow:hidden;text-overflow:ellipsis}
+.node.l1 .row{flex-wrap:nowrap;white-space:nowrap;position:relative}
+.node.l1 .label{font-family:'Fraunces',serif;font-size:15px;font-weight:500;letter-spacing:-0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:100px;flex:1}
+.node.l1 .sec-amt{font-family:'Fraunces',serif;font-size:15px;font-weight:500;letter-spacing:-0.01em;font-variation-settings:"opsz" 96;white-space:nowrap;position:absolute;left:240px}
+.node.l1 .cat-tag{max-width:180px;overflow:hidden;text-overflow:ellipsis;position:absolute;right:40px;bottom:0}
+.node.l1 .toggle{position:absolute;right:0;bottom:0}
 /* 3-column proposer layout */
 .l1-prop{display:grid;grid-template-columns:130px 140px 1fr;gap:0 8px;align-items:center}
 .l1-col-left{grid-column:1;display:flex;flex-direction:column;gap:0;min-width:0;overflow:hidden;justify-content:center}
@@ -2254,7 +2277,7 @@ function buildTreeBySector(){
     if(filterBy&&propKids.length===0) continue;
     var ok=0,wip=0,dnf=0;
     for(var m=0;m<propKids.length;m++){var s=propKids[m].st;if(s==='complete')ok++;else if(s==='progress')wip++;else dnf++;}
-    rootKids.push({id:ind.id,label:secName(ind),amt:0,hue:ind.hue,children:propKids,_ok:ok,_wip:wip,_dnf:dnf,_total:propKids.length});
+    rootKids.push({id:ind.id,label:secName(ind),amt:0,hue:ind.hue,children:propKids,_ok:ok,_wip:wip,_dnf:dnf,_total:propKids.length,_usdK:sumUsdK(propKids)});
   }
   var rootLabel='Catalyst Japan', rootSub=fmtTotal(TOTAL_USD_K);
   if(filterBy){
@@ -2617,7 +2640,9 @@ function render(){
         }
         l1Body=colTop+'<div class="l1-prop">'+colL+colM+colR+'</div>'+miniBar;
       } else {
+        var secAmt=raw._usdK>0?'<span class="sec-amt">'+fmtJpy(raw._usdK)+'</span>':'';
         l1Body='<div class="row"><div class="label">'+esc(n.label)+'</div>'
+          +secAmt
           +'<span class="cat-tag">'+raw._total+' proposals</span>'
           +'<span class="toggle">'+(n.expanded?'−':'+'+raw._total)+'</span></div>'
           +miniBar;
@@ -2765,30 +2790,13 @@ function buildShell(){
   /* Row 1: main nav */
   var mainRow=document.createElement('div');
   mainRow.className='view-bar-main';
-  /* currency toggle */
-  var curToggle=document.createElement('div');
-  curToggle.className='cur-toggle';
-  var curPill=document.createElement('div');
-  var curEff=_curMode();
-  curPill.className='cur-toggle-pill cur-'+curEff;
-  var _curModes=['jpy','usd','ada'];
-  var _curLabels=['¥','$','₳'];
-  for(var ci=0;ci<_curModes.length;ci++){
-    var cl=document.createElement('span');
-    cl.className='cur-toggle-label'+(curEff===_curModes[ci]?' active':'');
-    cl.textContent=_curLabels[ci];
-    curToggle.appendChild(cl);
-  }
-  curToggle.insertBefore(curPill,curToggle.firstChild);
-  curToggle.onclick=function(){var ci=_curModes.indexOf(_curMode());_amtMode=_curModes[(ci+1)%3];buildShell();if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else render();};
-  mainRow.appendChild(curToggle);
-
   var modes=[
     {key:'sector',ja:'業界別',en:'Sector'},
     {key:'proposer',ja:'アカウント別',en:'Accounts'},
     {key:'timeline',ja:'時系列',en:'Timeline'},
     {key:'network',ja:'関係図',en:'Network'}
   ];
+  var modesWrap=document.createElement('div');modesWrap.className='view-modes';
   for(var mi=0;mi<modes.length;mi++){
     (function(m){
       var btn=document.createElement('button');
@@ -2796,9 +2804,10 @@ function buildShell(){
       btn.textContent=_lang!=='en'?m.ja:m.en;
       btn.onclick=function(){viewMode=m.key;filterSec=null;filterBy=null;vis.clear();vis.add('root');buildShell();
         if(m.key==='network')renderNetwork();else if(m.key==='timeline')renderTimeline();else{render();centerView();}};
-      mainRow.appendChild(btn);
+      modesWrap.appendChild(btn);
     })(modes[mi]);
   }
+  mainRow.appendChild(modesWrap);
   var sep=document.createElement('div');sep.className='view-bar-sep';mainRow.appendChild(sep);
   var toggle=document.createElement('div');
   toggle.className='lang-toggle';
@@ -2807,13 +2816,18 @@ function buildShell(){
   var _langModes=['ja','en','jp'];
   var _langLabels=['通常','EN','翻訳'];
   for(var li=0;li<_langModes.length;li++){
-    var lbl=document.createElement('span');
-    lbl.className='lang-toggle-label'+(_lang===_langModes[li]?' active':'');
-    lbl.textContent=_langLabels[li];
-    toggle.appendChild(lbl);
+    (function(mode){
+      var lbl=document.createElement('span');
+      lbl.className='lang-toggle-label'+(_lang===mode?' active':'');
+      lbl.textContent=_langLabels[_langModes.indexOf(mode)];
+      lbl.onclick=function(e){
+        e.stopPropagation();
+        _lang=mode;buildShell();if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else render();
+      };
+      toggle.appendChild(lbl);
+    })(_langModes[li]);
   }
   toggle.insertBefore(pill,toggle.firstChild);
-  toggle.onclick=function(){var ci=_langModes.indexOf(_lang);_lang=_langModes[(ci+1)%3];buildShell();if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else render();};
   mainRow.appendChild(toggle);
   var nightBtn=document.createElement('button');
   nightBtn.className='view-bar-btn';
@@ -2917,6 +2931,36 @@ function buildShell(){
     +'<span><i style="background:var(--st-wip)"></i>Active</span>'
     +'<span><i style="background:var(--st-dnf)"></i>Stopped</span>';
   document.body.appendChild(bar);
+
+  /* currency toggle — outside view-bar, left of Sector */
+  if(!isMob()){
+    var oldCur=document.getElementById('cur-float');
+    if(oldCur)oldCur.remove();
+    var curFloat=document.createElement('div');
+    curFloat.className='cur-float';curFloat.id='cur-float';
+    var _curModes=['jpy','usd','ada'],_curLabels=['¥','$','₳'];
+    var cm=_curMode();
+    for(var ci=0;ci<3;ci++){
+      var cb=document.createElement('span');
+      cb.className='hdr-cur-btn'+(cm===_curModes[ci]?' active':'');
+      cb.setAttribute('data-cur',_curModes[ci]);
+      cb.textContent=_curLabels[ci];
+      curFloat.appendChild(cb);
+    }
+    curFloat.onclick=function(e){
+      var btn=e.target.closest('.hdr-cur-btn');
+      if(!btn)return;
+      _amtMode=btn.getAttribute('data-cur');
+      buildShell();if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else render();
+    };
+    document.body.appendChild(curFloat);
+    /* position to right of view-bar */
+    requestAnimationFrame(function(){
+      var barR=bar.getBoundingClientRect();
+      curFloat.style.top=Math.round(barR.top+barR.height/2)+'px';
+      curFloat.style.left=Math.round(barR.right+8)+'px';
+    });
+  }
 
   /* Legend strip — above card list */
   sb.appendChild(legStrip);
