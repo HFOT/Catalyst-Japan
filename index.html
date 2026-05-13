@@ -263,7 +263,7 @@ html.night .ct-d-badge.st-dnf{background:hsl(0 35% 20%);color:hsl(0 55% 70%);bor
   background:var(--bar-bg);backdrop-filter:blur(12px);
   border:1px solid var(--bar-border);border-radius:12px;padding:5px;
   box-shadow:0 4px 20px var(--bar-shadow);
-  min-width:750px;
+  min-width:825px;
 }
 .view-bar-main{display:flex;align-items:center;gap:4px}
 .view-modes{display:flex;gap:4px;width:416px}
@@ -317,17 +317,14 @@ html.night .sort-hl{color:hsla(270,70%,75%,1)!important;text-shadow:0 0 10px hsl
 }
 .lang-toggle-label.active{color:var(--bar-text-a)}
 .lang-toggle-pill{
-  position:absolute;top:2px;height:calc(100% - 4px);width:calc(100%/3);border-radius:4px;
+  position:absolute;top:2px;height:calc(100% - 4px);width:calc(100%/2);border-radius:4px;
   background:var(--bar-pill-a);box-shadow:0 0 6px var(--bar-pill);
   transition:left .2s ease;
 }
-.lang-toggle-pill.ja{left:2px}
-.lang-toggle-pill.en{left:calc(100%/3)}
-.lang-toggle-pill.jp{left:calc(200%/3 - 2px)}
-.cur-float{
-  position:fixed;z-index:101;
-  display:flex;align-items:center;gap:2px;
-  transform:translateY(-50%);
+.lang-toggle-pill.en{left:2px}
+.lang-toggle-pill.jp{left:calc(50% - 2px)}
+.cur-grp{
+  display:flex;align-items:center;gap:2px;margin-left:4px;
 }
 .hdr-cur-toggle{
   display:flex;align-items:center;gap:2px;pointer-events:auto;
@@ -1241,7 +1238,7 @@ function fmtDual(v,u,adaP){
   return main+'<span class="amt-sub">'+sub+'</span>';
 }
 /* ---- i18n ---- */
-var _lang='ja';
+var _lang='jp';
 var _i18n={
   complete:{ja:'完了',en:'Completed'},progress:{ja:'進行中',en:'In Progress'},dnf:{ja:'中止',en:'Discontinued'},
   main:{ja:'メイン',en:'Main'},co:{ja:'共同提案者',en:'Co-proposer'},bridge:{ja:'仲介',en:'Bridge'},
@@ -2808,13 +2805,33 @@ function buildShell(){
     })(modes[mi]);
   }
   mainRow.appendChild(modesWrap);
+  /* currency toggle — inside bar, right of modes */
+  if(!isMob()){
+    var curGrp=document.createElement('div');curGrp.className='cur-grp';
+    var _curModes=['jpy','usd','ada'],_curLabels=['¥','$','₳'];
+    var cm=_curMode();
+    for(var ci=0;ci<3;ci++){
+      var cb=document.createElement('span');
+      cb.className='hdr-cur-btn'+(cm===_curModes[ci]?' active':'');
+      cb.setAttribute('data-cur',_curModes[ci]);
+      cb.textContent=_curLabels[ci];
+      curGrp.appendChild(cb);
+    }
+    curGrp.onclick=function(e){
+      var btn=e.target.closest('.hdr-cur-btn');
+      if(!btn)return;
+      _amtMode=btn.getAttribute('data-cur');
+      buildShell();if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else render();
+    };
+    mainRow.appendChild(curGrp);
+  }
   var sep=document.createElement('div');sep.className='view-bar-sep';mainRow.appendChild(sep);
   var toggle=document.createElement('div');
   toggle.className='lang-toggle';
   var pill=document.createElement('div');
   pill.className='lang-toggle-pill '+_lang;
-  var _langModes=['ja','en','jp'];
-  var _langLabels=['通常','EN','翻訳'];
+  var _langModes=['en','jp'];
+  var _langLabels=['EN','JP'];
   for(var li=0;li<_langModes.length;li++){
     (function(mode){
       var lbl=document.createElement('span');
@@ -2932,35 +2949,9 @@ function buildShell(){
     +'<span><i style="background:var(--st-dnf)"></i>Stopped</span>';
   document.body.appendChild(bar);
 
-  /* currency toggle — outside view-bar, left of Sector */
-  if(!isMob()){
-    var oldCur=document.getElementById('cur-float');
-    if(oldCur)oldCur.remove();
-    var curFloat=document.createElement('div');
-    curFloat.className='cur-float';curFloat.id='cur-float';
-    var _curModes=['jpy','usd','ada'],_curLabels=['¥','$','₳'];
-    var cm=_curMode();
-    for(var ci=0;ci<3;ci++){
-      var cb=document.createElement('span');
-      cb.className='hdr-cur-btn'+(cm===_curModes[ci]?' active':'');
-      cb.setAttribute('data-cur',_curModes[ci]);
-      cb.textContent=_curLabels[ci];
-      curFloat.appendChild(cb);
-    }
-    curFloat.onclick=function(e){
-      var btn=e.target.closest('.hdr-cur-btn');
-      if(!btn)return;
-      _amtMode=btn.getAttribute('data-cur');
-      buildShell();if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else render();
-    };
-    document.body.appendChild(curFloat);
-    /* position to right of view-bar */
-    requestAnimationFrame(function(){
-      var barR=bar.getBoundingClientRect();
-      curFloat.style.top=Math.round(barR.top+barR.height/2)+'px';
-      curFloat.style.left=Math.round(barR.right+8)+'px';
-    });
-  }
+  /* clean up old floating currency toggle if present */
+  var oldCur=document.getElementById('cur-float');
+  if(oldCur)oldCur.remove();
 
   /* Legend strip — above card list */
   sb.appendChild(legStrip);
