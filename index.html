@@ -1018,6 +1018,7 @@ html.night .cls-bridge{background:hsl(30 35% 22%);color:hsl(30 55% 75%);border:n
   }
   .nw-bottombar{bottom:60px!important}
 
+  .api-gear{display:none!important}
   .disc-bar{font-size:7px;padding:5px 12px;left:0!important;display:none!important}
   .disc-refs{display:none!important}
 }
@@ -2648,6 +2649,22 @@ function buildShell(){
     else render();
   };
   mainRow.appendChild(nightBtn);
+  /* gear (settings) — move into bar on mobile */
+  if(isMob()){
+    var gearInBar=document.createElement('button');
+    gearInBar.className='view-bar-btn';
+    gearInBar.style.cssText='font-size:14px;padding:4px 8px;min-width:28px';
+    gearInBar.textContent='⚙';
+    gearInBar.title='API Settings';
+    gearInBar.onclick=function(){
+      var ov=document.getElementById('api-modal-overlay');
+      if(ov){var keys=document.getElementById('api-modal-overlay');if(keys)keys.classList.add('open');}
+      /* trigger same as gear btn */
+      var gb=document.getElementById('api-gear-btn');
+      if(gb)gb.click();
+    };
+    mainRow.appendChild(gearInBar);
+  }
   /* zoom controls */
   var sep2=document.createElement('div');sep2.className='view-bar-sep';mainRow.appendChild(sep2);
   var zoomCtrl=document.createElement('div');zoomCtrl.className='zoom-ctrl';
