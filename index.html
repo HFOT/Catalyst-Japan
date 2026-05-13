@@ -555,7 +555,10 @@ html.night .cls-bridge{background:hsl(30 35% 22%);color:hsl(30 55% 75%);border:n
 .mob-acc-head{display:flex;align-items:center;padding:12px 14px;gap:8px;cursor:pointer;transition:background .15s}
 .mob-acc-head:active{background:var(--dim)}
 .mob-acc-name{flex:1;font-size:13px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mob-acc-amt{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);white-space:nowrap;text-align:right;line-height:1.4}
+.mob-acc-amt{display:flex;align-items:center;gap:4px;white-space:nowrap}
+.mob-acc-ada{font-family:'Fraunces',serif;font-size:13px;font-weight:500;color:var(--ink);letter-spacing:-0.02em}
+.mob-acc-fiat{display:flex;flex-direction:column;align-items:flex-end;gap:0;line-height:1.2}
+.mob-acc-fiat span{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:0.02em}
 .mob-acc-cnt{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
 .mob-acc-arrow{font-size:12px;color:var(--muted);transition:transform .2s}
 .mob-acc-item.open .mob-acc-arrow{transform:rotate(90deg)}
@@ -2433,7 +2436,7 @@ function render(){
           var usdS=gUsdK>=1000?'$'+(gUsdK/1000).toFixed(1)+'M':'$'+Math.round(gUsdK)+'K';
           var jpyV=gUsdK*1000*USD_JPY;
           var jpyS=jpyV>=1e8?'¥'+(jpyV/1e8).toFixed(1)+'億':'¥'+Math.round(jpyV/1e4)+'万';
-          grpAmt='<span class="mob-acc-amt">'+adaS+' ₳<br>'+usdS+' · '+jpyS+'</span>';
+          grpAmt='<span class="mob-acc-amt"><span class="mob-acc-ada">'+adaS+' ₳</span><span class="mob-acc-fiat"><span>'+usdS+'</span><span>'+jpyS+'</span></span></span>';
         }
         head.innerHTML='<span class="mob-acc-name">'+esc(grp.label)+'</span>'
           +barHtml+grpAmt
