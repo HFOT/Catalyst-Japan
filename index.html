@@ -892,18 +892,21 @@ html.night .cls-bridge{background:hsl(30 35% 22%);color:hsl(30 55% 75%);border:n
   }
   .sector-bar.mob-open{transform:translateX(0)}
 
-  /* stage/timeline/network: full width, scrollable */
-  .stage{left:0!important;overflow-y:auto!important;overflow-x:hidden!important;cursor:auto!important}
+  /* stage/timeline/network: full width, scrollable, below hamburger row */
+  .stage{left:0!important;overflow-y:auto!important;overflow-x:hidden!important;cursor:auto!important;top:52px!important}
   .stage .layer{position:relative!important;padding-bottom:80px!important}
-  .tl-wrap{left:0!important}
-  .nw-wrap{left:0!important}
+  .tl-wrap{left:0!important;top:52px!important}
+  .nw-wrap{left:0!important;top:52px!important}
 
-  /* header: compact */
-  .header{left:56px;right:12px}
-  .title{font-size:18px}
+  /* header: fixed top bar, same row as hamburger */
+  .header{left:52px;right:8px;top:0;height:52px;align-items:center;
+    background:var(--bg);z-index:150;border-bottom:1px solid var(--border)}
+  .mob-toggle{z-index:200;background:var(--bg);top:0;left:0;height:52px;width:48px;border-radius:0;
+    border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+  .title{font-size:16px}
   .title em{display:none}
   .title-info{display:none}
-  .eyebrow{font-size:8px;margin-bottom:3px}
+  .eyebrow{display:none}
   .ref-links{display:none}
   .meta{display:none}
 
