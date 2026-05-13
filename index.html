@@ -94,7 +94,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(
 /* Sidebar */
 .sector-bar{
   position:absolute;top:0;left:0;bottom:0;width:180px;
-  display:flex;flex-direction:column;gap:0;z-index:50;pointer-events:auto;
+  display:flex;flex-direction:column;gap:0;z-index:70;pointer-events:auto;
   background:var(--paper);border-right:1px solid var(--border);
   padding:20px 0 80px;overflow-y:auto;
 }
@@ -484,18 +484,17 @@ html.night .cls-bridge{background:hsl(30 35% 22%);color:hsl(30 55% 75%);border:n
 .sv-card-amt{font-family:'Fraunces',serif;font-size:15px;font-weight:500;font-variation-settings:"opsz" 96}
 .sv-card-ch{font-size:11px;color:var(--muted);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-.hint{
-  position:fixed;left:196px;bottom:28px;
-  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.15em;
-  color:var(--muted);text-transform:uppercase;pointer-events:none;z-index:50;
-}
 .disc-bar{
-  position:fixed;bottom:0;left:0;right:0;z-index:90;
-  background:var(--paper);border-top:1px solid var(--border);
-  padding:6px 24px;text-align:center;
+  position:fixed;bottom:0;left:180px;right:0;z-index:90;
+  background:var(--bg);border-top:1px solid var(--border);
+  padding:5px 24px;display:flex;align-items:center;gap:16px;
   font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.03em;
-  color:var(--ink);opacity:0.5;line-height:1.5;
+  color:var(--ink);line-height:1.5;
 }
+.disc-text{flex:1;min-width:0;opacity:0.45}
+.disc-refs{flex-shrink:0;display:flex;align-items:center;gap:6px;opacity:0.75}
+.disc-refs .ref-links a{font-size:8px;padding:2px 6px 2px 4px}
+.disc-refs .ref-links a img{width:12px;height:12px}
 
 /* Timeline view */
 .tl-wrap{
@@ -921,9 +920,8 @@ html.night .cls-bridge{background:hsl(30 35% 22%);color:hsl(30 55% 75%);border:n
   /* timeline scroll */
   .tl-scroll{max-height:calc(100vh - 100px)}
 
-  /* hint text */
-  .hint{font-size:10px!important;bottom:32px!important;left:12px!important}
-  .disc-bar{font-size:7px;padding:5px 12px}
+  .disc-bar{font-size:7px;padding:5px 12px;left:0!important}
+  .disc-refs{display:none!important}
 }
 
 /* ================================================================
@@ -1061,7 +1059,6 @@ var _i18n={
   hasCollab:{ja:'共同提案あり',en:'Co-proposed'},sharedProp:{ja:'共有提案',en:'Shared'},
   categories:{ja:'カテゴリ',en:'Categories'},completionReport:{ja:'完了報告',en:'Completion Report'},
   openPeople:{ja:'人物ビューで開く →',en:'Open in People view →'},
-  hint:{ja:'ドラッグ · スクロール · クリックで展開',en:'Drag · Scroll · Click to expand'},
   sector:{ja:'業界',en:'Sector'},peopleTab:{ja:'人物',en:'People'},timeline:{ja:'時系列',en:'Timeline'},
   avg:{ja:'平均',en:'Avg'},max:{ja:'最大',en:'Max'},funded:{ja:'PROPOSALS FUNDED',en:'PROPOSALS FUNDED'},
   propS:{ja:'提案',en:'Proposals'},nameLabel:{ja:'名',en:''},
@@ -2364,9 +2361,32 @@ function buildShell(){
   var root=document.getElementById('root');
   root.innerHTML='';
   var disc=document.getElementById('disc-bar');
-  if(disc)disc.textContent=_lang==='ja'
-    ?'※ 本サイトに掲載されたデータは Catalyst Explorer および projectcatalyst.io の公開情報に基づく事実の記録であり、独自の評価・推奨・主観的判断は一切含みません。研究・実験目的でのみ提供されており、投資助言・金融商品の勧誘を目的としたものではありません。本サイトは非公式の個人プロジェクトであり、いかなる団体とも提携・関連はなく、正確性・完全性は保証されません。'
-    :'* All data presented on this site is based on publicly available records from Catalyst Explorer and projectcatalyst.io, and contains no independent evaluations, endorsements, or subjective opinions. Provided solely for research and experimental purposes; this is not investment advice and does not constitute a solicitation of financial products. This is an unofficial personal community project with no affiliation, partnership, or endorsement by IOG, Cardano Foundation, EMURGO, or any other entity. No guarantee is made regarding accuracy, completeness, or timeliness. Use at your own risk.';
+  if(disc){
+    var discTxt=_lang==='ja'
+      ?'※ 本サイトに掲載されたデータは Catalyst Explorer および projectcatalyst.io の公開情報に基づく事実の記録であり、独自の評価・推奨・主観的判断は一切含みません。研究・実験目的でのみ提供されており、投資助言・金融商品の勧誘を目的としたものではありません。本サイトは非公式の個人プロジェクトであり、いかなる団体とも提携・関連はなく、正確性・完全性は保証されません。'
+      :'* Data based on public records from Catalyst Explorer & projectcatalyst.io — factual only, no evaluations or endorsements. For research/experimental purposes only; not investment advice. Unofficial community project, no affiliation with any entity. Accuracy not guaranteed. Use at your own risk.';
+    var _dRefLinks=[
+      {url:'https://catalystexplorer.com',title:'Catalyst Explorer',domain:'catalystexplorer.com',label:'Explorer'},
+      {url:'https://projectcatalyst.io',title:'Project Catalyst',domain:'projectcatalyst.io',label:'Catalyst'},
+      {url:'https://www.lidonation.com/en/catalyst-explorer',title:'LIDO Nation',domain:'lidonation.com',label:'LIDO'},
+      {url:'https://projectcatalyst.io/global-map',title:'Catalyst Map',domain:'projectcatalyst.io',label:'Map'}
+    ];
+    var _dRefLabel='font-family:JetBrains Mono,monospace;font-size:8px;letter-spacing:0.06em;color:var(--ref-text);text-transform:uppercase';
+    var dRefHtml='<div class="ref-links">'
+      +'<span style="'+_dRefLabel+'">'+(_lang==='ja'?'参考':'Ref')+'</span>';
+    for(var dri=0;dri<_dRefLinks.length;dri++){
+      var dr=_dRefLinks[dri];
+      dRefHtml+='<a href="'+dr.url+'" target="_blank" title="'+dr.title+'">'
+        +'<img src="https://www.google.com/s2/favicons?domain='+dr.domain+'&sz=32" alt="'+dr.title+'">'
+        +dr.label+'</a>';
+    }
+    dRefHtml+='<span style="width:1px;height:12px;background:var(--bar-sep);margin:0 2px"></span>'
+      +'<span style="'+_dRefLabel+'">'+(_lang==='ja'?'作成者':'By')+'</span>'
+      +'<a href="https://x.com/Hardfork_OT" target="_blank" title="CORN🌽 @Hardfork_OT">'
+      +'<img src="https://unavatar.io/x/Hardfork_OT" alt="CORN" style="border-radius:50%">'
+      +'CORN</a></div>';
+    disc.innerHTML='<div class="disc-text">'+discTxt+'</div><div class="disc-refs">'+dRefHtml+'</div>';
+  }
 
   /* sidebar */
   var sb=document.createElement('div');
@@ -2617,48 +2637,13 @@ function buildShell(){
     var maxJpy=_maxUsdK*1000*USD_JPY;
     maxStr=maxJpy>=1e8?'¥'+(maxJpy/1e8).toFixed(1)+'億':'¥'+Math.round(maxJpy/1e4)+'万';
   }
-  var srcText=_lang==='en'
-    ?'Data sourced from Catalyst Explorer and projectcatalyst.io — factual records only, no opinions or ratings.'
-    :'データは Catalyst Explorer / projectcatalyst.io に基づく事実の記録であり、評価・主観的判断は含みません。';
   hdr.innerHTML='<div>'
     +'<div class="title-row"><div class="title">Catalyst<em>'+T('japan')+'</em></div>'
     +'<div class="title-info">'+FUND_RANGE+' · '+TOTAL_SECTORS+' sectors · '+TOTAL_PROPOSERS+' proposers</div></div>'
     +'</div><div class="meta"></div>';
-  var srcDiv=document.createElement('div');
-  srcDiv.className='hdr-src';
-  srcDiv.style.cssText='position:fixed;bottom:8px;left:190px;right:16px;z-index:49;display:flex;align-items:center;gap:12px;justify-content:flex-end';
-  var _refLinks=[
-    {url:'https://catalystexplorer.com',title:'Catalyst Explorer',domain:'catalystexplorer.com',label:'Explorer'},
-    {url:'https://projectcatalyst.io',title:'Project Catalyst',domain:'projectcatalyst.io',label:'Catalyst'},
-    {url:'https://www.lidonation.com/en/catalyst-explorer',title:'LIDO Nation',domain:'lidonation.com',label:'LIDO'},
-    {url:'https://projectcatalyst.io/global-map',title:'Catalyst Map',domain:'projectcatalyst.io',label:'Map'}
-  ];
-  var _refLabel='font-family:JetBrains Mono,monospace;font-size:8px;letter-spacing:0.06em;color:var(--ref-text);text-transform:uppercase';
-  var refHtml='<div class="ref-links">'
-    +'<span style="'+_refLabel+'">'+(_lang==='ja'?'参考':'Ref')+'</span>';
-  for(var ri=0;ri<_refLinks.length;ri++){
-    var r=_refLinks[ri];
-    refHtml+='<a href="'+r.url+'" target="_blank" title="'+r.title+'">'
-      +'<img src="https://www.google.com/s2/favicons?domain='+r.domain+'&sz=32" alt="'+r.title+'">'
-      +r.label+'</a>';
-  }
-  refHtml+='<span style="width:1px;height:12px;background:var(--bar-sep);margin:0 3px"></span>'
-    +'<span style="'+_refLabel+'">'+(_lang==='ja'?'作成者':'By')+'</span>'
-    +'<a href="https://x.com/Hardfork_OT" target="_blank" title="CORN🌽 @Hardfork_OT">'
-    +'<img src="https://unavatar.io/x/Hardfork_OT" alt="CORN" style="border-radius:50%">'
-    +'CORN</a>'
-    +'</div>';
-  srcDiv.innerHTML=refHtml+'<span style="pointer-events:none;opacity:0.5;font-size:9px;white-space:normal;min-width:0;flex-shrink:1">'+srcText+'</span>';
-  stage.appendChild(srcDiv);
   stage.appendChild(hdr);
 
-  /* hint */
-  var hint=document.createElement('div');
-  hint.className='hint';
-  hint.textContent=T('hint');
-  stage.appendChild(hint);
-
-  /* sector view overlay */
+/* sector view overlay */
   var sv=document.createElement('div');
   sv.className='sector-view';
   sv.id='sector-view';
