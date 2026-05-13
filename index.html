@@ -311,12 +311,13 @@ html.night .sort-hl{color:hsla(270,70%,75%,1)!important;text-shadow:0 0 10px hsl
 }
 .lang-toggle-label.active{color:var(--bar-text-a)}
 .lang-toggle-pill{
-  position:absolute;top:2px;height:calc(100% - 4px);width:50%;border-radius:4px;
+  position:absolute;top:2px;height:calc(100% - 4px);width:calc(100%/3);border-radius:4px;
   background:var(--bar-pill-a);box-shadow:0 0 6px var(--bar-pill);
   transition:left .2s ease;
 }
-.lang-toggle-pill.en{left:calc(50% - 2px)}
 .lang-toggle-pill.ja{left:2px}
+.lang-toggle-pill.en{left:calc(100%/3)}
+.lang-toggle-pill.jp{left:calc(200%/3 - 2px)}
 
 /* Nodes */
 .node{
@@ -1081,8 +1082,9 @@ var _i18n={
   nwTooltipPeople:{ja:'人物ビューへ',en:'Go to People view'},nwTooltipAll:{ja:'全ノード表示',en:'Show all nodes'},
   members:{ja:'名',en:' members'}
 };
-function T(k){return _i18n[k]?(_i18n[k][_lang]||_i18n[k].ja):k}
+function T(k){return _i18n[k]?(_i18n[k][_lang==='jp'?'ja':_lang]||_i18n[k].ja):k}
 function secName(sec){return _lang==='en'?sec.label:sec.ja}
+function pLabel(p){return (_lang==='jp'&&_JA_LABELS[p.id])?_JA_LABELS[p.id]:p.label}
 
 function stColor(st){return st==='complete'?'var(--st-ok)':st==='progress'?'var(--st-wip)':'var(--st-dnf)'}
 function stLabel(st){return st==='complete'?T('complete'):st==='progress'?T('progress'):T('dnf')}
@@ -1135,7 +1137,7 @@ function _lensAppend(role,text){
 function _buildLensContext(p,question){
   var teamStr='';
   if(p.team){for(var i=0;i<p.team.length;i++){teamStr+='\n  '+p.team[i].name+' ('+p.team[i].role+')';}}
-  var msg='【'+p.label+'】\n提案者: '+(p.by||'不明')+'\n'
+  var msg='【'+pLabel(p)+'】\n提案者: '+(p.by||'不明')+'\n'
     +(teamStr?'チーム:'+teamStr+'\n':'')
     +'Fund: '+(p.fund||'?')+' / 金額: '+fmtPlain(p.amt,p.u,p.adaPrice)+' / 状態: '+stLabel(p.st)+'\n'
     +'チャレンジ: '+(p.ch||'');
@@ -1234,7 +1236,7 @@ function openInLens(p){
   panel.style.setProperty('--c',c);
   document.getElementById('ct-d-dot').style.background=c;
   document.getElementById('ct-d-ent').textContent=(p.by||'').toUpperCase();
-  document.getElementById('ct-d-title').textContent=p.label||'';
+  document.getElementById('ct-d-title').textContent=pLabel(p)||'';
   document.getElementById('ct-d-amt').innerHTML=fmtDual(p.amt,p.u,p.adaPrice);
   document.getElementById('ct-d-usd').textContent='';
 
@@ -1295,7 +1297,7 @@ function openInLens(p){
           var op=otherProps[oi];
           localHtml+='<div style="display:flex;align-items:center;gap:6px;padding:2px 0;font-size:11px">'
             +'<span class="st-dot" style="background:'+stColor(op.st)+';width:5px;height:5px;min-width:5px;border-radius:50%"></span>'
-            +'<span style="flex:1;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(trunc(op.label,40))+'</span>'
+            +'<span style="flex:1;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(trunc(pLabel(op),40))+'</span>'
             +'<span style="color:var(--muted);font-size:9px;white-space:nowrap">F'+(op.fund||'?')+'</span>'
             +'</div>';
         }
@@ -1323,7 +1325,7 @@ function openInLens(p){
   }).join('');
   presets.onclick=function(e){
     var btn=e.target.closest('.ct-lens-preset');
-    if(btn&&_ctDetailProp)sendToLens(_ctDetailProp,btn.getAttribute('data-q')+(_lang==='ja'?'してください。':'. Please analyze.'));
+    if(btn&&_ctDetailProp)sendToLens(_ctDetailProp,btn.getAttribute('data-q')+(_lang!=='en'?'してください。':'. Please analyze.'));
   };
 
   panel.classList.add('open');
@@ -1341,7 +1343,7 @@ function fetchCatalystApi(p){
     if(pd.u){
       html+='<br><div style="margin-top:8px"><a href="'+pd.u+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;color:var(--ref-link);text-decoration:none;font-size:11px;padding:5px 12px;border:1px solid var(--border);border-radius:6px;transition:all .15s;background:var(--dim)">→ Catalyst Explorer で詳細を見る</a></div>';
     }
-    html+='<div style="margin-top:12px;font-size:9px;color:var(--muted);opacity:0.6;line-height:1.6">'+(_lang==='ja'
+    html+='<div style="margin-top:12px;font-size:9px;color:var(--muted);opacity:0.6;line-height:1.6">'+(_lang!=='en'
       ?'※ データは Catalyst Explorer / projectcatalyst.io に基づく事実の記録であり、評価・主観的判断は含みません。本データは研究・実験目的で掲載しています。投資助言を目的としたものではありません。本サイトは非公式のコミュニティプロジェクトであり、IOG・Cardano Foundation・EMURGO とは無関係です。内容の正確性・完全性は保証されません。'
       :'* Data is based on factual records from Catalyst Explorer / projectcatalyst.io and does not include evaluations or subjective opinions. This data is for research and experimental purposes only. It does not constitute investment advice. This is an unofficial community project and is not affiliated with IOG, Cardano Foundation, or EMURGO. Accuracy and completeness are not guaranteed.')+'</div>';
     descEl.innerHTML=html;
@@ -1514,6 +1516,78 @@ var INDUSTRIES=[
     {id:'sc-1',label:'Solve asset fractionalization',amt:90,u:'usd',st:'complete',ch:'Cross-Chain Collaboration'}
   ]}
 ];
+
+/* ---- 日本語タイトル翻訳マップ ---- */
+var _JA_LABELS={
+  'co-1':'富士通とのAIチャットプラットフォーム','co-2':'Web3ブロックチェーンセンター徳島',
+  'co-3':'日本の大手IP保有者オンボーディング','co-4':'SPOジャパンギルド',
+  'co-5':'Cardano PRイニシアチブ日本','co-6':'PABの日本プロモーション',
+  'co-7':'日本1000都市展開 [アプリ]','co-8':'東アジアオンボーディング',
+  'co-9':'アジアの有権者と提案者を繋ぐ','co-10':'芦屋プールによるADA普及',
+  'co-11':'Cardano情報センター日本','co-12':'日本合同会社DAO（100万人）',
+  'co-13':'日本のCatalyst調査','co-14':'四国からの製品展示会',
+  'co-15':'ステークプール支援プロジェクトJP','co-16':'日本1000都市展開 [ポイントシステム]',
+  'co-17':'東アジアオンボーディング (2)','co-18':'ハードウェアウォレットサイト / 10ミートアップJP',
+  'co-19':'日本・地域活性化プロジェクト','co-20':'日本の若手提案者育成',
+  'co-21':'Cardanoビルダー・アジアネットワーク','co-22':'日本のCardano製品プロモーション',
+  'co-23':'日本メディアによるCardano拡大',
+  'dt-1':'統合型暗号資産会計システム','dt-2':'Milkomedaアクセラレーター第2期',
+  'dt-3':'Milkomeda向けERC721 & ERC-1155','dt-4':'Milkomedaモバイル',
+  'dt-5':'Rust SDK重大CBORエンコーディング修正','dt-6':'Milkomeda Dockerフルノードセットアップ',
+  'dt-7':'Ouraによるdb-sync代替','dt-8':'SNSブロックチェーン認証（オフライン）',
+  'dt-9':'Atala技術展開ブループリント','dt-10':'高速再インデックスデータ形式',
+  'dt-11':'CPU/IoTファクトデータ開発','dt-12':'ラズベリーパイ / SPOプロジェクト',
+  'dt-13':'Gnosis Safe UI','dt-14':'RINA上のOuroboros',
+  'dt-15':'レイヤー3スケーラビリティ zkRollups','dt-16':'Fracadaアドレッシング監査',
+  'dt-17':'CIPエディター業務（Sebastien）','dt-18':'Milkomeda上のTheGraph',
+  'dt-19':'Milkomeda向けアプリストア','dt-20':'Cardano Rust SDK Babbage対応',
+  'dt-21':'Midnight向けスマートコントラクトライブラリ',
+  'em-1':'Cardanoジャパンハブ再始動','em-2':'日本でのイベント開催（ニュース）',
+  'em-3':'日本最大ブロックチェーンEXPO出展','em-4':'AtalaPRISMハッカソン × devillage',
+  'em-5':'日本最大ブロックチェーンEXPO出展 F3','em-6':'トークンユースケース マルチアドレスウォレット eUTXO',
+  'em-7':'DeFiハッカソン','em-8':'DIDビジネスアイデアハッカソン',
+  'em-9':'東京カルダノサミット','em-10':'Cardano SPT（特別プロモタスクフォース）',
+  'em-11':'Milkomedaハッカソン','em-12':'日本最大ブロックチェーンEXPO出展 2022',
+  'em-13':'日本最大ブロックチェーンEXPO出展 2021','em-14':'日本のカルダノサミット',
+  'em-15':'テック・フォー・インパクトサミット 2025','em-16':'Cardanoビルダーフェスト・アジア',
+  'em-17':'SusHiTech東京でのCardano',
+  'is-1':'トークンインセンティブ型メンタルヘルスDID','is-2':'Socious: 検証可能な資格証明',
+  'is-3':'MetaDID実験 × 会津ラボ','is-4':'エンタープライズDIDソリューション',
+  'is-5':'AtalaとMilkomedaの統合','is-6':'自治体向けDIDソリューション',
+  'is-7':'AtalaPrism SDK拡張','is-8':'DIDによるインパクト認証',
+  'is-9':'日本のFUD/詐欺バスター100','is-10':'職歴の検証可能な資格証明化',
+  'is-11':'Atala PRISM 2.0用IDウォレット','is-12':'Atalaウォレット SDK大規模普及',
+  'df-1':'流動性移行のファーミングインセンティブ','df-2':'Milkomeda/L2向けリキッドステーキング',
+  'df-3':'リモートワーク向け分散型エスクロー','df-4':'Milkomeda Djed',
+  'df-5':'主要プロトコル向けブリッジ流動性','df-6':'銀行口座を持たない人向けインパクト融資',
+  'df-7':'ウォレット用セルフホスト価格フィード','df-8':'日本で100のCardano DeFiを紹介',
+  'df-9':'社会/環境インパクトスコアリング','df-10':'分散型エスクロー＆紛争解決',
+  'ed-1':'L-Earning Bazaarプラットフォーム強化','ed-2':'Cardano For the M₳sses — 日本語版',
+  'ed-3':'L-Earning Bazaar: プラットフォーム構築','ed-4':'Cardano Bridges 日本語版',
+  'ed-5':'日本語Cardanoマスタークラス','ed-6':'SJG TOOLS V2 — ステークプールTUIツール',
+  'ed-7':'L-Earning Bazaar: Web3統合','ed-8':'Cardanoスタートガイド',
+  'ed-9':'Atala日本語翻訳 & CNFT','ed-10':'インパクト会計プロジェクト型学習',
+  'ed-11':'双葉社による暗号資産マガジン',
+  'gv-1':'DAOエコシステムの政策提言','gv-2':'デジタルコマース会議所',
+  'gv-3':'dRepの倫理規定 + ブリッジズアジア','gv-4':'Socious: 分散型リファラルDAO',
+  'gv-5':'日本法調査 + ロビー活動','gv-6':'拡張二次資金調達 (F10)',
+  'gv-7':'拡張二次資金調達 (F11)','gv-8':'拡張二次資金調達 (F13)',
+  'rw-1':"Lock'n': Hydra L2 IoT（ガチャガチャ）",'rw-2':'放送波によるIPDCブロックチェーン',
+  'rw-3':'AIRA: Hydraロイヤルティ地域活性化','rw-4':'Cardano RWAローンチパッド',
+  'rw-5':'Milkomedaアクセラレーター第3期','rw-6':'Cardano向けWalletConnect',
+  'rw-7':'MIRAIメモリーズバンク — プロジェクトエコーズ','rw-8':'ウィンタープロトコル: トレーサビリティ & RWA',
+  'rw-9':'四国地域の社会実装','rw-10':'空き家を活力へ: DAO & RWA住宅',
+  'rw-11':'ADAによるオンライン地域ショッピング','rw-12':'音楽ライブNFTプラットフォーム',
+  'io-1':'Cotalker統合','io-2':'メッセージ署名標準の策定',
+  'io-3':'Milkomedaトークンブリッジエクスプローラー',
+  'gf-1':'スポーツクラウドファンディング ファンクラブアプリ','gf-2':'Milkomedaゲーム','gf-3':'Milkomedaゲーム #2',
+  'nf-1':'レジェンダリー・ヒューマニティ: ファッションプラットフォーム','nf-2':'cNFTによる入場チケット',
+  'nf-3':'日本伝統工芸NFT','nf-4':'マスフォトプロジェクト: CNFTアート',
+  'nf-5':'渋谷フェス 428FES CNFT展示',
+  'su-1':'御朱印NFT 徳島','su-2':'有機食品の品質保証',
+  'su-3':'サステナブルコーヒー・トゥ・アーン','su-4':'サステナブルアパレル追跡デモ',
+  'sc-1':'資産分割化の解決'
+};
 
 var TOTAL_USD_K=0;
 
@@ -2009,7 +2083,7 @@ function buildTreeBySector(){
     for(var j=0;j<ind.children.length;j++){
       var p=ind.children[j];
       if(filterBy&&p.by!==filterBy) continue;
-      propKids.push({id:p.id,label:p.label,amt:p.amt,u:p.u,st:p.st,ch:p.ch,by:p.by,role:p.role,fund:p.fund,adaPrice:p.adaPrice,team:p.team,cls:p.cls,hue:ind.hue,children:[]});
+      propKids.push({id:p.id,label:pLabel(p),amt:p.amt,u:p.u,st:p.st,ch:p.ch,by:p.by,role:p.role,fund:p.fund,adaPrice:p.adaPrice,team:p.team,cls:p.cls,hue:ind.hue,children:[]});
     }
     if(filterBy&&propKids.length===0) continue;
     var ok=0,wip=0,dnf=0;
@@ -2046,7 +2120,7 @@ function buildTreeByProposer(){
         var p=INDUSTRIES[i].children[j];
         if(ps.unknown?!p.by:p.by===ps.name){
           seen[p.id]=true;
-          propKids.push({id:p.id,label:p.label,amt:p.amt,u:p.u,st:p.st,ch:p.ch,by:p.by,role:p.role,
+          propKids.push({id:p.id,label:pLabel(p),amt:p.amt,u:p.u,st:p.st,ch:p.ch,by:p.by,role:p.role,
             fund:p.fund,adaPrice:p.adaPrice,team:p.team,cls:p.cls,sector:secName(INDUSTRIES[i]),hue:pi*hueStep,children:[]});
         }
       }
@@ -2060,7 +2134,7 @@ function buildTreeByProposer(){
           for(var t=0;t<p.team.length;t++){
             if(p.team[t].name===ps.name){
               seen[p.id]=true;
-              propKids.push({id:p.id+'-t',label:p.label,amt:p.amt,u:p.u,st:p.st,ch:p.ch,by:p.by,
+              propKids.push({id:p.id+'-t',label:pLabel(p),amt:p.amt,u:p.u,st:p.st,ch:p.ch,by:p.by,
                 role:p.team[t].role,fund:p.fund,adaPrice:p.adaPrice,team:p.team,cls:p.cls,
                 sector:secName(INDUSTRIES[i]),hue:pi*hueStep,children:[],_teamRole:p.team[t].role});
               break;
@@ -2362,7 +2436,7 @@ function buildShell(){
   root.innerHTML='';
   var disc=document.getElementById('disc-bar');
   if(disc){
-    var discTxt=_lang==='ja'
+    var discTxt=_lang!=='en'
       ?'※ 本サイトに掲載されたデータは Catalyst Explorer および projectcatalyst.io の公開情報に基づく事実の記録であり、独自の評価・推奨・主観的判断は一切含みません。研究・実験目的でのみ提供されており、投資助言・金融商品の勧誘を目的としたものではありません。本サイトは非公式の個人プロジェクトであり、いかなる団体とも提携・関連はなく、正確性・完全性は保証されません。'
       :'* Data based on public records from Catalyst Explorer & projectcatalyst.io — factual only, no evaluations or endorsements. For research/experimental purposes only; not investment advice. Unofficial community project, no affiliation with any entity. Accuracy not guaranteed. Use at your own risk.';
     var _dRefLinks=[
@@ -2373,7 +2447,7 @@ function buildShell(){
     ];
     var _dRefLabel='font-family:JetBrains Mono,monospace;font-size:8px;letter-spacing:0.06em;color:var(--ref-text);text-transform:uppercase';
     var dRefHtml='<div class="ref-links">'
-      +'<span style="'+_dRefLabel+'">'+(_lang==='ja'?'参考':'Ref')+'</span>';
+      +'<span style="'+_dRefLabel+'">'+(_lang!=='en'?'参考':'Ref')+'</span>';
     for(var dri=0;dri<_dRefLinks.length;dri++){
       var dr=_dRefLinks[dri];
       dRefHtml+='<a href="'+dr.url+'" target="_blank" title="'+dr.title+'">'
@@ -2381,7 +2455,7 @@ function buildShell(){
         +dr.label+'</a>';
     }
     dRefHtml+='<span style="width:1px;height:12px;background:var(--bar-sep);margin:0 2px"></span>'
-      +'<span style="'+_dRefLabel+'">'+(_lang==='ja'?'作成者':'By')+'</span>'
+      +'<span style="'+_dRefLabel+'">'+(_lang!=='en'?'作成者':'By')+'</span>'
       +'<a href="https://x.com/Hardfork_OT" target="_blank" title="CORN🌽 @Hardfork_OT">'
       +'<img src="https://unavatar.io/x/Hardfork_OT" alt="CORN" style="border-radius:50%">'
       +'CORN</a></div>';
@@ -2410,7 +2484,7 @@ function buildShell(){
     (function(m){
       var btn=document.createElement('button');
       btn.className='view-bar-btn'+(viewMode===m.key?' active':'');
-      btn.textContent=_lang==='ja'?m.ja:m.en;
+      btn.textContent=_lang!=='en'?m.ja:m.en;
       btn.onclick=function(){viewMode=m.key;filterSec=null;filterBy=null;vis.clear();vis.add('root');buildShell();
         if(m.key==='network')renderNetwork();else if(m.key==='timeline')renderTimeline();else{render();centerView();}};
       mainRow.appendChild(btn);
@@ -2421,14 +2495,16 @@ function buildShell(){
   toggle.className='lang-toggle';
   var pill=document.createElement('div');
   pill.className='lang-toggle-pill '+_lang;
-  var lblJa=document.createElement('span');
-  lblJa.className='lang-toggle-label'+(_lang==='ja'?' active':'');
-  lblJa.textContent='JP';
-  var lblEn=document.createElement('span');
-  lblEn.className='lang-toggle-label'+(_lang==='en'?' active':'');
-  lblEn.textContent='EN';
-  toggle.appendChild(pill);toggle.appendChild(lblJa);toggle.appendChild(lblEn);
-  toggle.onclick=function(){_lang=_lang==='ja'?'en':'ja';buildShell();if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else render();};
+  var _langModes=['ja','en','jp'];
+  var _langLabels=['通常','EN','翻訳'];
+  for(var li=0;li<_langModes.length;li++){
+    var lbl=document.createElement('span');
+    lbl.className='lang-toggle-label'+(_lang===_langModes[li]?' active':'');
+    lbl.textContent=_langLabels[li];
+    toggle.appendChild(lbl);
+  }
+  toggle.insertBefore(pill,toggle.firstChild);
+  toggle.onclick=function(){var ci=_langModes.indexOf(_lang);_lang=_langModes[(ci+1)%3];buildShell();if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else render();};
   mainRow.appendChild(toggle);
   var nightBtn=document.createElement('button');
   nightBtn.className='view-bar-btn';
@@ -2485,7 +2561,7 @@ function buildShell(){
     sortRow.className='view-bar-sort';
     var sortLabel=document.createElement('span');
     sortLabel.className='view-bar-sort-label';
-    sortLabel.textContent=_lang==='ja'?'並び替え':'Sort';
+    sortLabel.textContent=_lang!=='en'?'並び替え':'Sort';
     sortRow.appendChild(sortLabel);
     var sortModes=[
       {key:'',ja:'標準',en:'Def'},
@@ -2499,7 +2575,7 @@ function buildShell(){
       (function(sm){
         var sBtn=document.createElement('button');
         sBtn.className='sort-btn'+(sortMode===sm.key?' active':'');
-        sBtn.textContent=_lang==='ja'?sm.ja:sm.en;
+        sBtn.textContent=_lang!=='en'?sm.ja:sm.en;
         sBtn.onclick=function(e){e.stopPropagation();sortMode=sm.key;buildShell();render();};
         sortRow.appendChild(sBtn);
       })(sortModes[si]);
@@ -2508,7 +2584,7 @@ function buildShell(){
   }
   /* Legend strip — right side */
   var legStrip=document.createElement('div');legStrip.className='legend-strip';
-  legStrip.innerHTML=_lang==='ja'
+  legStrip.innerHTML=_lang!=='en'
     ?'<span><i style="background:var(--st-ok)"></i>完了</span>'
     +'<span><i style="background:var(--st-wip)"></i>進行中</span>'
     +'<span><i style="background:var(--st-dnf)"></i>中止</span>'
@@ -2909,10 +2985,10 @@ function renderTimeline(){
           var pip=document.createElement('div');
           pip.className='tl-pip';
           pip.style.borderLeft='3px solid '+stColor(p.st);
-          pip.innerHTML='<div class="tl-pip-title">'+esc(trunc(p.label,30))+'</div>'
+          pip.innerHTML='<div class="tl-pip-title">'+esc(trunc(pLabel(p),30))+'</div>'
             +'<div class="tl-pip-meta">'+stBadge(p.st)
             +'<span class="tl-pip-amt">'+fmtDual(p.amt,p.u,p.adaPrice)+'</span></div>';
-          pip.title=p.label+'\n'+stLabel(p.st)+' · F'+p.fund+'\n'+(p.ch||'');
+          pip.title=pLabel(p)+'\n'+stLabel(p.st)+' · F'+p.fund+'\n'+(p.ch||'');
           pip.style.cursor='pointer';
           (function(pr){pip.onclick=function(e){e.stopPropagation();openInLens(pr)};})(p);
           cell.appendChild(pip);
@@ -2977,7 +3053,7 @@ function renderNetwork(){
       for(var k=0;k<inv.length;k++){
         var nm=inv[k].name;
         if(!ppl[nm])ppl[nm]={name:nm,props:[],totalAda:0,totalUsd:0,soloUsdK:0,coUsdK:0,_sectors:{}};
-        ppl[nm].props.push({id:p.id,label:p.label,role:inv[k].role,fund:p.fund,st:p.st,amt:p.amt,u:p.u,adaPrice:p.adaPrice,ch:p.ch,by:p.by,team:p.team,cls:p.cls,url:p.url,x:p.x,yt:p.yt,report:p.report,_secId:sec.id,_secHue:sec.hue,_secJa:sec.ja});
+        ppl[nm].props.push({id:p.id,label:pLabel(p),role:inv[k].role,fund:p.fund,st:p.st,amt:p.amt,u:p.u,adaPrice:p.adaPrice,ch:p.ch,by:p.by,team:p.team,cls:p.cls,url:p.url,x:p.x,yt:p.yt,report:p.report,_secId:sec.id,_secHue:sec.hue,_secJa:sec.ja});
         if(p.u==='ada')ppl[nm].totalAda+=p.amt;
         else ppl[nm].totalUsd+=p.amt;
         var _uK=p.u==='ada'?p.amt*p.adaPrice:p.amt;
@@ -3507,7 +3583,7 @@ function renderNetwork(){
         linksHtml+='</div>';
       }
       row.innerHTML='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px">'
-        +'<div class="nw-prop-title" style="flex:1;min-width:0">'+esc(pr.label)+'</div>'
+        +'<div class="nw-prop-title" style="flex:1;min-width:0">'+esc(pLabel(pr))+'</div>'
         +linksHtml+'</div>'
         +'<div class="nw-prop-meta">'+stBadge(pr.st)
         +clsTag(pr.cls)
@@ -3603,7 +3679,7 @@ function showEdgePopup(edge,x,y){
       if(p.report)pLk+='<span class="lk-icon lk-cr" title="'+T('completionReport')+'" data-report="'+esc(p.id)+'">CR</span>';
       pLk+='</span>';
     }
-    item.innerHTML='<div style="display:flex;align-items:center;gap:4px"><div class="nw-popup-item-label" style="flex:1;min-width:0">'+esc(p.label)+'</div>'+pLk+'</div>'
+    item.innerHTML='<div style="display:flex;align-items:center;gap:4px"><div class="nw-popup-item-label" style="flex:1;min-width:0">'+esc(pLabel(p))+'</div>'+pLk+'</div>'
       +'<div class="nw-popup-item-meta">'+stBadge(p.st)
       +'<span>F'+(p.fund||'?')+'</span>'
       +'<span>'+fmtAmt(p.amt,p.u)+'</span></div>';
