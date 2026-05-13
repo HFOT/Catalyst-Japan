@@ -277,7 +277,7 @@ html.night .ct-d-badge.st-dnf{background:hsl(0 35% 20%);color:hsl(0 55% 70%);bor
   min-width:72px;text-align:center;
 }
 .view-bar-btn:hover{color:var(--bar-text-h);background:var(--bar-pill)}
-.view-bar-btn.active{color:var(--bar-text-a);background:hsla(210,60%,55%,0.28);box-shadow:0 0 10px hsla(210,60%,55%,0.12)}
+.view-bar-btn.active{color:var(--bar-text-a);background:rgba(255,255,255,0.1)}
 .view-bar-sep{width:1px;height:22px;background:var(--bar-sep);margin:0 4px}
 .zoom-ctrl{display:flex;align-items:center;gap:2px;margin-left:2px}
 .zoom-btn{
@@ -303,8 +303,8 @@ html.night .ct-d-badge.st-dnf{background:hsl(0 35% 20%);color:hsl(0 55% 70%);bor
 .sort-btn{padding:5px 10px;border:none;border-radius:5px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.04em;color:var(--bar-text);background:none;transition:all .15s ease;white-space:nowrap;line-height:1}
 .sort-btn:hover{color:var(--bar-text-h)}
 .sort-btn.active{color:var(--bar-text-a);background:var(--bar-pill-a)}
-.sort-hl{color:hsl(210 60% 42%)!important;text-shadow:none}
-html.night .sort-hl{color:hsla(210,70%,72%,1)!important;text-shadow:0 0 10px hsla(210,60%,55%,0.5)}
+.sort-hl{color:var(--ink)!important;font-weight:500;text-shadow:none}
+html.night .sort-hl{color:#fff!important;font-weight:500;text-shadow:none}
 .cur-toggle{
   position:relative;display:flex;align-items:center;
   background:var(--bar-pill);border-radius:8px;padding:3px;cursor:pointer;
@@ -318,7 +318,7 @@ html.night .sort-hl{color:hsla(210,70%,72%,1)!important;text-shadow:0 0 10px hsl
 .cur-toggle-label.active{color:var(--bar-text-a);font-weight:700}
 .cur-toggle-pill{
   position:absolute;top:3px;height:calc(100% - 6px);width:calc(100%/3);border-radius:5px;
-  background:hsla(210,60%,55%,0.28);box-shadow:0 0 8px hsla(210,60%,55%,0.12);
+  background:rgba(255,255,255,0.1);
   transition:left .2s ease;
 }
 .cur-toggle-pill.cur-jpy{left:3px}
@@ -337,7 +337,7 @@ html.night .sort-hl{color:hsla(210,70%,72%,1)!important;text-shadow:0 0 10px hsl
 .lang-toggle-label.active{color:var(--bar-text-a);font-weight:700}
 .lang-toggle-pill{
   position:absolute;top:3px;height:calc(100% - 6px);width:calc(100%/2);border-radius:5px;
-  background:hsla(210,60%,55%,0.28);box-shadow:0 0 8px hsla(210,60%,55%,0.12);
+  background:rgba(255,255,255,0.1);
   transition:left .2s ease;
 }
 .lang-toggle-pill.en{left:3px}
@@ -999,11 +999,11 @@ html.night .cls-bridge{background:hsl(30 35% 22%);color:hsl(30 55% 75%);border:n
     background:transparent;border-radius:1px;transition:all .2s;
   }
   .view-bar-btn.active{
-    color:hsla(210,80%,75%,1)!important;
+    color:#fff!important;
     background:transparent!important;
   }
   .view-bar-btn.active::after{
-    background:hsla(210,60%,60%,0.8);left:10%;right:10%;
+    background:rgba(255,255,255,0.5);left:10%;right:10%;
   }
   .view-bar-sep{display:none!important}
   .lang-toggle{transform:scale(0.85);margin:0 2px}
