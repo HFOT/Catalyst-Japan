@@ -946,7 +946,8 @@ html.night .cls-bridge{background:hsl(30 35% 22%);color:hsl(30 55% 75%);border:n
   .mob-hdr-ada{font-family:'Fraunces',serif;font-size:14px;font-weight:500;color:var(--ink);letter-spacing:-0.02em}
   .mob-hdr-sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:0.04em}
 
-  /* stage/tl/nw below header — set by JS after header renders */
+  /* mobile header in tl-wrap/nw-wrap */
+  .mob-view-hdr{position:fixed!important;top:0;left:0;right:0;z-index:160}
 
   /* view bar: stylish bottom tab bar */
   .view-bar{
@@ -2685,6 +2686,30 @@ function render(){
 }
 
 /* ================================================================
+   MOBILE HEADER (shared by all views)
+   ================================================================ */
+function buildMobHeader(parent){
+  if(!isMob()) return;
+  var hdr=document.createElement('div');
+  hdr.className='header mob-view-hdr';
+  var adaTotal=TOTAL_ADA>=1e6?(TOTAL_ADA/1e6).toFixed(2)+'M':TOTAL_ADA>=1e3?(TOTAL_ADA/1e3).toFixed(1)+'K':Math.round(TOTAL_ADA);
+  var usdTotal='$'+(TOTAL_USD_K/1000).toFixed(2)+'M';
+  var jpyT=TOTAL_USD_K*1000*USD_JPY;
+  var jpyTotal=jpyT>=1e8?'¥'+(jpyT/1e8).toFixed(1)+'億':'¥'+Math.round(jpyT/1e4)+'万';
+  hdr.innerHTML='<div class="title-row"><div class="title">Catalyst<em>'+T('japan')+'</em></div></div>'
+    +'<div class="mob-hdr-amt">'
+    +'<span class="mob-hdr-ada">'+adaTotal+' ₳</span>'
+    +'<span class="mob-hdr-sub">'+usdTotal+' · '+jpyTotal+'</span>'
+    +'</div>';
+  parent.appendChild(hdr);
+  requestAnimationFrame(function(){
+    var hh=hdr.offsetHeight||44;
+    parent.style.top=hh+'px';
+  });
+  return hdr;
+}
+
+/* ================================================================
    SHELL (sidebar + stage + header)
    ================================================================ */
 function buildShell(){
@@ -3198,6 +3223,7 @@ function renderTimeline(){
   var wrap=document.getElementById('tl-wrap');
   if(!wrap)return;
   wrap.innerHTML='';
+  buildMobHeader(wrap);
   panX=0;panY=0;zoom=1;
 
   /* collect all funds used */
@@ -3384,6 +3410,7 @@ function renderNetwork(){
   var wrap=document.getElementById('nw-wrap');
   if(!wrap)return;
   wrap.innerHTML='';
+  buildMobHeader(wrap);
 
   /* ---- build graph data ---- */
   var ppl={},edg={};
