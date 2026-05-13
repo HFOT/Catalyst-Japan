@@ -1056,14 +1056,14 @@ var _i18n={
   proposalInfo:{ja:'提案情報',en:'Proposal Info'},challenge:{ja:'チャレンジ',en:'Challenge'},
   team:{ja:'チーム',en:'Team'},proposer:{ja:'提案者',en:'Proposer'},proposals:{ja:'件',en:''},
   propCount:{ja:'件の提案',en:' proposals'},connections:{ja:'接続',en:' connections'},
-  overview:{ja:'概況',en:'Overview'},people:{ja:'人物',en:'People'},
+  overview:{ja:'概況',en:'Overview'},people:{ja:'アカウント',en:'Accounts'},
   hasCollab:{ja:'共同提案あり',en:'Co-proposed'},sharedProp:{ja:'共有提案',en:'Shared'},
   categories:{ja:'カテゴリ',en:'Categories'},completionReport:{ja:'完了報告',en:'Completion Report'},
-  openPeople:{ja:'人物ビューで開く →',en:'Open in People view →'},
-  sector:{ja:'業界',en:'Sector'},peopleTab:{ja:'人物',en:'People'},timeline:{ja:'時系列',en:'Timeline'},
+  openPeople:{ja:'アカウント別で開く →',en:'Open in Accounts view →'},
+  sector:{ja:'業界',en:'Sector'},peopleTab:{ja:'アカウント別',en:'Accounts'},timeline:{ja:'時系列',en:'Timeline'},
   avg:{ja:'平均',en:'Avg'},max:{ja:'最大',en:'Max'},funded:{ja:'PROPOSALS FUNDED',en:'PROPOSALS FUNDED'},
   propS:{ja:'提案',en:'Proposals'},nameLabel:{ja:'名',en:''},
-  allShow:{ja:'全表示',en:'Show all'},peopleArrow:{ja:'人物 ↗',en:'People ↗'},
+  allShow:{ja:'全表示',en:'Show all'},peopleArrow:{ja:'アカウント ↗',en:'Accounts ↗'},
   loading:{ja:'読み込み中...',en:'Loading...'},fetchOriginal:{ja:'⟳ 原文を取得',en:'⟳ Fetch original'},
   problem:{ja:'課題',en:'Problem'},solutionLabel:{ja:'解決策',en:'Solution'},
   votesLabel:{ja:'投票',en:'Votes'},linkLabel:{ja:'リンク',en:'Links'},
@@ -1079,7 +1079,7 @@ var _i18n={
   summary:{ja:'要約',en:'Summary'},riskAnalysis:{ja:'リスク分析',en:'Risk Analysis'},
   prosAndCons:{ja:'賛否の論点',en:'Pros & Cons'},comparison:{ja:'類似比較',en:'Compare similar'},
   lensAsk:{ja:'してください。',en:'. Please provide details.'},
-  nwTooltipPeople:{ja:'人物ビューへ',en:'Go to People view'},nwTooltipAll:{ja:'全ノード表示',en:'Show all nodes'},
+  nwTooltipPeople:{ja:'アカウント別へ',en:'Go to Accounts view'},nwTooltipAll:{ja:'全ノード表示',en:'Show all nodes'},
   members:{ja:'名',en:' members'}
 };
 function T(k){return _i18n[k]?(_i18n[k][_lang==='jp'?'ja':_lang]||_i18n[k].ja):k}
@@ -2476,7 +2476,7 @@ function buildShell(){
   mainRow.className='view-bar-main';
   var modes=[
     {key:'sector',ja:'業界別',en:'Sector'},
-    {key:'proposer',ja:'人物別',en:'People'},
+    {key:'proposer',ja:'アカウント別',en:'Accounts'},
     {key:'timeline',ja:'時系列',en:'Timeline'},
     {key:'network',ja:'関係図',en:'Network'}
   ];
