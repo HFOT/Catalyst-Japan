@@ -552,7 +552,9 @@ html.night .cls-bridge{background:hsl(30 35% 22%);color:hsl(30 55% 75%);border:n
 /* ═══════ Mobile accordion (sector/accounts) ═══════ */
 .mob-acc{display:none;flex-direction:column;gap:6px;padding:8px 8px 80px}
 .mob-acc-item{background:var(--paper);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.mob-acc-head{display:flex;align-items:center;padding:12px 14px;gap:8px;cursor:pointer;transition:background .15s}
+.mob-acc-head{display:flex;flex-direction:column;padding:10px 14px;gap:4px;cursor:pointer;transition:background .15s}
+.mob-acc-head-top{display:flex;align-items:center;gap:8px}
+.mob-acc-head-btm{display:flex;align-items:center;gap:6px;padding-left:2px}
 .mob-acc-head:active{background:var(--dim)}
 .mob-acc-name{flex:1;font-size:13px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mob-acc-amt{display:flex;align-items:center;gap:4px;white-space:nowrap}
@@ -2438,10 +2440,11 @@ function render(){
           var jpyS=jpyV>=1e8?'¥'+(jpyV/1e8).toFixed(1)+'億':'¥'+Math.round(jpyV/1e4)+'万';
           grpAmt='<span class="mob-acc-amt"><span class="mob-acc-ada">'+adaS+' ₳</span><span class="mob-acc-fiat"><span>'+usdS+'</span><span>'+jpyS+'</span></span></span>';
         }
-        head.innerHTML='<span class="mob-acc-name">'+esc(grp.label)+'</span>'
-          +barHtml+grpAmt
+        head.innerHTML='<div class="mob-acc-head-top"><span class="mob-acc-name">'+esc(grp.label)+'</span>'
+          +barHtml
           +'<span class="mob-acc-cnt">'+((grp._total||0))+'件</span>'
-          +'<span class="mob-acc-arrow">▶</span>';
+          +'<span class="mob-acc-arrow">▶</span></div>'
+          +(grpAmt?'<div class="mob-acc-head-btm">'+grpAmt+'</div>':'');
         head.onclick=function(){item.classList.toggle('open');};
         item.appendChild(head);
         /* body */
