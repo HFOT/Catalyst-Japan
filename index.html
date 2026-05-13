@@ -319,6 +319,24 @@ html.night .sort-hl{color:hsla(270,70%,75%,1)!important;text-shadow:0 0 10px hsl
 .lang-toggle-pill.ja{left:2px}
 .lang-toggle-pill.en{left:calc(100%/3)}
 .lang-toggle-pill.jp{left:calc(200%/3 - 2px)}
+.cur-toggle{
+  position:relative;display:flex;align-items:center;
+  background:var(--bar-pill);border-radius:6px;padding:2px;cursor:pointer;
+  font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.06em;line-height:1;
+  border:1px solid var(--bar-border);margin-right:2px;
+}
+.cur-toggle-label{
+  position:relative;z-index:1;padding:4px 6px;color:var(--bar-text);transition:color .2s;user-select:none;
+}
+.cur-toggle-label.active{color:var(--bar-text-a)}
+.cur-toggle-pill{
+  position:absolute;top:2px;height:calc(100% - 4px);width:calc(100%/3);border-radius:4px;
+  background:var(--bar-pill-a);box-shadow:0 0 6px var(--bar-pill);
+  transition:left .2s ease;
+}
+.cur-toggle-pill.cur-jpy{left:2px}
+.cur-toggle-pill.cur-usd{left:calc(100%/3)}
+.cur-toggle-pill.cur-ada{left:calc(200%/3 - 2px)}
 
 /* Nodes */
 .node{
@@ -1146,9 +1164,11 @@ if(NIGHT)document.documentElement.classList.add('night');
 
 /* ---- Helpers ---- */
 var ADA_USD=0.75, USD_JPY=150;
+var _amtMode='auto'; /* 'auto'=follow _lang | 'jpy' | 'usd' | 'ada' */
 function esc(s){return s?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):''}
 function trunc(s,m){if(!s)return'';s=s.replace(/\s+/g,' ').trim();return s.length>m?s.slice(0,m-1)+'…':s}
 function hsl(h){return 'hsl('+h+' 50% '+(NIGHT?'58':'44')+'%)'}
+function _curMode(){return _amtMode==='auto'?(_lang==='en'?'usd':'jpy'):_amtMode}
 function fmtAmt(v,u){
   if(u==='ada'){
     if(v>=1000) return (v/1000).toFixed(1)+'M ₳';
@@ -1159,7 +1179,14 @@ function fmtAmt(v,u){
   return '$'+v+'K';
 }
 function fmtJpy(usdK){
-  if(_lang==='en'){
+  var mode=_curMode();
+  if(mode==='ada'){
+    var ada=usdK/ADA_USD;
+    if(ada>=1e3) return (ada/1e3).toFixed(1)+'M ₳';
+    if(ada>=1) return Math.round(ada)+'K ₳';
+    return Math.round(ada*1e3)+' ₳';
+  }
+  if(mode==='usd'){
     if(usdK>=1000) return '$'+(usdK/1000).toFixed(1)+'M';
     if(usdK>=1) return '$'+Math.round(usdK)+'K';
     return '$'+(usdK*1000).toFixed(0);
@@ -1169,32 +1196,26 @@ function fmtJpy(usdK){
   if(jpy>=1e4) return '¥'+Math.round(jpy/1e4)+'万';
   return '¥'+Math.round(jpy);
 }
-function fmtJpySub(usdK){
-  if(_lang==='en'){
-    var jpy=usdK*1000*USD_JPY;
-    if(jpy>=1e8) return '¥'+(jpy/1e8).toFixed(1)+'億';
-    if(jpy>=1e4) return '¥'+Math.round(jpy/1e4)+'万';
-    return '¥'+Math.round(jpy);
-  }
-  if(usdK>=1000) return '$'+(usdK/1000).toFixed(1)+'M';
-  if(usdK>=1) return '$'+Math.round(usdK)+'K';
-  return '$'+(usdK*1000).toFixed(0);
-}
 function fmtDual(v,u,adaP){
   var ap=adaP||ADA_USD;
-  var main=fmtAmt(v,u);
-  var usd,sub1,sub2;
-  if(u==='ada'){
-    usd=v*ap;
-    sub1=usd>=1000?'$'+(usd/1000).toFixed(1)+'M':'$'+Math.round(usd)+'K';
-    sub2=_lang==='en'?'':' '+fmtJpy(usd);
-  } else {
-    usd=v;
-    var ada=v/ap;
-    sub1=ada>=1000?(ada/1000).toFixed(1)+'M ₳':Math.round(ada)+'K ₳';
-    sub2=_lang==='en'?'':' '+fmtJpy(usd);
+  var mode=_curMode();
+  if(mode==='ada'){
+    /* ADA mode: main=ADA, sub=fiat */
+    var ada=u==='ada'?v:v/ap;
+    var main=ada>=1000?(ada/1000).toFixed(1)+'M ₳':Math.round(ada)+'K ₳';
+    var usdK=u==='ada'?v*ap:v;
+    var sub=_lang==='en'?('$'+(usdK>=1000?(usdK/1000).toFixed(1)+'M':Math.round(usdK)+'K')):(function(){var j=usdK*1000*USD_JPY;return j>=1e8?'¥'+(j/1e8).toFixed(1)+'億':'¥'+Math.round(j/1e4)+'万'})();
+    return main+'<span class="amt-sub">'+sub+'</span>';
   }
-  return main+'<span class="amt-sub">'+sub1+sub2+'</span>';
+  var main=fmtAmt(v,u);
+  var sub;
+  if(u==='ada'){
+    sub=fmtJpy(v*ap);
+  } else {
+    var ada=v/ap;
+    sub=ada>=1000?(ada/1000).toFixed(1)+'M ₳':Math.round(ada)+'K ₳';
+  }
+  return main+'<span class="amt-sub">'+sub+'</span>';
 }
 /* ---- i18n ---- */
 var _lang='ja';
@@ -1265,8 +1286,12 @@ function roleTag(role){
 function pathD(x1,y1,x2,y2){var mx=(x1+x2)/2;return'M'+x1+','+y1+' C'+mx+','+y1+' '+mx+','+y2+' '+x2+','+y2}
 
 function fmtPlain(amt,u,adaPrice){
-  if(u==='ada'){var usd=amt*(adaPrice||ADA_USD);return Math.round(amt)+'K ₳ ($'+Math.round(usd)+'K)';}
-  return '$'+Math.round(amt)+'K';
+  var ap=adaPrice||ADA_USD;
+  if(u==='ada'){
+    var usd=amt*ap;
+    return Math.round(amt)+'K ₳ ('+fmtJpy(usd)+')';
+  }
+  return fmtJpy(amt);
 }
 var _ctDetailProp=null;
 var _ctDetailApi=null;
@@ -1403,11 +1428,9 @@ function openInLens(p){
 
   /* Proposal details */
   var adaP=p.adaPrice||ADA_USD;
-  var usdVal=p.u==='ada'?p.amt*adaP:p.amt;
-  var jpyS=fmtJpy(usdVal);
   var adaVal=p.u==='ada'?p.amt:p.amt/adaP;
   localHtml+='<div class="ct-d-section"><div class="ct-d-label">'+T('proposalInfo')+'</div><div class="ct-d-text">'
-    +'<b>'+fmtDual(p.amt,p.u,adaP)+'</b> ('+jpyS+')<br>'
+    +'<b>'+fmtDual(p.amt,p.u,adaP)+'</b><br>'
     +T('adaPriceLabel')+': $'+adaP.toFixed(2)+' (F'+(p.fund||'?')+')'
     +(p.cls&&p.cls!=='main'?' · <span style="color:hsl(270 50% 65%)">'+clsLabel(p.cls)+'</span>':'')
     +'</div></div>';
@@ -2214,14 +2237,7 @@ function sumUsdK(kids){
   var s=0;for(var i=0;i<kids.length;i++){var c=kids[i];s+=c.u==='ada'?c.amt*(c.adaPrice||ADA_USD):c.amt;}return s;
 }
 function fmtTotal(usdK){
-  if(_lang==='en'){
-    if(usdK>=1000) return '$'+(usdK/1000).toFixed(2)+'M';
-    return '$'+Math.round(usdK)+'K';
-  }
-  var jpy=usdK*1000*USD_JPY;
-  var jpyStr=jpy>=1e8?'¥'+(jpy/1e8).toFixed(1)+'億':'¥'+Math.round(jpy/1e4)+'万';
-  if(usdK>=1000) return '$'+(usdK/1000).toFixed(2)+'M · '+jpyStr;
-  return '$'+Math.round(usdK)+'K · '+jpyStr;
+  return fmtJpy(usdK);
 }
 
 function buildTreeBySector(){
@@ -2436,10 +2452,7 @@ function render(){
         if(gUsdK>0){
           var gAda=0;for(var gi=0;gi<gKids.length;gi++){var gk=gKids[gi];gAda+=gk.u==='ada'?gk.amt:gk.amt/(gk.adaPrice||ADA_USD);}
           var adaS=gAda>=1e3?Math.round(gAda/1e3)+'K':Math.round(gAda);
-          var usdS=gUsdK>=1000?'$'+(gUsdK/1000).toFixed(1)+'M':'$'+Math.round(gUsdK)+'K';
-          var jpyV=gUsdK*1000*USD_JPY;
-          var jpyS=jpyV>=1e8?'¥'+(jpyV/1e8).toFixed(1)+'億':'¥'+Math.round(jpyV/1e4)+'万';
-          grpAmt='<span class="mob-acc-amt"><span class="mob-acc-ada">'+adaS+' ₳</span><span class="mob-acc-fiat"><span>'+usdS+'</span><span>'+jpyS+'</span></span></span>';
+          grpAmt='<span class="mob-acc-amt"><span class="mob-acc-ada">'+adaS+' ₳</span><span class="mob-acc-fiat"><span>'+fmtJpy(gUsdK)+'</span></span></span>';
         }
         head.innerHTML='<div class="mob-acc-head-top"><span class="mob-acc-name">'+esc(grp.label)+'</span>'
           +barHtml
@@ -2693,13 +2706,10 @@ function buildMobHeader(parent){
   var hdr=document.createElement('div');
   hdr.className='header mob-view-hdr';
   var adaTotal=TOTAL_ADA>=1e6?(TOTAL_ADA/1e6).toFixed(2)+'M':TOTAL_ADA>=1e3?(TOTAL_ADA/1e3).toFixed(1)+'K':Math.round(TOTAL_ADA);
-  var usdTotal='$'+(TOTAL_USD_K/1000).toFixed(2)+'M';
-  var jpyT=TOTAL_USD_K*1000*USD_JPY;
-  var jpyTotal=jpyT>=1e8?'¥'+(jpyT/1e8).toFixed(1)+'億':'¥'+Math.round(jpyT/1e4)+'万';
   hdr.innerHTML='<div class="title-row"><div class="title">Catalyst<em>'+T('japan')+'</em></div></div>'
     +'<div class="mob-hdr-amt">'
     +'<span class="mob-hdr-ada">'+adaTotal+' ₳</span>'
-    +'<span class="mob-hdr-sub">'+usdTotal+' · '+jpyTotal+'</span>'
+    +'<span class="mob-hdr-sub">'+fmtJpy(TOTAL_USD_K)+'</span>'
     +'</div>';
   parent.appendChild(hdr);
   requestAnimationFrame(function(){
@@ -2755,6 +2765,24 @@ function buildShell(){
   /* Row 1: main nav */
   var mainRow=document.createElement('div');
   mainRow.className='view-bar-main';
+  /* currency toggle */
+  var curToggle=document.createElement('div');
+  curToggle.className='cur-toggle';
+  var curPill=document.createElement('div');
+  var curEff=_curMode();
+  curPill.className='cur-toggle-pill cur-'+curEff;
+  var _curModes=['jpy','usd','ada'];
+  var _curLabels=['¥','$','₳'];
+  for(var ci=0;ci<_curModes.length;ci++){
+    var cl=document.createElement('span');
+    cl.className='cur-toggle-label'+(curEff===_curModes[ci]?' active':'');
+    cl.textContent=_curLabels[ci];
+    curToggle.appendChild(cl);
+  }
+  curToggle.insertBefore(curPill,curToggle.firstChild);
+  curToggle.onclick=function(){var ci=_curModes.indexOf(_curMode());_amtMode=_curModes[(ci+1)%3];buildShell();if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else render();};
+  mainRow.appendChild(curToggle);
+
   var modes=[
     {key:'sector',ja:'業界別',en:'Sector'},
     {key:'proposer',ja:'アカウント別',en:'Accounts'},
@@ -2896,7 +2924,7 @@ function buildShell(){
   /* ALL card */
   var allCard=document.createElement('div');
   allCard.className='s-card s-all'+(filterSec===null&&filterBy===null?' active':'');
-  allCard.innerHTML='<div class="s-name">ALL</div><div class="s-amt">'+TOTAL_FUNDED+'</div><div class="s-cnt">PROPOSALS · '+TOTAL_COMPLETED+' COMPLETE</div>';
+  allCard.innerHTML='<div class="s-name">ALL</div><div class="s-amt">'+TOTAL_FUNDED+' <span style="font-size:10px;opacity:0.6;font-family:JetBrains Mono,monospace">'+fmtJpy(TOTAL_USD_K)+'</span></div><div class="s-cnt">PROPOSALS · '+TOTAL_COMPLETED+' COMPLETE</div>';
   allCard.onclick=function(){filterSec=null;filterBy=null;toggleExpandAll();centerView();buildSidebar();updateMeta()};
   sb.appendChild(allCard);
 
@@ -2909,8 +2937,9 @@ function buildShell(){
         var okP=tot?(ind._ok/tot*100).toFixed(1):'0';
         var wiP=tot?(ind._wip/tot*100).toFixed(1):'0';
         var dnP=tot?(ind._dnf/tot*100).toFixed(1):'0';
+        var indAmt=ind._usdK>0?fmtJpy(ind._usdK):'';
         card.innerHTML='<div class="s-top"><div class="s-dot" style="background:'+hsl(ind.hue)+'"></div><div class="s-name">'+esc(secName(ind))+'</div></div>'
-          +'<div class="s-bottom"><div class="s-amt">'+tot+'</div><div class="s-pct">'+ind._ok+' '+(_lang==='en'?'done':'完了')+'</div></div>'
+          +'<div class="s-bottom"><div class="s-amt">'+tot+' <span style="font-size:10px;opacity:0.6;font-family:JetBrains Mono,monospace">'+indAmt+'</span></div><div class="s-pct">'+ind._ok+' '+(_lang==='en'?'done':'完了')+'</div></div>'
           +'<div class="s-bar"><div class="s-bar-seg" style="width:'+okP+'%;background:var(--st-ok)"></div><div class="s-bar-seg" style="width:'+wiP+'%;background:var(--st-wip)"></div><div class="s-bar-seg" style="width:'+dnP+'%;background:var(--st-dnf)"></div></div>';
         card.onclick=function(){
           filterSec=(filterSec===ind.id?null:ind.id);
@@ -2932,7 +2961,6 @@ function buildShell(){
       if(sortMode==='total') return b.allUsdK-a.allUsdK||b.allCount-a.allCount;
       return b.allCount-a.allCount;
     });
-    function fmtK(k){return k>=1000?'$'+(k/1000).toFixed(1)+'M':'$'+Math.round(k)+'K';}
     function fmtA(a){return a>=1000?(a/1000).toFixed(1)+'M ₳':Math.round(a)+' ₳';}
     for(var pi=0;pi<sorted.length;pi++){
       (function(ps){
@@ -2996,29 +3024,15 @@ function buildShell(){
   var hdr=document.createElement('div');
   hdr.className='header';
   var adaStr=TOTAL_ADA>=1e3?(TOTAL_ADA/1e3).toFixed(1)+'M ₳':Math.round(TOTAL_ADA)+'K ₳';
-  var totalLine,avgStr,maxStr;
-  if(_lang==='en'){
-    totalLine='<b>$'+(TOTAL_USD_K/1000).toFixed(2)+'M</b> · <b>'+adaStr+'</b>';
-    avgStr='$'+Math.round(AVG_USD_K)+'K';
-    maxStr=_maxUsdK>=1000?'$'+(_maxUsdK/1000).toFixed(1)+'M':'$'+Math.round(_maxUsdK)+'K';
-  } else {
-    var jpyTotal=TOTAL_USD_K*1000*USD_JPY;
-    var jpyStr=jpyTotal>=1e8?'¥'+(jpyTotal/1e8).toFixed(1)+'億':'¥'+Math.round(jpyTotal/1e4)+'万';
-    totalLine='<b>$'+(TOTAL_USD_K/1000).toFixed(2)+'M</b> · <b>'+jpyStr+'</b> · <b>'+adaStr+'</b>';
-    var avgJpy=AVG_USD_K*1000*USD_JPY;
-    avgStr=avgJpy>=1e4?Math.round(avgJpy/1e4)+'万':'¥'+Math.round(avgJpy);
-    var maxJpy=_maxUsdK*1000*USD_JPY;
-    maxStr=maxJpy>=1e8?'¥'+(maxJpy/1e8).toFixed(1)+'億':'¥'+Math.round(maxJpy/1e4)+'万';
-  }
+  var totalLine='<b>'+fmtJpy(TOTAL_USD_K)+'</b> · <b>'+adaStr+'</b>';
+  var avgStr=fmtJpy(AVG_USD_K);
+  var maxStr=fmtJpy(_maxUsdK);
   var mobAmtHtml='';
   if(isMob()){
     var adaTotal=TOTAL_ADA>=1e6?(TOTAL_ADA/1e6).toFixed(2)+'M':TOTAL_ADA>=1e3?(TOTAL_ADA/1e3).toFixed(1)+'K':Math.round(TOTAL_ADA);
-    var usdTotal='$'+(TOTAL_USD_K/1000).toFixed(2)+'M';
-    var jpyT=TOTAL_USD_K*1000*USD_JPY;
-    var jpyTotal=jpyT>=1e8?'¥'+(jpyT/1e8).toFixed(1)+'億':'¥'+Math.round(jpyT/1e4)+'万';
     mobAmtHtml='<div class="mob-hdr-amt">'
       +'<span class="mob-hdr-ada">'+adaTotal+' ₳</span>'
-      +'<span class="mob-hdr-sub">'+usdTotal+' · '+jpyTotal+'</span>'
+      +'<span class="mob-hdr-sub">'+fmtJpy(TOTAL_USD_K)+'</span>'
       +'</div>';
   }
   hdr.innerHTML='<div>'
