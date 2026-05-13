@@ -323,20 +323,6 @@ html.night .sort-hl{color:hsla(270,70%,75%,1)!important;text-shadow:0 0 10px hsl
 }
 .lang-toggle-pill.en{left:2px}
 .lang-toggle-pill.jp{left:calc(50% - 2px)}
-.cur-grp{
-  display:flex;align-items:center;gap:2px;margin-left:4px;
-}
-.hdr-cur-toggle{
-  display:flex;align-items:center;gap:2px;pointer-events:auto;
-  font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.08em;
-}
-.hdr-cur-btn{
-  padding:4px 8px;border-radius:4px;cursor:pointer;
-  color:var(--muted);border:1px solid var(--border);
-  transition:all .2s;user-select:none;
-}
-.hdr-cur-btn:hover{color:var(--ink);border-color:var(--ink)}
-.hdr-cur-btn.active{color:var(--bg);background:var(--ink);border-color:var(--ink)}
 .cur-toggle{
   position:relative;display:flex;align-items:center;
   background:var(--bar-pill);border-radius:6px;padding:2px;cursor:pointer;
@@ -2805,25 +2791,28 @@ function buildShell(){
     })(modes[mi]);
   }
   mainRow.appendChild(modesWrap);
-  /* currency toggle — inside bar, right of modes */
+  /* currency toggle — pill style, inside bar */
   if(!isMob()){
-    var curGrp=document.createElement('div');curGrp.className='cur-grp';
+    var curTog=document.createElement('div');curTog.className='cur-toggle';
+    var curPill=document.createElement('div');
+    curPill.className='cur-toggle-pill cur-'+_curMode();
     var _curModes=['jpy','usd','ada'],_curLabels=['¥','$','₳'];
     var cm=_curMode();
     for(var ci=0;ci<3;ci++){
-      var cb=document.createElement('span');
-      cb.className='hdr-cur-btn'+(cm===_curModes[ci]?' active':'');
-      cb.setAttribute('data-cur',_curModes[ci]);
-      cb.textContent=_curLabels[ci];
-      curGrp.appendChild(cb);
+      (function(mode,label){
+        var cl=document.createElement('span');
+        cl.className='cur-toggle-label'+(cm===mode?' active':'');
+        cl.textContent=label;
+        cl.onclick=function(e){
+          e.stopPropagation();
+          _amtMode=mode;
+          buildShell();if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else render();
+        };
+        curTog.appendChild(cl);
+      })(_curModes[ci],_curLabels[ci]);
     }
-    curGrp.onclick=function(e){
-      var btn=e.target.closest('.hdr-cur-btn');
-      if(!btn)return;
-      _amtMode=btn.getAttribute('data-cur');
-      buildShell();if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else render();
-    };
-    mainRow.appendChild(curGrp);
+    curTog.insertBefore(curPill,curTog.firstChild);
+    mainRow.appendChild(curTog);
   }
   var sep=document.createElement('div');sep.className='view-bar-sep';mainRow.appendChild(sep);
   var toggle=document.createElement('div');
