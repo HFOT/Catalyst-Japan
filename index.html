@@ -1184,7 +1184,7 @@ if(NIGHT)document.documentElement.classList.add('night');
 
 /* ---- Helpers ---- */
 var ADA_USD=0.75, USD_JPY=150;
-var _amtMode='auto'; /* 'auto'=follow _lang | 'jpy' | 'usd' | 'ada' */
+var _amtMode='ada'; /* 'auto'=follow _lang | 'jpy' | 'usd' | 'ada' */
 function esc(s){return s?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):''}
 function trunc(s,m){if(!s)return'';s=s.replace(/\s+/g,' ').trim();return s.length>m?s.slice(0,m-1)+'…':s}
 function hsl(h){return 'hsl('+h+' 50% '+(NIGHT?'58':'44')+'%)'}
