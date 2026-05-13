@@ -297,6 +297,10 @@ html.night .ct-d-badge.st-dnf{background:hsl(0 35% 20%);color:hsl(0 55% 70%);bor
 }
 .zoom-note{font-family:'JetBrains Mono',monospace;font-size:7px;color:var(--bar-text);opacity:0.4;margin-left:3px;white-space:nowrap;line-height:1}
 .legend-strip{display:flex;flex-direction:column;gap:3px;padding:10px 16px 8px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);opacity:0.7;border-bottom:1px solid var(--border)}
+.sb-title{padding:14px 16px 10px;border-bottom:1px solid var(--border)}
+.sb-title-main{font-family:'Fraunces',serif;font-size:28px;font-weight:500;letter-spacing:-0.01em;line-height:1;font-variation-settings:"opsz" 96;white-space:nowrap}
+.sb-title-main em{font-style:italic;color:var(--muted);font-weight:400;margin-left:8px}
+.sb-title-info{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;white-space:nowrap;margin-top:6px}
 .legend-strip span{display:flex;align-items:center;gap:6px;white-space:nowrap}
 .legend-strip i{display:inline-block;width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .sort-group{display:flex;align-items:center;gap:2px;background:var(--bar-pill);border-radius:7px;padding:2px;margin-left:4px;border:1px solid var(--bar-border)}
@@ -2928,23 +2932,18 @@ function buildShell(){
     }
     bar.appendChild(sortRow);
   }
-  /* Legend strip — right side */
-  var legStrip=document.createElement('div');legStrip.className='legend-strip';
-  legStrip.innerHTML=_lang!=='en'
-    ?'<span><i style="background:var(--st-ok)"></i>完了</span>'
-    +'<span><i style="background:var(--st-wip)"></i>進行中</span>'
-    +'<span><i style="background:var(--st-dnf)"></i>中止</span>'
-    :'<span><i style="background:var(--st-ok)"></i>Done</span>'
-    +'<span><i style="background:var(--st-wip)"></i>Active</span>'
-    +'<span><i style="background:var(--st-dnf)"></i>Stopped</span>';
   document.body.appendChild(bar);
 
   /* clean up old floating currency toggle if present */
   var oldCur=document.getElementById('cur-float');
   if(oldCur)oldCur.remove();
 
-  /* Legend strip — above card list */
-  sb.appendChild(legStrip);
+  /* Sidebar title block */
+  var sbTitle=document.createElement('div');
+  sbTitle.className='sb-title';
+  sbTitle.innerHTML='<div class="sb-title-main">Catalyst<em>'+T('japan')+'</em></div>'
+    +'<div class="sb-title-info">'+FUND_RANGE+' · '+TOTAL_SECTORS+' sectors · '+TOTAL_PROPOSERS+' proposers</div>';
+  sb.appendChild(sbTitle);
 
   /* ALL card */
   var allCard=document.createElement('div');
@@ -3060,10 +3059,9 @@ function buildShell(){
       +'<span class="mob-hdr-sub">'+fmtJpy(TOTAL_USD_K)+'</span>'
       +'</div>';
   }
-  hdr.innerHTML='<div>'
-    +'<div class="title-row"><div class="title">Catalyst<em>'+T('japan')+'</em></div>'
-    +'<div class="title-info">'+FUND_RANGE+' · '+TOTAL_SECTORS+' sectors · '+TOTAL_PROPOSERS+' proposers</div></div>'
-    +'</div>'+mobAmtHtml+'<div class="meta"></div>';
+  hdr.innerHTML=isMob()
+    ?'<div><div class="title-row"><div class="title">Catalyst<em>'+T('japan')+'</em></div></div></div>'+mobAmtHtml+'<div class="meta"></div>'
+    :'<div class="meta"></div>';
   stage.appendChild(hdr);
 
   /* mobile: dynamically set stage/tl/nw top offset to match header height */
