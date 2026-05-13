@@ -872,13 +872,15 @@ html.night .cls-bridge{background:hsl(30 35% 22%);color:hsl(30 55% 75%);border:n
   /* hamburger visible */
   .mob-toggle{display:flex}
 
-  /* treemap: vertical stack, 2-col proposals */
+  /* treemap: left-right master-detail */
   .layer{transform:none!important}
   .lines{display:none!important}
   .node.root{display:none!important}
-  .node.l1 .node-card{padding:10px 14px}
-  .node.l1 .label{font-size:13px}
-  .node.l2 .node-card{padding:7px 10px}
+  .node-card{width:100%!important}
+  .node.l1 .node-card{padding:8px 8px;min-height:36px;width:100%!important}
+  .node.l1 .label{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .node.l1 .sub{font-size:7px;letter-spacing:0.08em}
+  .node.l2 .node-card{padding:7px 10px;width:100%!important}
   .node.l2 .label{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .l1-col-right{display:none}
   .l1-col-mid{display:none}
@@ -2284,36 +2286,42 @@ function doLayout(root){
   var yOff=0;
   var mob=isMob();
   var vw=window.innerWidth;
-  var mobCol=0; /* for 2-col grid on mobile */
+  /* mobile: left-right master-detail layout */
+  var mobLeftW,mobRightX,mobRightW,mobRightY;
+  if(mob){
+    mobLeftW=Math.min(130,Math.floor(vw*0.36));
+    mobRightX=mobLeftW+6;
+    mobRightW=vw-mobRightX-6;
+    mobRightY=0;
+  }
   function place(n){
-    var x,w,h;
+    var x,w,h,y;
     if(mob){
-      var fullW=vw-24;
-      if(n.depth===2){
-        /* L2 proposals: 2-column grid */
-        var colW=(fullW-12-8)/2; /* 12=indent, 8=gap */
-        x=12+mobCol*(colW+8);
-        w=colW;
-        h=46;
-        if(mobCol===0){mobCol=1;} else {mobCol=0;}
+      if(n.depth===0){
+        /* root: hidden on mobile */
+        lay[n.id]={id:n.id,x:0,y:0,w:vw,h:0,depth:0,hue:n.hue,parent:n.parent,hasKids:n.hasKids,expanded:n.expanded,raw:n.raw,label:n.label};
+        if(n.expanded){for(var i=0;i<n._ch.length;i++) place(n._ch[i]);}
+        return;
+      } else if(n.depth===1){
+        x=0;w=mobLeftW;h=viewMode==='proposer'?48:40;
+        y=yOff;
+        mobRightY=yOff; /* children start at same y */
       } else {
-        if(mobCol===1){yOff+=46+GAP;mobCol=0;} /* flush partial row */
-        x=0;
-        w=fullW;
-        h=n.depth===0?52:n.depth===1?(viewMode==='proposer'?56:44):46;
+        x=mobRightX;w=mobRightW;h=40;
+        y=mobRightY;
+        mobRightY+=h+GAP;
       }
     } else {
       x=n.depth*COL;
       w=n.depth===0?220:n.depth===1?480:560;
       h=n.depth===0?80:n.depth===1?(viewMode==='proposer'?67:52):50;
+      y=yOff;
     }
-    var y=yOff;
     lay[n.id]={id:n.id,x:x,y:y,w:w,h:h,depth:n.depth,hue:n.hue,parent:n.parent,hasKids:n.hasKids,expanded:n.expanded,raw:n.raw,label:n.label};
-    if(!mob||n.depth!==2||mobCol===0){yOff+=h+GAP;}
+    if(!mob||n.depth!==2){yOff+=h+GAP;}
     if(n.expanded){
-      if(mob)mobCol=0; /* reset column for new group */
       for(var i=0;i<n._ch.length;i++) place(n._ch[i]);
-      if(mob&&mobCol===1){yOff+=46+GAP;mobCol=0;} /* flush at end of group */
+      if(mob&&n.depth===1){yOff=Math.max(yOff,mobRightY);}
     }
   }
   place(list[0]);
@@ -2361,7 +2369,7 @@ function render(){
     var el=document.createElement('div');
     var clsCls=(n.depth===2&&n.raw&&n.raw.cls&&n.raw.cls!=='main')?' cls-'+n.raw.cls:'';
     el.className='node'+(n.depth===0?' root':n.depth===1?' l1':' l2')+clsCls;
-    el.style.cssText='left:'+n.x+'px;top:'+n.y+'px;';
+    el.style.cssText='left:'+n.x+'px;top:'+n.y+'px;'+(isMob()?'width:'+n.w+'px;':'');
     el.setAttribute('data-id',n.id);
 
     var card=document.createElement('div');
