@@ -15,6 +15,15 @@
   --card-shadow:#1a171533;--stage-g1:#f0e8d8;--stage-g2:#e8e8e0;
   --selection-bg:#1a1715;--selection-fg:#fafaf7;
   --st-ok:#3d8b6e;--st-wip:#c49b2a;--st-dnf:#b85450;
+  --bar-bg:rgba(255,255,255,0.92);--bar-border:rgba(26,23,21,0.1);
+  --bar-text:rgba(26,23,21,0.45);--bar-text-h:rgba(26,23,21,0.7);
+  --bar-text-a:var(--ink);--bar-pill:rgba(26,23,21,0.06);
+  --bar-pill-a:rgba(26,23,21,0.12);--bar-sep:rgba(26,23,21,0.1);
+  --bar-shadow:rgba(0,0,0,0.08);
+  --ref-text:rgba(26,23,21,0.35);--ref-bg:rgba(26,23,21,0.05);
+  --ref-border:rgba(26,23,21,0.08);--ref-link:rgba(26,23,21,0.5);
+  --ref-bg-h:rgba(26,23,21,0.1);--ref-border-h:rgba(26,23,21,0.18);
+  --fund-bg:hsl(270 30% 93%);--fund-fg:hsl(270 40% 38%);--fund-border:none;
 }
 html.night{
   --bg:#0c0d10;--ink:#e8e6e1;--paper:#16171a;--muted:#7a7a74;
@@ -22,6 +31,15 @@ html.night{
   --card-shadow:#00000066;--stage-g1:#12141a;--stage-g2:#101418;
   --selection-bg:#e8e6e1;--selection-fg:#0c0d10;
   --st-ok:#4ca882;--st-wip:#d4a832;--st-dnf:#c86460;
+  --bar-bg:rgba(20,20,25,0.88);--bar-border:rgba(255,255,255,0.12);
+  --bar-text:rgba(255,255,255,0.4);--bar-text-h:rgba(255,255,255,0.7);
+  --bar-text-a:#fff;--bar-pill:rgba(255,255,255,0.06);
+  --bar-pill-a:rgba(255,255,255,0.12);--bar-sep:rgba(255,255,255,0.1);
+  --bar-shadow:rgba(0,0,0,0.4);
+  --ref-text:rgba(255,255,255,0.25);--ref-bg:rgba(255,255,255,0.06);
+  --ref-border:rgba(255,255,255,0.08);--ref-link:rgba(255,255,255,0.5);
+  --ref-bg-h:rgba(255,255,255,0.12);--ref-border-h:rgba(255,255,255,0.2);
+  --fund-bg:hsl(270 30% 25%);--fund-fg:hsl(270 50% 75%);--fund-border:none;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:'Noto Sans JP',system-ui,sans-serif}
@@ -56,19 +74,19 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(
 .title em{font-style:italic;color:var(--muted);font-weight:400;margin-left:8px}
 .title-info{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;white-space:nowrap}
 .hdr-src{
-  font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.04em;
-  color:rgba(255,255,255,0.35);white-space:nowrap;
+  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.04em;
+  color:var(--muted);white-space:nowrap;
 }
-.ref-links{display:flex;gap:6px;align-items:center}
+.ref-links{display:flex;gap:8px;align-items:center}
 .ref-links a{
-  display:flex;align-items:center;gap:3px;
-  padding:2px 6px 2px 4px;border-radius:4px;
-  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);
-  transition:all .15s;opacity:0.4;text-decoration:none;
-  font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.5);letter-spacing:0.02em;
+  display:flex;align-items:center;gap:4px;
+  padding:3px 8px 3px 5px;border-radius:5px;
+  background:var(--ref-bg);border:1px solid var(--ref-border);
+  transition:all .15s;opacity:0.5;text-decoration:none;
+  font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ref-link);letter-spacing:0.02em;
 }
-.ref-links a:hover{opacity:1;background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.2)}
-.ref-links a img{width:12px;height:12px;border-radius:1px}
+.ref-links a:hover{opacity:1;background:var(--ref-bg-h);border-color:var(--ref-border-h)}
+.ref-links a img{width:14px;height:14px;border-radius:2px}
 .meta{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.18em;color:var(--muted);text-transform:uppercase;text-align:right;line-height:1.9;opacity:0;pointer-events:none;transition:opacity 0.2s ease}
 .meta.show{opacity:1;pointer-events:auto}
 .meta b{color:var(--ink);font-weight:500}
@@ -174,9 +192,12 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(
   font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:0.06em;
 }
 .ct-d-badge{padding:2px 8px;border-radius:3px;font-size:9px;letter-spacing:0.1em;text-transform:uppercase}
-.ct-d-badge.st-complete{background:hsl(145 35% 20%);color:hsl(145 55% 70%)}
-.ct-d-badge.st-progress{background:hsl(40 40% 20%);color:hsl(40 60% 70%)}
-.ct-d-badge.st-dnf{background:hsl(0 35% 20%);color:hsl(0 55% 70%)}
+.ct-d-badge.st-complete{background:hsl(145 35% 92%);color:hsl(145 40% 35%);border:none}
+.ct-d-badge.st-progress{background:hsl(40 40% 92%);color:hsl(40 50% 32%);border:none}
+.ct-d-badge.st-dnf{background:hsl(0 35% 92%);color:hsl(0 40% 38%);border:none}
+html.night .ct-d-badge.st-complete{background:hsl(145 35% 20%);color:hsl(145 55% 70%);border:none}
+html.night .ct-d-badge.st-progress{background:hsl(40 40% 20%);color:hsl(40 60% 70%);border:none}
+html.night .ct-d-badge.st-dnf{background:hsl(0 35% 20%);color:hsl(0 55% 70%);border:none}
 .ct-detail-body{flex:1;overflow-y:auto;padding:16px 22px 20px}
 .ct-detail-body::-webkit-scrollbar{width:4px}
 .ct-detail-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
@@ -227,47 +248,71 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(
 .ct-lens-send:hover{opacity:0.85}
 .ct-lens-log{max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:4px 0}
 .ct-lens-msg{padding:8px 10px;border-radius:6px;font-size:11px;line-height:1.5;word-break:break-word;white-space:pre-wrap}
-.ct-lens-msg-user{background:rgba(255,255,255,0.06);color:var(--ink)}
+.ct-lens-msg-user{background:var(--dim);color:var(--ink)}
 .ct-lens-msg-ai{background:hsla(270,40%,50%,0.12);color:var(--ink)}
 .ct-lens-msg-err{background:rgba(239,68,68,0.12);color:#ef4444}
 .ct-lens-msg-label{font-size:8px;font-weight:700;letter-spacing:0.08em;color:var(--muted);margin-bottom:2px;text-transform:uppercase}
 .ct-lens-thinking{font-size:11px;color:var(--muted);font-style:italic;padding:4px 0}
-.fund-tag{background:hsl(270 30% 25%);color:hsl(270 50% 75%)}
+.fund-tag{background:var(--fund-bg);color:var(--fund-fg);border:var(--fund-border)}
 /* ---- Main view bar (top center) ---- */
 /* ---- Main view bar (top center) ---- */
 .view-bar{
-  position:fixed;top:8px;left:calc(190px + (100% - 190px)/2);transform:translateX(-50%);z-index:100;
-  display:flex;align-items:center;gap:3px;
-  background:rgba(20,20,25,0.88);backdrop-filter:blur(12px);
-  border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:3px;
-  box-shadow:0 4px 20px rgba(0,0,0,0.4);
+  position:fixed;top:10px;left:calc(190px + (100% - 190px)/2);transform:translateX(-50%);z-index:100;
+  display:flex;flex-direction:column;align-items:center;gap:0;
+  background:var(--bar-bg);backdrop-filter:blur(12px);
+  border:1px solid var(--bar-border);border-radius:12px;padding:5px;
+  box-shadow:0 4px 20px var(--bar-shadow);
 }
+.view-bar-main{display:flex;align-items:center;gap:4px}
+.view-bar-sort{display:flex;align-items:center;gap:2px;padding:4px 0 1px;border-top:1px solid var(--bar-sep);margin-top:4px;width:100%;justify-content:center}
+.view-bar-sort-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.06em;color:var(--bar-text);opacity:0.5;margin-right:4px;white-space:nowrap}
 .view-bar-btn{
-  padding:5px 16px;border:none;border-radius:6px;cursor:pointer;
-  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.06em;line-height:1;
-  color:rgba(255,255,255,0.4);background:none;transition:all .2s ease;white-space:nowrap;
+  padding:7px 18px;border:none;border-radius:8px;cursor:pointer;
+  font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.04em;line-height:1;
+  color:var(--bar-text);background:none;transition:all .2s ease;white-space:nowrap;
 }
-.view-bar-btn:hover{color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.05)}
-.view-bar-btn.active{color:#fff;background:hsla(270,50%,55%,0.3);box-shadow:0 0 10px hsla(270,50%,55%,0.15)}
-.view-bar-sep{width:1px;height:16px;background:rgba(255,255,255,0.1);margin:0 2px}
-.sort-group{display:flex;align-items:center;gap:1px;background:rgba(255,255,255,0.06);border-radius:5px;padding:1px;margin-left:2px;border:1px solid rgba(255,255,255,0.08)}
-.sort-btn{padding:3px 7px;border:none;border-radius:4px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.04em;color:rgba(255,255,255,0.3);background:none;transition:all .15s ease;white-space:nowrap;line-height:1}
-.sort-btn:hover{color:rgba(255,255,255,0.55)}
-.sort-btn.active{color:#fff;background:rgba(255,255,255,0.12)}
-.sort-hl{color:hsla(270,70%,75%,1)!important;text-shadow:0 0 10px hsla(270,60%,55%,0.6)}
+.view-bar-btn:hover{color:var(--bar-text-h);background:var(--bar-pill)}
+.view-bar-btn.active{color:var(--bar-text-a);background:hsla(270,50%,55%,0.3);box-shadow:0 0 10px hsla(270,50%,55%,0.15)}
+.view-bar-sep{width:1px;height:22px;background:var(--bar-sep);margin:0 4px}
+.zoom-ctrl{display:flex;align-items:center;gap:2px;margin-left:2px}
+.zoom-btn{
+  width:22px;height:22px;border:none;border-radius:5px;cursor:pointer;
+  font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;line-height:1;
+  color:var(--bar-text);background:none;transition:all .15s ease;
+  display:flex;align-items:center;justify-content:center;
+}
+.zoom-btn:hover{color:var(--bar-text-h);background:var(--bar-pill)}
+.zoom-range{
+  width:64px;height:4px;-webkit-appearance:none;appearance:none;
+  background:var(--bar-sep);border-radius:2px;outline:none;cursor:pointer;margin:0 1px;
+}
+.zoom-range::-webkit-slider-thumb{
+  -webkit-appearance:none;width:12px;height:12px;border-radius:50%;
+  background:var(--bar-text-a);cursor:pointer;border:none;
+}
+.zoom-note{font-family:'JetBrains Mono',monospace;font-size:7px;color:var(--bar-text);opacity:0.4;margin-left:3px;white-space:nowrap;line-height:1}
+.legend-strip{display:flex;flex-direction:column;gap:3px;padding:10px 16px 8px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);opacity:0.7;border-bottom:1px solid var(--border)}
+.legend-strip span{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.legend-strip i{display:inline-block;width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sort-group{display:flex;align-items:center;gap:2px;background:var(--bar-pill);border-radius:7px;padding:2px;margin-left:4px;border:1px solid var(--bar-border)}
+.sort-btn{padding:5px 10px;border:none;border-radius:5px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.04em;color:var(--bar-text);background:none;transition:all .15s ease;white-space:nowrap;line-height:1}
+.sort-btn:hover{color:var(--bar-text-h)}
+.sort-btn.active{color:var(--bar-text-a);background:var(--bar-pill-a)}
+.sort-hl{color:hsl(270 55% 42%)!important;text-shadow:none}
+html.night .sort-hl{color:hsla(270,70%,75%,1)!important;text-shadow:0 0 10px hsla(270,60%,55%,0.6)}
 .lang-toggle{
   position:relative;display:flex;align-items:center;
-  background:rgba(255,255,255,0.06);border-radius:6px;padding:2px;cursor:pointer;
+  background:var(--bar-pill);border-radius:6px;padding:2px;cursor:pointer;
   font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.06em;line-height:1;
-  border:1px solid rgba(255,255,255,0.08);margin-left:2px;
+  border:1px solid var(--bar-border);margin-left:2px;
 }
 .lang-toggle-label{
-  position:relative;z-index:1;padding:4px 7px;color:rgba(255,255,255,0.35);transition:color .2s;user-select:none;
+  position:relative;z-index:1;padding:4px 7px;color:var(--bar-text);transition:color .2s;user-select:none;
 }
-.lang-toggle-label.active{color:#fff}
+.lang-toggle-label.active{color:var(--bar-text-a)}
 .lang-toggle-pill{
   position:absolute;top:2px;height:calc(100% - 4px);width:50%;border-radius:4px;
-  background:rgba(255,255,255,0.12);box-shadow:0 0 6px rgba(255,255,255,0.08);
+  background:var(--bar-pill-a);box-shadow:0 0 6px var(--bar-pill);
   transition:left .2s ease;
 }
 .lang-toggle-pill.en{left:calc(50% - 2px)}
@@ -313,9 +358,12 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(
   font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.04em;
   padding:1px 5px;border-radius:2px;white-space:nowrap;
 }
-.st-complete{background:hsl(145 35% 20%);color:hsl(145 55% 70%)}
-.st-progress{background:hsl(40 40% 20%);color:hsl(40 60% 70%)}
-.st-dnf{background:hsl(0 35% 20%);color:hsl(0 55% 70%)}
+.st-complete{background:hsl(145 35% 92%);color:hsl(145 40% 35%);border:none}
+.st-progress{background:hsl(40 40% 92%);color:hsl(40 50% 32%);border:none}
+.st-dnf{background:hsl(0 35% 92%);color:hsl(0 40% 38%);border:none}
+html.night .st-complete{background:hsl(145 35% 20%);color:hsl(145 55% 70%);border:none}
+html.night .st-progress{background:hsl(40 40% 20%);color:hsl(40 60% 70%);border:none}
+html.night .st-dnf{background:hsl(0 35% 20%);color:hsl(0 55% 70%);border:none}
 .st-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.04em;color:var(--muted)}
 
 /* Root pill */
@@ -353,7 +401,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(
 .l1-col-right .l1-r-val .v-l{text-align:right}.l1-col-right .l1-r-val .v-sl{opacity:0.35}.l1-col-right .l1-r-val .v-r{text-align:left}
 .l1-col-right .l1-r-cell2{display:flex;flex-direction:column;gap:0;align-items:flex-end}
 .l1-col-right .l1-r-title2{color:var(--ink);opacity:0.9;font-size:7px;letter-spacing:0.06em;text-transform:uppercase}
-.l1-col-right .l1-r-val2{color:var(--muted)}
+.l1-col-right .l1-r-val2{color:var(--ink);opacity:0.7}
 .node.l1 .mini-bar{height:3px;border-radius:2px;background:var(--dim);overflow:hidden;display:flex;margin-top:4px}
 .node.l1 .mini-bar-seg{height:100%}
 
@@ -371,15 +419,23 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(
   font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.04em;
   padding:1px 5px;border-radius:2px;white-space:nowrap;
 }
-.role-proposer{background:hsl(200 40% 25%);color:hsl(200 60% 80%)}
-.role-co{background:hsl(260 30% 25%);color:hsl(260 50% 80%)}
-.role-advisor{background:hsl(40 40% 25%);color:hsl(40 60% 80%)}
-.role-marketing{background:hsl(330 35% 25%);color:hsl(330 55% 80%)}
-.role-dev{background:hsl(150 35% 25%);color:hsl(150 55% 80%)}
-.role-ops{background:hsl(20 35% 25%);color:hsl(20 55% 80%)}
+.role-proposer{background:hsl(200 35% 92%);color:hsl(200 45% 35%);border:none}
+.role-co{background:hsl(260 30% 93%);color:hsl(260 35% 38%);border:none}
+.role-advisor{background:hsl(40 40% 92%);color:hsl(40 50% 32%);border:none}
+.role-marketing{background:hsl(330 30% 93%);color:hsl(330 40% 38%);border:none}
+.role-dev{background:hsl(150 30% 92%);color:hsl(150 40% 32%);border:none}
+.role-ops{background:hsl(20 30% 92%);color:hsl(20 40% 32%);border:none}
+html.night .role-proposer{background:hsl(200 40% 25%);color:hsl(200 60% 80%);border:none}
+html.night .role-co{background:hsl(260 30% 25%);color:hsl(260 50% 80%);border:none}
+html.night .role-advisor{background:hsl(40 40% 25%);color:hsl(40 60% 80%);border:none}
+html.night .role-marketing{background:hsl(330 35% 25%);color:hsl(330 55% 80%);border:none}
+html.night .role-dev{background:hsl(150 35% 25%);color:hsl(150 55% 80%);border:none}
+html.night .role-ops{background:hsl(20 35% 25%);color:hsl(20 55% 80%);border:none}
 .cls-tag{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.06em;padding:1px 5px;border-radius:2px;white-space:nowrap}
-.cls-co{background:hsl(270 30% 22%);color:hsl(270 50% 75%)}
-.cls-bridge{background:hsl(30 35% 22%);color:hsl(30 55% 75%)}
+.cls-co{background:hsl(270 30% 93%);color:hsl(270 35% 38%);border:none}
+.cls-bridge{background:hsl(30 30% 92%);color:hsl(30 40% 32%);border:none}
+html.night .cls-co{background:hsl(270 30% 22%);color:hsl(270 50% 75%);border:none}
+html.night .cls-bridge{background:hsl(30 35% 22%);color:hsl(30 55% 75%);border:none}
 
 /* Link icons (tree view) */
 .lk-row{display:inline-flex;gap:1px;margin-left:auto;flex-shrink:0;vertical-align:middle}
@@ -429,17 +485,32 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(
 .sv-card-ch{font-size:11px;color:var(--muted);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 .hint{
-  position:fixed;left:196px;bottom:12px;
+  position:fixed;left:196px;bottom:28px;
   font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.15em;
   color:var(--muted);text-transform:uppercase;pointer-events:none;z-index:50;
+}
+.disc-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:90;
+  background:var(--paper);border-top:1px solid var(--border);
+  padding:6px 24px;text-align:center;
+  font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.03em;
+  color:var(--ink);opacity:0.5;line-height:1.5;
 }
 
 /* Timeline view */
 .tl-wrap{
-  position:absolute;top:0;left:180px;right:0;bottom:0;overflow:auto;background:var(--bg);z-index:40;
-  padding:80px 24px 40px;display:none;
+  position:absolute;top:0;left:180px;right:0;bottom:0;overflow:hidden;background:var(--bg);z-index:40;
+  display:none;cursor:grab;
 }
 .tl-wrap.open{display:block}
+.tl-wrap.grabbing{cursor:grabbing}
+.tl-layer{transform-origin:0 0;padding:80px 24px 40px}
+.tl-scroll{overflow:auto;max-height:calc(100vh - 140px);border-radius:4px}
+.tl-scroll::-webkit-scrollbar{width:6px;height:6px}
+.tl-scroll::-webkit-scrollbar-track{background:transparent}
+.tl-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.tl-scroll::-webkit-scrollbar-corner{background:transparent}
+.tl-wrap.grabbing{cursor:grabbing}
 .tl-grid{
   display:grid;gap:0;border-left:1px solid var(--border);
   font-family:'JetBrains Mono',monospace;font-size:10px;
@@ -740,12 +811,12 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(
 
 .api-gear{
   position:fixed;top:8px;right:8px;z-index:9999;
-  width:28px;height:28px;border:1px solid rgba(255,255,255,0.1);border-radius:6px;
-  background:rgba(255,255,255,0.06);cursor:pointer;font-size:14px;
-  color:rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;
+  width:28px;height:28px;border:1px solid var(--bar-border);border-radius:6px;
+  background:var(--bar-pill);cursor:pointer;font-size:14px;
+  color:var(--bar-text);display:flex;align-items:center;justify-content:center;
   transition:all .15s;
 }
-.api-gear:hover{color:#fff;border-color:rgba(255,255,255,0.25);background:rgba(255,255,255,0.1)}
+.api-gear:hover{color:var(--bar-text-a);border-color:var(--border-h);background:var(--bar-pill-a)}
 .api-modal-overlay{
   position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10000;
   display:none;align-items:center;justify-content:center;
@@ -776,6 +847,98 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(
 .api-modal-btns button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .api-modal-btns button:hover{opacity:0.85}
 .api-cors-note{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);margin-top:2px;padding-left:12px}
+
+/* ---- Mobile hamburger ---- */
+.mob-toggle{
+  display:none;position:fixed;top:10px;left:10px;z-index:200;
+  width:36px;height:36px;border:none;border-radius:8px;cursor:pointer;
+  background:var(--bar-bg);backdrop-filter:blur(12px);
+  border:1px solid var(--bar-border);box-shadow:0 2px 10px var(--bar-shadow);
+  font-size:18px;color:var(--ink);
+  align-items:center;justify-content:center;
+}
+.mob-backdrop{
+  display:none;position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,0.4);z-index:180;
+}
+.mob-backdrop.show{display:block}
+
+/* ================================================================
+   MOBILE — max-width:768px
+   ================================================================ */
+@media(max-width:768px){
+  /* hamburger visible */
+  .mob-toggle{display:flex}
+
+  /* sidebar: hidden by default, slide-in overlay */
+  .sector-bar{
+    transform:translateX(-100%);transition:transform .25s ease;
+    z-index:190;width:260px;box-shadow:4px 0 20px rgba(0,0,0,0.3);
+  }
+  .sector-bar.mob-open{transform:translateX(0)}
+
+  /* stage/timeline/network: full width */
+  .stage{left:0!important}
+  .tl-wrap{left:0!important}
+  .nw-wrap{left:0!important}
+
+  /* header: compact */
+  .header{left:56px;right:12px}
+  .title{font-size:18px}
+  .title em{display:none}
+  .title-info{display:none}
+  .eyebrow{font-size:8px;margin-bottom:3px}
+  .ref-links{display:none}
+  .meta{display:none}
+
+  /* view bar: centered, compact */
+  .view-bar{
+    left:50%!important;transform:translateX(-50%)!important;
+    top:auto!important;bottom:12px;
+    max-width:calc(100vw - 24px);
+  }
+  .view-bar-main{flex-wrap:wrap;justify-content:center}
+  .view-bar-btn{padding:6px 12px;font-size:11px}
+  .view-bar-sep{height:16px}
+  .zoom-ctrl{display:none}
+  .zoom-note{display:none}
+  .view-bar-sort{flex-wrap:wrap}
+  .sort-btn{padding:4px 8px;font-size:9px}
+
+  /* detail panel: full screen overlay */
+  .ct-detail{
+    top:0!important;right:0!important;bottom:0!important;left:0!important;
+    width:100%!important;border-radius:0;
+  }
+  .ct-d-title{font-size:14px}
+  .ct-d-amt{font-size:16px}
+  .ct-lens-presets{gap:4px}
+  .ct-lens-preset{font-size:8px;padding:3px 8px}
+
+  /* cards: larger touch targets */
+  .sector-bar .s-card{padding:14px 16px;min-height:44px}
+
+  /* timeline scroll */
+  .tl-scroll{max-height:calc(100vh - 100px)}
+
+  /* hint text */
+  .hint{font-size:10px!important;bottom:32px!important;left:12px!important}
+  .disc-bar{font-size:7px;padding:5px 12px}
+}
+
+/* ================================================================
+   SMALL PHONE — max-width:480px
+   ================================================================ */
+@media(max-width:480px){
+  .title{font-size:15px}
+  .header{left:50px;right:8px}
+  .view-bar-btn{padding:5px 9px;font-size:10px}
+  .sort-group{flex-wrap:wrap}
+  .ct-d-title{font-size:13px}
+  .ct-detail-head{padding:14px 16px 10px}
+  .ct-detail-body{padding:12px 16px}
+  .ct-lens-row{padding:10px 16px}
+}
 </style>
 </head>
 <body>
@@ -810,13 +973,16 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(
     </div>
   </div>
 </div>
+<button class="mob-toggle" id="mob-toggle" aria-label="Menu">☰</button>
+<div class="mob-backdrop" id="mob-backdrop"></div>
 <div id="root"></div>
+<div class="disc-bar" id="disc-bar"></div>
 <script>
 /* ================================================================
    CATALYST JAPAN — CIGNAL OS
    Horizontal Tree Map · Impact Report
    ================================================================ */
-var COL=520, ROW=52, GAP=10, DUR=350;
+var COL=520, ROW=52, GAP=3, DUR=350;
 
 /* ---- Night mode ---- */
 var NIGHT=(function(){
@@ -1143,7 +1309,7 @@ function openInLens(p){
   }
 
   bodyEl.innerHTML=localHtml
-    +'<div class="ct-d-section" id="ct-d-desc" style="border-top:1px solid var(--border);padding-top:12px"><div class="ct-d-label">Catalyst Explorer</div>'
+    +'<div class="ct-d-section" id="ct-d-desc" style="border-top:1px solid var(--border);padding-top:12px"><div class="ct-d-label">'+T('descLabel')+'</div>'
     +'<div class="ct-d-text" style="color:var(--muted);font-style:italic">'+T('loading')+'</div></div>'
     +'<button class="ct-d-fetch-btn" id="ct-d-fetch" style="display:none">'+T('fetchOriginal')+'</button>'
     +'<div id="ct-d-extra"></div>';
@@ -1167,47 +1333,27 @@ function openInLens(p){
   fetchCatalystApi(p);
 }
 
+var PDESC={"co-1":{"p":"Fujitsu and Anifie are tackling fandoms’ need to maintain and grow enthusiasm. Funded by the Japanese government, we address this need for athletes, artists, and brands across m...","s":"Backed by Fujitsu and ¥20M in Japanese government funding, Anifie’s AI fuels fan enthusiasm with personalized perks. Our system is proven by 500K messages, 100K downloads, and p...","u":"https://www.catalystexplorer.com/en/proposals/japanese-government-funded-ai-chat-platform-with-fujitsu-f14"},"co-2":{"p":"Around Cardano blockchain,there is only a small number of start up consultants. It is hard to find good partners for peoples or companies who consider Cardano for their service.","s":"We will establish the Web3 center with Kittamu, who has close relations with the (local) government. The center has an original server, technique for token/NFT minting and Web3 ...","u":"https://www.catalystexplorer.com/en/proposals/cardano-based-web3-blockchain-center-in-tokushima-yoshinogawa-japan-f10"},"co-3":{"p":"The absence of an IP certification platform for NFTs on Cardano poses a barrier for major IP holders and developers seeking to enter the Cardano NFT space.","s":"Create a platform for major Japanese IP holders to participate in Cardano by making the IP authentication platform on Ethereum (JPNFT), used by major IP holders such as Ghibli, ...","u":"https://www.catalystexplorer.com/en/proposals/onboard-japanese-big-ip-holders-onto-cardano-space-and-build-an-ip-certification-system-on-the-cardano-blockchain-f10"},"co-4":{"p":"Acquisition of technical information in English and communication in English are difficult for J","s":"Maintain documentation in Japanese and make sustainable the operation of the SPO JAPAN GUILD, a discord community for training and supporting SPOs and sharing technical informat...","u":"https://www.catalystexplorer.com/en/proposals/spo-japan-guild-continued-operation-of-the-japanese-spo-community-f10"},"co-5":{"p":"Participants in Japan will benefit from a program to communicate the current situation and engage with opinion leaders in media & industry.","s":"Reality check to opinion leaders in media & industry about advancements and prominence of ecosystem. Set the stage for wave of progress.","u":"https://www.catalystexplorer.com/en/proposals/cardano-pr-initiative-japan-f8"},"co-6":{"p":"Plutus the fundamental program language is not so popular especially in Japan. It is only few method to learn Plutus and hard to develop.","s":"We will provide the guide book (or Website) for Plutus Application Background in Japanese. This will be interested Japanese Engineers.","u":"https://www.catalystexplorer.com/en/proposals/pab-promotion-in-japan-f7"},"co-7":{"p":"There is little social infrastructure, where communities take the lead & individuals act as agents of change to revitalize the local economy","s":"We offer a sustainable social infrastructure based on a circulation- based community revitalization that uses points and cryptocurrencies.","u":"https://www.catalystexplorer.com/en/proposals/expands-to-1000cities-in-jpapp-f8"},"co-8":{"p":"Despite a population of billions, East Asia is underrepresented in Catalyst due to a lack of localized content and Town Hall participation.","s":"Setup a translation pipeline to translate Catalyst documents & proposals to various languages in East Asia as accurately as possible.","u":"https://www.catalystexplorer.com/en/proposals/onboarding-east-asia-today-f9"},"co-9":{"p":"Language barriers and cultural differences creates a lack of trust on sources to rely on before and during the voting period.","s":"Provide reliable information, before & during voting to communities in their local language & culture to help voter understand the proposal.","u":"https://www.catalystexplorer.com/en/proposals/connecting-asian-voter-and-proposer-f9"},"co-10":{"p":"Most citizens in Japan still don’t know what ADA is, how it works, or why it matters. Cardano lacks daily-life visibility and cultural trust, limiting grassroots adoption.","s":"We will make ADA part of daily life in Japan by embedding it into festivals, radio, and LINE — turning blockchain into something trusted, joyful, and culturally familiar.","u":"https://www.catalystexplorer.com/en/proposals/empowering-real-world-ada-adoption-with-ashiya-pool-f14"},"co-11":{"p":"Fraud has been increasing in Japan recently. There is more than 10M ADA damage. Many scammers are targeting the 12-word recovery phrase and secretkey.There is no official Cardan...","s":"Establish a fixed location, which will be attached to a restaurant, for consuling Cardano problem. Encourage customers to specify this store when dealing with recovery phrases o...","u":"https://www.catalystexplorer.com/en/proposals/cardano-information-center-in-japan-with-a-restaurant-f11"},"co-12":{"p":"Few people have experienced the potential of DAOs and Dapps outside of the financial domain.  Few people have experienced where Cardano's Dapps and findings are specifically use...","s":"So that 1 million people can easily join in using Cardano's Dapps (yoroi, NMKR, Claliry),  Ownership NFT in LLC DAO, made possible by a legal amendment by the members, sold for ...","u":"https://www.catalystexplorer.com/en/proposals/japanese-llc-dao-where-1-million-people-can-join-and-contribute-using-cardanos-dapps-from-japan-to-the-world-dao-f12"},"co-13":{"p":"The catalyst is quite unique and large advantage function on Cardano compared to other public block chain. However, still catalyst is not so popular for ordinary ADA holders.","s":"We will search poteitial catalyst proposer and supply small fund to encourage Catalyst proposal or mini Cardano project. I already receive several possibilities from Japanese AD...","u":"https://www.catalystexplorer.com/en/proposals/potential-catalyst-survey-in-japan-for-truely-decentralized-dao-system-on-cardano-f10"},"co-14":{"p":"In japan, there is no use case of ADA for shopping. On the other hand, Japan local area want to make new appeal method for their product.","s":"The discount price produced by Catalyst supporting make ADA use case, new appeal method and out reach effect for new potential ADA holders.","u":"https://www.catalystexplorer.com/en/proposals/product-exhibition-from-shikoku-f7"},"co-15":{"p":"The Cardano ecosystem has seen the rise of many high-risk meme coins, making it difficult to detect scams early and protect investors.","s":"We will build an AI platform analyzing on/off-chain data of Cardano meme coins to detect scams early, score credibility, and alert investors, boosting safety and trust in the ec...","u":"https://www.catalystexplorer.com/en/proposals/blab-decentralized-ai-platform-for-memecoin-analytics-f14"},"co-16":{"p":"There is little social infrastructure, where communities take the lead & individuals act as agents of change to revitalize the local economy","s":"We offer a sustainable social infrastructure based on a circulation- based community revitalization that uses points and cryptocurrencies.","u":"https://www.catalystexplorer.com/en/proposals/expands-to-1000cities-jppointsyst-f8"},"co-17":{"p":"Despite a population of billions, East Asia is underrepresented in Catalyst due to a lack of localized content and Town Hall participation.","s":"Setup a translation pipeline to translate Catalyst documents & proposals to various languages in East Asia as accurately as possible.","u":"https://www.catalystexplorer.com/en/proposals/onboarding-east-asia-today-f9"},"co-18":{"p":"There is no site where ADA users can get comprehensive information about security (e.g. hardware wallets) in Japanese.","s":"Create a comprehensive explanation site for security (e.g. hardware wallets) in Japanese + hold 10 meetups","u":"https://www.catalystexplorer.com/en/proposals/hardware-wallet-site-10meetup-jp-f7"},"co-19":{"p":"Deindustrialization (high aging, depopulation, shortage of engineers in local areas) is serious problem for developed country Japan","s":"We will make acceptance of Cardano based BC technology for local area citizens and government in Japan, which willl extend the ADA use case.","u":"https://www.catalystexplorer.com/en/proposals/jp-regional-revitalization-project-f7"},"co-20":{"p":"<p>The problem is Japan has few Catalyst proposers. Because Japanese ADA holders are just normal investors, not highly motivated entrepreneurs.</p>","s":"","u":"https://www.catalystexplorer.com/en/proposals/fostering-japanese-young-proposers"},"co-21":{"p":"The lack of a unified platform connecting developer and builder communities in Asia leads to underutilized resources and limits the potential to create innovative and high-quali...","s":"Cardano Builder Asia promotes collaboration, resource sharing, and networking among builders in the Asian region to create a stronger and more innovative Cardano ecosystem","u":"https://www.catalystexplorer.com/en/proposals/cardano-builder-asia-building-a-connected-cardano-builder-network-in-asia-f13"},"co-22":{"p":"Cardano has many projects but no notable examples of great success. Due to the abundance of projects, they often end up collapsing together. There are few marketing efforts to a...","s":"Our main focus will be on promoting Cardano projects from Japan and creating successful examples of the use cases. Japan has clear laws related to cryptocurrency and is also the...","u":"https://www.catalystexplorer.com/en/proposals/promotion-of-japanese-cardano-products-f11"},"co-23":{"p":"<p>Japanese ADA holder have largest class ADA. However only 10% members contribute community and less than 5% member attend Catalyst Voting.</p>","s":"A lot of Cardano content's with deep understanding written in Japanese such as books, document, You tube community moderating etc.","u":"https://www.catalystexplorer.com/en/proposals/scale-up-cardano-by-jpn-publication"},"dt-1":{"p":"There are few options for profit and loss calculation tools that are compatible with multi-chains, including Cardano. In particular, there is no one that is compatible with the ...","s":"**【Crypto Accounting for Cardano】**  We will develop a web app that calculates P&amp;L from a wallet address.  Features:  1. Retrieve transaction from wallet address. 2. Calcula...","u":"https://www.catalystexplorer.com/en/proposals/an-all-in-one-crypto-accounting-system-compatible-with-tax-regulations-including-those-of-japan-and-also-supporting-staking-and-defi-transactions-f12"},"dt-2":{"p":"Organic adoption and development of dApps is too slow. Not only that but creating a startup is difficult and it is very likely to fail.","s":"Milkomeda will be launching a second batch of its acceleration program together with SOSV (sosv.com) where companies will be coached.","u":"https://www.catalystexplorer.com/en/proposals/milkomeda-accelerator-batch-2-f8"},"dt-3":{"p":"Milkomeda allows moving native tokens <-> ERC20 tokens between Cardano and Milkomeda, but does not support ERC721 or ERC1155 (ex: NFTs)","s":"Build infrastructure required to be able to bring NFTs or ERC1155-compatible assets between Cardano <-> Milkomeda","u":"https://www.catalystexplorer.com/en/proposals/erc721-erc-1155-for-milkomeda-f8"},"dt-4":{"p":"Currently there is no way for users to run Cardano smart contracts from a mobile device","s":"We want to allow users to use Milkomeda smart contracts from their mobile device","u":"https://www.catalystexplorer.com/en/proposals/milkomeda-mobile-f8"},"dt-5":{"p":"Cardano uses a encoding scheme called CBOR that supports multiple ways of encoding the same data. No Rust library supports all possible encodings of data which has caused multip...","s":"We will implement support in the cddl-codgen for generating Rust code that supports multiple CBOR encoding possibilities to ensure reliability of the Rust-based Cardano tool stack","u":"https://www.catalystexplorer.com/en/proposals/rust-sdk-fix-critical-cbor-encoding-f9"},"dt-6":{"p":"To ensure decentralization, we need to make it easy for users and developers to run full node and archive nodes of Milkomeda","s":"We will provide an easy to run docker solution so that users and developers can easily run their own full nodes and/or archive nodes","u":"https://www.catalystexplorer.com/en/proposals/milkomeda-docker-fullnode-setup-f8"},"dt-7":{"p":"Many projects rely on an IOHK tool called cardano-db-sync. This means that when an issue is found in db-sync, the many projects are affected","s":"We will write an alternative to cardano-db-sync in Rust powered by Oura starting with the core functionality needed for light wallets.","u":"https://www.catalystexplorer.com/en/proposals/db-sync-replacement-in-oura-f8"},"dt-8":{"p":"Indonesians receive an average of 14+ spam calls per month, partly due to unprotected digital verification, while developers struggle with the cost and security risks of managin...","s":"Midnight Shield replaces SMS OTPs with ZK Proofs. Verify your phone once to mint a credential, then login anonymously. Stops spam by proving unique humanity without sharing data.","u":"https://www.catalystexplorer.com/en/proposals/midnight-shield-zk-phone-verification-anti-spam-sdk-f15"},"dt-9":{"p":"Projects on Cardano lack an **Ecosystem Building Blueprint** for entering jurisdictions and ensuring the successful implementation of **national-level solutions.**","s":"Beginning with the **Global Speciality Tea Sector** as our case study, we will deliver a systematic playbook and **Ecosystem Building Blueprint** to successfully deploy national...","u":"https://www.catalystexplorer.com/en/proposals/ecosystem-building-large-scale-atala-tech-deployment-blueprint-f10"},"dt-10":{"p":"Currently no efficient tooling exists for storing the blocks persistently with fast indexing and fast distribution. For example, an empty indexer on Oura will still take ~300s/e...","s":"We introduce new thread-safe memory-efficient persistent storage with indexing capabilities. Using a single-file solution, there will be no extra processing overhead for downloa...","u":"https://www.catalystexplorer.com/en/proposals/fast-reindexable-data-format-f9"},"dt-11":{"p":"<p>To reduce the noise to society caused by data whose authenticity cannot be proven</p><p><br></p><p>-data can be super easily modified and processed by AI-</p>","s":"","u":"https://www.catalystexplorer.com/en/proposals/cpuiot-development-for-fact-data"},"dt-12":{"p":"The memory of RaspberryPi4 is 8GB and a spec of about 16GB is required. It contains unnecessary features and needs further optimization.","s":"We will develop hardware dedicated to stake pool operators that can be powered by small, eco-friendly power such as an enhanced RaspberryPi4","u":"https://www.catalystexplorer.com/en/proposals/raspberry-spo-project-f7"},"dt-13":{"p":"Cardano needs a wallet with robust handling of multisig for enterprise use cases and for DAOs","s":"We will deploy Gnosis Safe on Milkomeda and deploy a UI for it for ease-of-use","u":"https://www.catalystexplorer.com/en/proposals/gnosis-safe-ui-f8"},"dt-14":{"p":"As transactions increase on the Cardano network, every node cannot relay every message utilizing the current TCP/IP architecture.","s":"Deploy a proof of concept stake pool and relay solution of Ouroborus over RINA using Ethernet/WDM at two sites in Tokyo, Japan.","u":"https://www.catalystexplorer.com/en/proposals/ouroboros-over-rina-f2"},"dt-15":{"p":"zk-rollups using validity proofs are currently the most likely solutions that will help scale up blockchains. Cardano is missing this so far","s":"Research and clear blueprint on how to implement zk-rollups on top of Milkomeda as a L3 as well as a roadmap for wallet implementation","u":"https://www.catalystexplorer.com/en/proposals/layer-3-scalability-using-zkrollups-f8"},"dt-16":{"p":"Fracada is a fractionalized NFT project for Cardano. It was audited thanks to a Catalyst proposal in the previous round and now we need funds to implement the audit","s":"The funds will be used for a Plutus developer to address the concerns found in the audit, followed by publishing the audit and updated code for the community","u":"https://www.catalystexplorer.com/en/proposals/fracada-addressing-audit-f9"},"dt-17":{"p":"Currently Sebastien (dcSpark CTO) acts as a Catalyst editor which requires a weekly time commitment. This proposal is to cover the time cost","s":"Financially cover the time cost of having Sebastien act as a CIP editor which involves both reviewing & writing proposals","u":"https://www.catalystexplorer.com/en/proposals/cip-editor-time-sebastien-for-1year-f8"},"dt-18":{"p":"Indexers are a core component of DeFi and one popular indexer protocol is called TheGraph. We need a project like this in Cardano","s":"We will deploy an instance of TheGraph to Milkomeda which will act as an indexing protocol for querying networks like Milkomeda and IPFS","u":"https://www.catalystexplorer.com/en/proposals/thegraph-in-milkomeda-f8"},"dt-19":{"p":"Currently one of the hard problems in the blockchain space is discovery. Difficulty in finding dApps lowers user engagement and fuels FUD","s":"We will build a dApp store for Milkomeda so that users can see all the apps in the Cardano ecosystem that are deployed on Milkomeda","u":"https://www.catalystexplorer.com/en/proposals/app-store-for-milkomeda-f8"},"dt-20":{"p":"Cardano-serialization-lib is one of the top projects in the ecosystem used by almost all dApps & needs to be updated for the next hardfork","s":"dcSpark will make the required changes to cardano-serialization-lib to update it for the Babbage hardfork","u":"https://www.catalystexplorer.com/en/proposals/cardano-rust-sdk-babbage-f8"},"dt-21":{"p":"Creating secure and efficient smart contracts from scratch on a new blockchain like Midnight can lead to vulnerabilities, inefficiencies, and longer development times.","s":"We offer a secure library of smart contracts for Midnight, which includes basic contract implementations. This library will enhance security, reduce development costs, and speed...","u":"https://www.catalystexplorer.com/en/proposals/open-source-smart-contract-library-for-midnight-catalyzing-midnights-developer-ecosystem-with-ready-to-use-smart-contracts-f13"},"em-1":{"p":"Cardano's distance from the rest of the blockchain industry in Japan, hindring sustainable growth of $ADA in the market.","s":"Leveraging Pacific Meta's influence and experience with the Japanese blockchain space, plus our connection with Japanese enterprises, we will improve the recognition and adoptio...","u":"https://www.catalystexplorer.com/en/proposals/cardano-japan-hub-restart-f14"},"em-2":{"p":"We will reach out to a segment of the population not interested in Cardano by organizing meet-ups with all those involved in the Cardano and web3 experts and inviting entertaini...","s":"As well as organizing high-quality events, by doing a lot of them, you will always be able to attract a lot of interest.  ![-2024-05-12-0.45.13-62b6f3.png](https://cardano.ideas...","u":"https://www.catalystexplorer.com/en/proposals/organising-events-that-keep-cardano-in-the-news-in-japan-f12"},"em-3":{"p":"The web3 industry in Japan is developing and regulations are being put in place, but Cardano is not recognized as an option for development and applications, which is a serious ...","s":"Introduce Cardano at the largest trade shows. Focus on face-to-face conversations and demonstrations, and multiple exhibits throughout the year to stimulate communication and in...","u":"https://www.catalystexplorer.com/en/proposals/exhibit-largest-blockchain-expojpcardano-is-hardly-recognized-in-japan-therefore-we-will-exhibit-at-one-of-the-largest-trade-shows-to-raise-awareness--f10"},"em-4":{"p":"To promote AtalaPRISM, the concept of DID and SSI is not widely understood and the number of implementation cases is limited.","s":"Training program and hackathon for building AtalaPRISM","u":"https://www.catalystexplorer.com/en/proposals/atalaprism-hackathon-with-devillage-f8"},"em-5":{"p":"In order to promote AtalaPrism and attract development engineers in Japan, the fact that all program materials is in English is a barrier.","s":"Create Japanese translated versions of AtalaPrism and DID related materials, including localized ATALA Prism Pioneers Program documentation","u":"https://www.catalystexplorer.com/en/proposals/atala-japanese-translation-cnft-f7"},"em-6":{"p":"The required minimum transation ADA (1.2 ADA) for transactions of Cardano assets(Tokens) prohibit Cardano based system operations. This is a serious disadvantage against other b...","s":"We will develop and test a simple donation/voting system that takes advantage of eUTXO's multi-address design and multi-token design, which are one of Cardano's features.","u":"https://www.catalystexplorer.com/en/proposals/token-use-case-with-multi-address-wallet-based-on-eutxo-model-for-social-welfare-system-f12"},"em-7":{"p":"Ethereum has developed an ecosystem in the DeFi space, and their business models are choking on the Gas cost. Need them on Cardano.","s":"Developers, Project Managers, UI designers, graphic designers team together to solve a variety of DeFi building block type challenges.","u":"https://www.catalystexplorer.com/en/proposals/defi-hackathon-f2"},"em-8":{"p":"Asians do not have the opportunity to think about business ideas in Cardano, so there is less development.","s":"Organize a business idea-a-thon to encourage business ideas.","u":"https://www.catalystexplorer.com/en/proposals/did-business-ideas-hackathon-f8"},"em-9":{"p":"Japanese interest in crypto and blockchain technology is growing, but many still do not actively invest or participate in any communities.","s":"Develop and produce an online trade fair in Japanese, showcasing the coolest things Cardano has to offer, appealing to absolute beginners.","u":"https://www.catalystexplorer.com/en/proposals/tokyo-cardano-summit-f7"},"em-10":{"p":"We aim to address low Cardano awareness and adoption in government, education, and corporate sectors, enhancing visibility and usage to foster broader blockchain acceptance.","s":"We will create targeted awareness campaigns and collaborate with key stakeholders to educate and integrate Cardano into government, education, and corporate sectors, driving its...","u":"https://www.catalystexplorer.com/en/proposals/cardano-spt-special-promo-taskforce-f12"},"em-11":{"p":"Cardano TVL hasn't catch up with Cardano's position by market cap.","s":"Milkomeda Hackathon will help with the deployments of projects that and boost adoption in Cardano.","u":"https://www.catalystexplorer.com/en/proposals/milkomeda-hackathon-f8"},"em-12":{"p":"Only few JP and East Asia companies recognize Cardano as main BLOCKCHAIN! so, it is difficult to adopt CARDANO into the real business world.","s":"We will exhibit at the B.C. EXPO, largest business events in JP, and introduce Cardano to Japanese Fortune 500 and public organizations.","u":"https://www.catalystexplorer.com/en/proposals/exhibit-largest-blockchainexpojp-f8"},"em-13":{"p":"Only few JP and East Asia companies recognize Cardano as main BLOCKCHAIN! so, it is difficult to adopt CARDANO into the real business world.","s":"We will exhibit at the B.C. EXPO, largest business events in JP, and introduce Cardano to Japanese Fortune 500 and public organizations.","u":"https://www.catalystexplorer.com/en/proposals/exhibit-largest-blockchainexpojp-f7"},"em-14":{"p":"Given Cardano's origins, the Japanese community holds significant importance. However, the community is currently fragmented and isolated from the international Cardano community.","s":"We Organize three community-led Cardano summits in Japan, which bring together Cardano stakeholders from Japan and abroad, fostering collaboration and encouraging Japanese compa...","u":"https://www.catalystexplorer.com/en/proposals/community-led-cardano-summits-in-japan-f11"},"em-15":{"p":"Given Cardano's origin, the Japanese community holds significant importance. However, no events currently exist to attract people from outside the Cardano ecosystem and encourag...","s":"We organize Tech for Impact Summit 2025, which will bring together Cardano stakeholders from Japan and beyond, fostering collaboration and encouraging Japanese companies to adop...","u":"https://www.catalystexplorer.com/en/proposals/tech-for-impact-summit-2025-asias-premier-cardano-event-f13"},"em-16":{"p":"EU and US developers are connected but the Asia builders are fragmented, lacks physical spaces and opportunity to effectively connect, learn, share and build.  ![Image file](/a/...","s":"Hosting Buidler Fest #2, building up on the great experiences of Buidler Fest #1. A 2-day event for tech-savvy Cardano builders to connect, showcase and share.","u":"https://www.catalystexplorer.com/en/proposals/cardano-builder-fest-asia-by-mesh-socious-sidan-vietnam-cardano-f13"},"em-17":{"p":"Despite Cardano's Japanese origins, no dedicated platform exists to introduce Cardano to broader audiences beyond existing enthusiasts, limiting mainstream adoption in this key ...","s":"A Cardano side event at SusHiTech Tokyo will connect global Cardano leaders with Japanese enterprises, showcasing real-world applications to drive mainstream adoption at Japan's...","u":"https://www.catalystexplorer.com/en/proposals/cardano-at-sushitech-tokyo-japans-premier-tech-summit-f14"},"is-1":{"p":"Mental health care suffers from low participation due to stigma and privacy fears, creating barriers in research recruitment treatment access, and care continuity.","s":"Mental health participation increases through anonymous SSI credentials on Cardano, enabling stigma-free screening, treatment access, and research participation with token rewards.","u":"https://www.catalystexplorer.com/en/proposals/a-token-incentivized-mental-health-ecosystem-using-did-f14"},"is-2":{"p":"There is no impact score system that visualizes and attributes social & environmental impact to decentralized identities.日本語","s":"Socious uses Atala PRISM/ProofSpace to attribute “impact score” to visualize users' contributions to impact projects and reward them with crypto tokens, which increases utility ...","u":"https://www.catalystexplorer.com/en/proposals/recognize-impact-through-dids-f9"},"is-3":{"p":"There does not appear to be a laboratory that studies Atala DID in Cardano .Thus many professors and students are not aware of Atala.","s":"The Aizu lab in Japan will study the use of Cardano's Atala DID as an ID on the metaverse.","u":"https://www.catalystexplorer.com/en/proposals/metadid-experiment-aizu-lab-f8"},"is-4":{"p":"RealFi projects like Landano need decentralized solutions for identity and credentials which can be used by users globally. However, system requirements and available solutions ...","s":"Landano will research DID use cases and analyze pilot user feedback to prepare formal software requirements for a DID component and provide an evaluation on how Cardano solution...","u":"https://www.catalystexplorer.com/en/proposals/mapping-realfi-did-requirements-to-cardano-based-solutions-f11"},"is-5":{"p":"Atala should be accessible to everyone. However, it is not integrated with Milkomeda and is affecting the adoption of Atala and Milkomeda. 日本語","s":"We integrate Atala to Milkomeda via ProofSpace/Socious to increase the adoption of Cardano.","u":"https://www.catalystexplorer.com/en/proposals/atala-integration-with-milkomeda-f9"},"is-6":{"p":"<p>In Japan, solutions in the society and the industry using Japan national IDs is not popular yet.</p>","s":"","u":"https://www.catalystexplorer.com/en/proposals/did-solutions-for-local-governments"},"is-7":{"p":"The Prism wallet SDK doesn't currently have the ability to store DIDs and credentials. This means that current users of the SDK have to build their own identity storage impactin...","s":"The project objective will work with other ecosystem projects to develop an adaptable storage implementation that supports early adoption and Cardano onboarding.","u":"https://www.catalystexplorer.com/en/proposals/grow-atalaprism-sdk-adaptable-identity-storage-module-atalaprism-sdk-id-f11"},"is-8":{"p":"There is no impact score system that visualizes and attributes social & environmental impact to decentralized identities.日本語","s":"Socious uses Atala PRISM/ProofSpace to attribute “impact score” to visualize users' contributions to impact projects and reward them with crypto tokens, which increases utility ...","u":"https://www.catalystexplorer.com/en/proposals/recognize-impact-through-dids-f9"},"is-9":{"p":"There is no team to deal with Japanese SCAM and FUD (ADA is gambling coin etc.).","s":"We will create a team to deal with Japanese SCAM and FUD (ADA is gambling coin etc.) and deal with it as much as possible.","u":"https://www.catalystexplorer.com/en/proposals/japanese-fud-scam-buster-100-f7"},"is-10":{"p":"According to a [survey](https://www.entrepreneur.com/business-news/more-than-half-of-americans-say-they-lie-on-their-resumes/441589), 55% of respondents admitted to lying on the...","s":"Build a Dapp to record work history as verifiable credentials and publish a Governance Framework, enabling hiring organizations to verify the authenticity of work history to hir...","u":"https://www.catalystexplorer.com/en/proposals/socious-work-history-as-verifiable-credentials-f10"},"is-11":{"p":"Currently, there is no open-source identity wallet available that supports both browser and mobile platforms and is compatible with Atala PRISM v2.0.","s":"We will create an open-source identity wallet compatible with Atala PRISM v2.0. The wallet can issue and verify academic and other certificates.","u":"https://www.catalystexplorer.com/en/proposals/open-source-identity-wallet-for-atala-prism-20-and-academic-certificates-f11"},"is-12":{"p":"The reliance on seed phrase-based wallet recovery and the lack of No-Code Self-Sovereign Identity solutions are hindering mass adoption. [日本語](https://youtu.be/sYkCgAFngk0)","s":"We improve the Atala identity wallet SDK to allow wallet recovery using a password-protected backup file instead of a seed phrase. We also build a no-code Self-Sovereign Identit...","u":"https://www.catalystexplorer.com/en/proposals/accelerate-mass-adoption-open-source-atala-wallet-sdk-with-no-seed-phrase-vulnerability-and-a-no-code-self-sovereign-identity-platform-f12"},"df-1":{"p":"Farming incentives have proven to be very effective in crypto. We can use this to incentivize projects to move liquidity from Ethereum","s":"We will use funds to provide a farming incentive to users that move liquidity from Ethereum to Cardano","u":"https://www.catalystexplorer.com/en/proposals/farming-incentive-to-move-liquidity-f8"},"df-2":{"p":"Although we need to encourage moving computation to L2s to scale, currently doing so will cause you to lose your staking rewards making it hard to convince users to migrate","s":"We will design & implement a standard for Milkomeda to allow its users to keep earning staking rewards. We will share the approach publicly so other L2s / sidechains can impleme...","u":"https://www.catalystexplorer.com/en/proposals/liquid-staking-for-milkomeda-l2s-f9"},"df-3":{"p":"Direct contracts between employers and remote developers may lead to disputes. However, centralized escrow services can be expensive and their decisions may be arbitrary. 日本語","s":"Decentralized escrow to protect both remote developers and hiring organizations with cheaper fees and a fair/decentralized dispute settlement mechanism.","u":"https://www.catalystexplorer.com/en/proposals/decentralized-escrow-for-remote-job-f9"},"df-4":{"p":"Djed, the stablecoin protocol, does not require the UTXO model and can also be deployed on accounting (ex: EVM) blockchains too well. This may help users & devs understanding an...","s":"Our team developed and deployed Djed for the *testnet* version of Milkomeda. This allowed both developers and users to play around with Djed before its official release on Cardano.","u":"https://www.catalystexplorer.com/en/proposals/milkomeda-djed-f9"},"df-5":{"p":"Most Crypto dApps require liquidity to work correctly. Low liquidity implies jumps in prices, lack of tokens among other undesirable things.","s":"Bridge liquidity for top protocols. The liquidity will be permanent on those protocols so dcSpark won't be getting any direct commission.","u":"https://www.catalystexplorer.com/en/proposals/bridge-liquidity-for-top-protocols-f8"},"df-6":{"p":"Financial services for 1.7 billion adults who are unbanked are limited. Microfinance’s interest rate (global average: 35%) is much higher than that of bank credit (10.31%). 日本語","s":"A P2P lending platform with low interest rates for the unbanked, powered by Impact Score instead of credit history.","u":"https://www.catalystexplorer.com/en/proposals/impact-lending-for-the-unbanked-f9"},"df-7":{"p":"Currently wallets in Cardano cannot easily display prices of native tokens on Cardano through self-hosted solutions","s":"We will deploy an Oura source+sink that parses on-chain dApp data to provide an open-source self-hosted price feed that wallets can use","u":"https://www.catalystexplorer.com/en/proposals/self-hosted-pricefeed-for-wallets-f8"},"df-8":{"p":"Most of Cardano's Defi is in English. ADA held by the Japanese is huge.It is necessary to encourage the participation of Japanese people.","s":"Introduce 100 briefly and 10 in detail about Defi in Japanese.","u":"https://www.catalystexplorer.com/en/proposals/introducing-100-cardano-defi-in-jp-f7"},"df-9":{"p":"Many contribute their time to impact projects but their contributions are not well recognized or rewarded. This also discourages some people to contribute their time to social/e...","s":"We attribute “impact score” to volunteers/freelancers who contribute their time to impact projects (valuation). Users receive THANK tokens proportional to their impact score (mo...","u":"https://www.catalystexplorer.com/en/proposals/scoring-socialenvironmental-impact-f9"},"df-10":{"p":"Current business transactions suffer from issues of insecurity, exclusion, high costs, and lack of anonymity, primarily caused by centralized intermediaries and the absence of d...","s":"Create decentralized escrow and dispute resolution on blockchain for secure, inclusive, cost-effective transactions, tackling issues caused by centralized intermediaries and lac...","u":"https://www.catalystexplorer.com/en/proposals/adacrow-decentralized-and-p2p-escrow-app-f10"},"ed-1":{"p":"With the growing interest in Web3, DAOs, SDGs, and globalization in Japan, there is no platform where people can learn extensively about this various knowledge and participate w...","s":"The main net enables ADA/credit card payments, and marketing attracts people outside the ecosystem, such as Japanese schools, local authorities, etc., to use the product and get...","u":"https://www.catalystexplorer.com/en/proposals/enhancing-the-l-earning-bazaar-platform-and-onboarding-new-personas-f12"},"ed-2":{"p":"Knowledge of Cardano is mainly in English. So **it is difficult for the Japanese who want to learn about Cardano, affecting Cardano's ability to reach new users.**  ![Image file...","s":"Publish the book “Cardano For the M₳sses” in the Japanese version to help the Japanese understand Cardano better and attract more newcomers.  ![Image file](https://cardano.ideas...","u":"https://www.catalystexplorer.com/en/proposals/cardano-for-the-marasses-japanese-book-f10"},"ed-3":{"p":"There is no comprehensive education platform on Cardano that combines a rewards structure. It is imperative to build a platform to bring educational materials to a wider audienc...","s":"We will establish a web3 learning platform and marketplace with DID, where anyone can open a classroom in any field. This will empower people to simultaneously share and earn th...","u":"https://www.catalystexplorer.com/en/proposals/l-earning-bazaar-platform-building-f9"},"ed-4":{"p":"Japan has a large Cardano community, but the major Cardano bridges do not yet have any Japanese localization. This limits the Japan community's ability to access these parts of ...","s":"Create Japanese translations for the most popular Cardano bridges and follow through to ensure the text is implemented. All visible text, UI, error messages, input fields, etc. ...","u":"https://www.catalystexplorer.com/en/proposals/cardano-bridges-in-japanese-f9"},"ed-5":{"p":"Japanese interest in Cardano and blockchain technology is growing, but many still feel that it's still too new and complex to get involved.","s":"Produce a Master Class video in Japanese that introduces blockchain and crypto fundamentals, before showcasing what Cardano has to offer.","u":"https://www.catalystexplorer.com/en/proposals/japanese-cardano-master-class-f8"},"ed-6":{"p":"Setup a stake pool by executing commands requires expertise and is time consuming to install. In addition, mistakes can occur in daily operations.","s":"Create a TUI (Terminal User Interface) to enable Cardano node/CLI installation, dependency automation, pool registration, and daily operations.","u":"https://www.catalystexplorer.com/en/proposals/sjg-tools-v2-stake-pool-setup-operation-tui-tool-in-japanese-f10"},"ed-7":{"p":"There is no comprehensive education platform on Cardano that combines a rewards structure. It is imperative to build a platform to bring educational materials to a wider audienc...","s":"We will establish a web3 learning platform and marketplace with DID, where anyone can open a classroom in any field. This will empower people to simultaneously share and earn th...","u":"https://www.catalystexplorer.com/en/proposals/l-earning-bazaar-web3-integration-f9"},"ed-8":{"p":"There is still a high barrier to entry for newcomers and casual users to get involved with Dapps and DeFi on Cardano. Even many existing holders and traders lack confidence for ...","s":"I will create a clear and accessible Cardano Start Guide to guide users through the basics of the protocol and learn the essential tools and apps. The guide will be open license...","u":"https://www.catalystexplorer.com/en/proposals/cardano-start-guide-f9"},"ed-9":{"p":"In order to promote AtalaPrism and attract development engineers in Japan, the fact that all program materials is in English is a barrier.","s":"Create Japanese translated versions of AtalaPrism and DID related materials, including localized ATALA Prism Pioneers Program documentation","u":"https://www.catalystexplorer.com/en/proposals/atala-japanese-translation-cnft-f7"},"ed-10":{"p":"Shortage of skilled professionals in impact accounting due to insufficient training and blockchain-verified certification programs, hindering effective social and environmental ...","s":"Create project-based learning materials for impact accounting and issue a completion certificate as a verifiable credential on Atala PRISM.","u":"https://www.catalystexplorer.com/en/proposals/impact-accounting-project-based-learning-f11"},"ed-11":{"p":"Cardano's image in Japan is currently unfavorable, with FUD attacks by medias/SNS. The absence of unbiased analysis from influential publishers is impeding Cardano's adoption an...","s":"To promote Cardano's merits and facilitate its adoption, we will launch a dedicated Crypto Magazine that highlights Cardano and provides comparative analysis with other major bl...","u":"https://www.catalystexplorer.com/en/proposals/crypto-magazine-published-by-japanese-polular-publisher-futaba-sha-f10"},"gv-1":{"p":"In Japan, the government is moving toward legalization of LLC-type DAO legal entities. Therefore, we will establish effective use cases to work in the sandbox ahead of the legis...","s":"Tax Deductible Donations by Direct Donation of Crypto Assets  Staking operations with donated crypto assets  Introduction of a voting system in the distribution of treasury","u":"https://www.catalystexplorer.com/en/proposals/policy-advocacy-for-the-dao-ecosystem-to-the-government-f11"},"gv-2":{"p":"Help shaping regulations in a way that support the industry and Cardano.","s":"Participating with the Chamber of Digital Commerce will help us interacting with regulators and other key players in the industry.","u":"https://www.catalystexplorer.com/en/proposals/chamber-of-digital-commerce-for-f8"},"gv-4":{"p":"Referral fraud poses a significant challenge for the growth of DAOs, accounting for [21% of all attacks,](https://www.statista.com/statistics/1297428/leading-fraud-attacks-onlin...","s":"A decentralized referral system that utilizes smart contracts, guaranteeing security and transparency. By combating referral fraud, the system facilitates DAO’s growth and foste...","u":"https://www.catalystexplorer.com/en/proposals/socious-decentralized-referral-system-for-daos-f10"},"gv-5":{"p":"There is no comprehensive survey of Japanese law and no organization to oppose some of the reported excesses of the legal system.","s":"A Comprehensive Survey of Japanese Law + Send at least two letters of opposition to excessive legal systems","u":"https://www.catalystexplorer.com/en/proposals/surveylobbying-of-japanese-law-f7"},"gv-6":{"p":"Existing crowdfunding platforms [favor a few wealthy individuals](https://cointelegraph.com/explained/quadratic-funding-the-future-of-crowdfunding-explained), neglecting communi...","s":"Extended quadratic funding combines modest contributions from individuals who have done good deeds with larger matching sums. This approach promotes fair and inclusive funding f...","u":"https://www.catalystexplorer.com/en/proposals/socious-extended-quadratic-funding-for-open-source-projects-f10"},"gv-7":{"p":"Cardano lacks tools to show how different funding strategies and ADA’s volatility affect treasury risk, leaving voters and DReps without quantitative support for resilient fundi...","s":"Photrek builds a treasury risk analyst using coupled-entropy to evaluate funding strategies via scenario forecasts and risk metrics, guiding treasury decisions impacted by curre...","u":"https://www.catalystexplorer.com/en/proposals/entropic-open-source-cardano-treasury-ai-risk-analyst-f15"},"gv-8":{"p":"Project Catalyst, as a decentralized innovation fund, is still highly dependent on the IOG for the operation and further development of the platform.","s":"We offer the community an alternative that makes Project Catalyst a purely decentralized innovation fund by acting as a transition from an IOG-led Project Catalyst to a Project ...","u":"https://www.catalystexplorer.com/en/proposals/catalyst-operations-20-transition-from-iog-to-a-project-catalyst-dao-f10"},"rw-2":{"p":"In order to implement offline authentication using broadcasting (IPDC) and blockchain as a service, it is very important to be able to demonstrate it using actual television bro...","s":"The innovative system that combines broadcast waves (IPDC) and CARDANO to enable offline verification of certificates even in situations where the Internet is unavailable, such ...","u":"https://www.catalystexplorer.com/en/proposals/activating-ipdc-blockchain-through-real-broadcasting-waves-f14"},"rw-3":{"p":"Japan’s municipalities lack economic independence. Expanding Symons’ Web2 model into a points and crypto platform can make them players in a decentralized economy, advancing gov...","s":"We will evolve Symons’ Web2 model into a Cardano L1 + Hydra blockchain platform, integrating points and cryptocurrency to enable municipal autonomy and support comprehensive gov...","u":"https://www.catalystexplorer.com/en/proposals/aira-hydra-loyalty-crypto-for-regional-revitalization-f14"},"rw-4":{"p":"A survey shows more than 1.7 billion people can’t access the finance system. This keeps those willing to work if they can afford the tools from working and keeps the poor in pov...","s":"Build a Real World Asset launchpad using IOT technology, enabling access to the finance system for these people and distributing interest to the investors who support them.","u":"https://www.catalystexplorer.com/en/proposals/cardano-real-world-asset-launch-pad-f11"},"rw-5":{"p":"Grow an ecosystem is hard even harder is doing it in a speedy manner. Some startups that are already in Ethereum need convincing and mentoring to join the ecosystem and growth f...","s":"A 4-6 week acceleration program in partnership with SOSV (one of the most active early stage investors in the US) that scout, attract, support, guide and fund startups with high...","u":"https://www.catalystexplorer.com/en/proposals/accelerator-batch-3-f9"},"rw-6":{"p":"WalletConnect is a standard to connect mobile wallets to desktop dApps without having the private key leave the mobile app. It is integrated by many dApps, but does not support ...","s":"We will do the required engineering work to add WalletConnect support to FlintWallet and write information about how any other wallet in the Cardano ecosystem that has a mobile ...","u":"https://www.catalystexplorer.com/en/proposals/walletconnect-for-cardano-f9"},"rw-7":{"p":"It is difficult to accurately pass on people's feelings to the future, and paper, photographs, and videos are at risk of being tampered with or lost.","s":"The proposed solution is a digital platform that uses the immutability and reliability of the Cardano blockchain to safely and permanently pass on personal thoughts and memories...","u":"https://www.catalystexplorer.com/en/proposals/mirai-memories-bank-project-echoes-of-the-heart-f14"},"rw-8":{"p":"**Lithium** is crucial for markets like EVs, but a **lack of transparency hinders responsible sourcing** and **ESG compliance**, limiting export opportunities, financing access,...","s":"Onboarding leading **Argentine Lithium Provinces &amp; projects** to implement **traceability** on Cardano; ensuring **ESG-compliant sourcing** via **RWA tokenization**, **prove...","u":"https://www.catalystexplorer.com/en/proposals/cardano-powered-rwa-traceability-for-sustainable-lithium-production-in-argentinas-56b-industry-f13"},"rw-9":{"p":"Web3, including DAOs, is gaining attention in Japan as a solution to issues like the declining birthrate and aging population. However, neither the apps nor society are ready fo...","s":"Develop a major social implementation case study in Takamatsu City, Shikoku, using Cardano-based Dapps and DAOs to solve social problems in Japan, integrating real communities f...","u":"https://www.catalystexplorer.com/en/proposals/creating-social-implementation-use-cases-of-cardano-in-the-shikoku-region-japan-f12"},"rw-10":{"p":"Lack of liquidity for physical assets in rural areas is a big issue for revitalization of local economies. ANGO is creating a platform for RWA DAO projects to raise money to uti...","s":"Provide tool for issuing and exchange tokens of RWA DAOs to provide money and liquidity to social conscious projects that otherwise would not have started. Help the projects to ...","u":"https://www.catalystexplorer.com/en/proposals/from-vacancy-to-vitality-cardano-dao-and-rwas-transforming-424000-homes-into-33-billion-economic-hubs-f12"},"rw-11":{"p":"The use case  for non Crypto citizens is important.  For understanding Cardano worth, we have to emphasize the benefit from Cardano Project.","s":"The special discount on internet shopping by ADA supported by Catalyst will promote ADA holder shopping and active local area economy.","u":"https://www.catalystexplorer.com/en/proposals/on-line-local-area-shopping-by-ada-f7"},"rw-12":{"p":"There is no tool that allows you to cut out portions of an artist's live & sell it as an NFT during the show, it'll be good recruitment tool","s":"Tool that allows owner to cut out portions of an artist's live & sell it as NFT during the show in Cardano would be a good recruitment tool.","u":"https://www.catalystexplorer.com/en/proposals/music-live-nft-platform-f8"},"io-1":{"p":"Adoption with businesses and enterprise solutions with Cardano is difficult and there is no a good platform to get traction and adoption.","s":"Cotalker integration will allow companies to use Cardano as a source of true for storing operational information that can be verified.","u":"https://www.catalystexplorer.com/en/proposals/cotalker-integration-f8"},"io-2":{"p":"Prove reserves, identity, delegating to a pool and more.","s":"","u":"https://www.catalystexplorer.com/en/proposals/create-message-signing-standard-f2"},"io-3":{"p":"Milkomeda is a sidechain so traceability of wrapping and unwrapping is really difficult because block explorers only work on one side.","s":"Milkomeda token bridge explorer will allow to do full traceability of assets when they move from one chain to the other one.","u":"https://www.catalystexplorer.com/en/proposals/milkomeda-token-bridge-explorer-f8"},"gf-1":{"p":"The absence of practical adoption examples poses a significant challenge for the Cardano system. Developing a viable product based on real-world applications is imperative for s...","s":"We are set to develop a novel sports funding application for \"FC Tokushima,\" the football team, utilizing the Cardano chain and CNFTs. The application will incorporate a robust ...","u":"https://www.catalystexplorer.com/en/proposals/sports-crowdfunding-system-attached-to-funclub-application-based-on-cardano-chain-f10"},"gf-2":{"p":"Gaming is one of the fastest growing categories in crypto. Cardano is not quite there in terms of quantity of games.","s":"Milkomeda Game will be a simple casual game that uses blockchain concepts. It will bring adoption and usage to Cardano through Milkomeda.","u":"https://www.catalystexplorer.com/en/proposals/milkomeda-game-f8"},"gf-3":{"p":"Currently, most blockchain-based games are not actually running on-chain. Instead, they run on centralized servers and the only blockchain component are NFTs and tokens used by ...","s":"We will make a 2nd game for Milkomeda that operates entirely on-chain without needing to trust a centralized server, and do so in a more gas-friendly way than traditional gas-hu...","u":"https://www.catalystexplorer.com/en/proposals/milkomeda-game-2-f9"},"nf-1":{"p":"Despite the great value of artistic collections, especially fashion collections, they are not adequately preserved and the originals continue to be lost because of the enormous ...","s":"Making precise 3D scans of masterpieces and leave detailed 3D models for the future. By mixing the XR and blockchain technology, we'll incentivise collectors to preserve master ...","u":"https://www.catalystexplorer.com/en/proposals/legendary-humanitya-platform-for-reserving-on-physical-fashion-collections-to-the-future-f11"},"nf-2":{"p":"NFT tickets based on Polygon or Ethereum are being used in Japan, but almost none are in common use in Cardano.  日本でpolygon等のNFTチケットが利用され始めて拡大しているが、カルダノで一般的に使われているものはほぼ無い","s":"Issue Cardano NFTs in stores that already utilize NFT tickets .This will create one real example that CNFTs have been used continuously in downtown Tokyo.  東京銀座で営業する店舗のチケットをcNFT...","u":"https://www.catalystexplorer.com/en/proposals/put-cnfts-into-public-circulation-as-admission-tickets-nft-f11"},"nf-3":{"p":"The intrinsic values of NFT were questioned due to the absence of the supporting value . On the other hands, Japanese traditional craft face to crisis of survaival due to decrea...","s":"We will establish the value supported NFT market with Japanese Traditional Craftsman Group. We want to make this system as a standard for art type NFT and a way to save the art ...","u":"https://www.catalystexplorer.com/en/proposals/japanese-traditional-crafts-nft-f9"},"nf-4":{"p":"We'll promote \"Masu\" and Cardano globally via social media-friendly photos, creating a photo book linked with Cardano's blockchain and NFTs to attract new users and enhance glob...","s":"The FOMUS Masu Photo Project is a global initiative that combines traditional Japanese craftsmanship with Cardano techniques to raise awareness of Cardano, publicize NFT, and ex...","u":"https://www.catalystexplorer.com/en/proposals/japanese-traditional-craft-masu-photo-project-cardano-community-expands-through-art-f11"},"nf-5":{"p":"There are not so major events that people who are not in our ecosystem learn about or reach out to the Cardano ecosystem. It makes many in Japan think Cardano has no use case or...","s":"We'll have Cardano events at SHIBUYA FES which was over 12K, including many no-crypto people last year, an event for pop, fashion, and music culture and NFT, and showcase our ec...","u":"https://www.catalystexplorer.com/en/proposals/shibuya-fes-428fes-cardano-conference-cnft-art-exhibition-f11"},"su-1":{"p":"There are few Cardano use cases in Japan in spite of the many reports of the use case in other block chain. It is serious problem to unable to provide answers to What is Cardano...","s":"We offer NFTs linked to Shurine Stamps provided at Japanese shrines. Additionally, a portion of the sales of this system will be donated to anti-poverty causes, increasing Cadan...","u":"https://www.catalystexplorer.com/en/proposals/shrine-stamp-nft-with-sustainable-system-in-tokushima-japan-f11"},"su-2":{"p":"Japan uses the most pesticides in the world, but these chemicals are used to increase the profits of the petrochemical industry. And the health hazards of these chemicals have n...","s":"By activating microorganisms in the soil, organic agricultural products can be grown without using chemicals. And by utilizing the blockchain, the traceability of foodstuffs can...","u":"https://www.catalystexplorer.com/en/proposals/quality-assurance-of-organic-foods-f9"},"su-3":{"p":"By 2050, global coffee production will be halved. It is due to the decline in cultivated areas due to global warming and the inadequate monetization of producers in Africa. This...","s":"Measure and visualize CO2 emissions associated with coffee production. Design a mechanism to increase the creditworthiness and incentives of producers in Africa by reducing CO2 ...","u":"https://www.catalystexplorer.com/en/proposals/sustainable-coffee-to-earn-f9"},"su-4":{"p":"For sustainable enviorment (SDG), it is necesarry to full trace(from product generation to end of product) not only \"a part of product life\"","s":"We will try to make full hystory of Apparel (source of Clothes) with compony. Which can be good demonstration for SDGs traceability.","u":"https://www.catalystexplorer.com/en/proposals/sustainable-apparel-trace-demo-f8"},"sc-1":{"p":"Multiple bridges connected to Milkomeda and Cardano result in the creation of multiple assets (derivatives) which fragment liquidity (of the same asset e.g. USDC) and impact UX ...","s":"The creation of a canonical smart contract where whitelisted assets (and bridges) can exchange their bridged asset by a canonical version that will be used by the Cardano ecosys...","u":"https://www.catalystexplorer.com/en/proposals/solve-asset-fractionalization-f9"}};
+
 function fetchCatalystApi(p){
-  var apiUrl='https://catalystexplorer.com/api/proposals?search='+encodeURIComponent(p.label)+'&limit=3';
-
-  fetch(apiUrl).then(function(r){return r.json();})
-  .then(function(json){
-    var items=json.data||json;
-    var found=null;
-    if(Array.isArray(items)){
-      for(var i=0;i<items.length;i++){
-        if(items[i].title&&items[i].title.toLowerCase()===p.label.toLowerCase()){found=items[i];break;}
-      }
-      if(!found&&items.length>0)found=items[0];
+  var descEl=document.getElementById('ct-d-desc');
+  var pd=typeof PDESC!=='undefined'&&PDESC[p.id]?PDESC[p.id]:null;
+  if(pd){
+    var html='<div class="ct-d-label">'+T('problem')+'</div><div class="ct-d-text">'+esc(pd.p||'N/A')+'</div>';
+    html+='<br><div class="ct-d-label">'+T('solutionLabel')+'</div><div class="ct-d-text">'+esc(pd.s||'N/A')+'</div>';
+    if(pd.u){
+      html+='<br><div style="margin-top:8px"><a href="'+pd.u+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;color:var(--ref-link);text-decoration:none;font-size:11px;padding:5px 12px;border:1px solid var(--border);border-radius:6px;transition:all .15s;background:var(--dim)">→ Catalyst Explorer で詳細を見る</a></div>';
     }
-    if(!found){showDescFallback();return;}
-    _ctDetailApi=found;
-    var descEl=document.getElementById('ct-d-desc');
-    var html='<div class="ct-d-label">'+T('problem')+'</div><div class="ct-d-text">'+esc(found.problem||'N/A')+'</div>';
-    html+='<br><div class="ct-d-label">'+T('solutionLabel')+'</div><div class="ct-d-text">'+esc(found.solution||'N/A')+'</div>';
-    if(found.yes_votes_count||found.no_votes_count){
-      html+='<br><div class="ct-d-label">'+T('votesLabel')+'</div><div class="ct-d-text">Yes: '+(found.yes_votes_count||0)+' / No: '+(found.no_votes_count||0)+'</div>';
-    }
-    if(found.link){
-      html+='<br><div class="ct-d-label">'+T('linkLabel')+'</div><div class="ct-d-text" style="font-size:11px;word-break:break-all">'+esc(found.link)+'</div>';
-    }
+    html+='<div style="margin-top:12px;font-size:9px;color:var(--muted);opacity:0.6;line-height:1.6">'+(_lang==='ja'
+      ?'※ データは Catalyst Explorer / projectcatalyst.io に基づく事実の記録であり、評価・主観的判断は含みません。本データは研究・実験目的で掲載しています。投資助言を目的としたものではありません。本サイトは非公式のコミュニティプロジェクトであり、IOG・Cardano Foundation・EMURGO とは無関係です。内容の正確性・完全性は保証されません。'
+      :'* Data is based on factual records from Catalyst Explorer / projectcatalyst.io and does not include evaluations or subjective opinions. This data is for research and experimental purposes only. It does not constitute investment advice. This is an unofficial community project and is not affiliated with IOG, Cardano Foundation, or EMURGO. Accuracy and completeness are not guaranteed.')+'</div>';
     descEl.innerHTML=html;
-    if(found.content){
-      var fb=document.getElementById('ct-d-fetch');
-      fb.style.display='inline-flex';
-      fb.onclick=function(){
-        var extra=document.getElementById('ct-d-extra');
-        extra.innerHTML='<div class="ct-d-section" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">'
-          +'<div class="ct-d-label">'+(_lang==='en'?'Original text':'\u539f\u6587')+'</div><div class="ct-d-text" style="font-size:12px;line-height:1.8">'+esc(found.content).replace(/\n/g,'<br>')+'</div></div>';
-        fb.style.display='none';
-      };
-    }
-  }).catch(function(){showDescFallback();});
-
-  function showDescFallback(){
-    var descEl=document.getElementById('ct-d-desc');
-    descEl.innerHTML='<div class="ct-d-label">'+T('descLabel')+'</div><div class="ct-d-text" style="color:var(--muted)">'+T('apiFailed')+'</div>';
+    _ctDetailApi={problem:pd.p,solution:pd.s,link:pd.u};
+    return;
   }
+  var ceUrl='https://catalystexplorer.com/proposals?search='+encodeURIComponent(p.label);
+  descEl.innerHTML='<div class="ct-d-label">'+T('descLabel')+'</div>'
+    +'<div class="ct-d-text" style="color:var(--muted);line-height:2">'+'<a href="'+ceUrl+'" target="_blank" style="color:var(--ref-link);text-decoration:underline;font-size:11px">→ Catalyst Explorer で検索</a>'+'</div>';
 }
 
 /* ================================================================
@@ -1831,7 +1977,7 @@ var PROPOSER_STATS=(function(){
 /* ================================================================
    STATE
    ================================================================ */
-var vis=new Set();  // expanded node IDs
+var vis=new Set(['root']);  // expanded node IDs — start with L1 open
 var filterSec=null; // sector filter
 var filterBy=null;  // proposer filter
 var viewMode='sector'; // 'sector' or 'proposer'
@@ -2217,6 +2363,10 @@ function render(){
 function buildShell(){
   var root=document.getElementById('root');
   root.innerHTML='';
+  var disc=document.getElementById('disc-bar');
+  if(disc)disc.textContent=_lang==='ja'
+    ?'※ 本サイトに掲載されたデータは Catalyst Explorer および projectcatalyst.io の公開情報に基づく事実の記録であり、独自の評価・推奨・主観的判断は一切含みません。研究・実験目的でのみ提供されており、投資助言・金融商品の勧誘を目的としたものではありません。本サイトは非公式の個人プロジェクトであり、いかなる団体とも提携・関連はなく、正確性・完全性は保証されません。'
+    :'* All data presented on this site is based on publicly available records from Catalyst Explorer and projectcatalyst.io, and contains no independent evaluations, endorsements, or subjective opinions. Provided solely for research and experimental purposes; this is not investment advice and does not constitute a solicitation of financial products. This is an unofficial personal community project with no affiliation, partnership, or endorsement by IOG, Cardano Foundation, EMURGO, or any other entity. No guarantee is made regarding accuracy, completeness, or timeliness. Use at your own risk.';
 
   /* sidebar */
   var sb=document.createElement('div');
@@ -2227,6 +2377,9 @@ function buildShell(){
   if(oldBar)oldBar.remove();
   var bar=document.createElement('div');
   bar.className='view-bar';bar.id='view-bar';
+  /* Row 1: main nav */
+  var mainRow=document.createElement('div');
+  mainRow.className='view-bar-main';
   var modes=[
     {key:'sector',ja:'業界別',en:'Sector'},
     {key:'proposer',ja:'人物別',en:'People'},
@@ -2238,35 +2391,12 @@ function buildShell(){
       var btn=document.createElement('button');
       btn.className='view-bar-btn'+(viewMode===m.key?' active':'');
       btn.textContent=_lang==='ja'?m.ja:m.en;
-      btn.onclick=function(){viewMode=m.key;filterSec=null;filterBy=null;vis.clear();buildShell();
+      btn.onclick=function(){viewMode=m.key;filterSec=null;filterBy=null;vis.clear();vis.add('root');buildShell();
         if(m.key==='network')renderNetwork();else if(m.key==='timeline')renderTimeline();else{render();centerView();}};
-      bar.appendChild(btn);
-      /* sort buttons right next to People button */
-      if(m.key==='proposer'&&viewMode==='proposer'){
-        var sortModes=[
-          {key:'',ja:'標準',en:'Def'},
-          {key:'count',ja:'数順',en:'#'},
-          {key:'solo',ja:'単独',en:'Solo'},
-          {key:'co',ja:'共同',en:'Co'},
-          {key:'named',ja:'名義',en:'Named'},
-          {key:'total',ja:'関連',en:'Total'}
-        ];
-        var sortGrp=document.createElement('div');
-        sortGrp.className='sort-group';
-        for(var si=0;si<sortModes.length;si++){
-          (function(sm){
-            var sBtn=document.createElement('button');
-            sBtn.className='sort-btn'+(sortMode===sm.key?' active':'');
-            sBtn.textContent=_lang==='ja'?sm.ja:sm.en;
-            sBtn.onclick=function(e){e.stopPropagation();sortMode=sm.key;buildShell();render();};
-            sortGrp.appendChild(sBtn);
-          })(sortModes[si]);
-        }
-        bar.appendChild(sortGrp);
-      }
+      mainRow.appendChild(btn);
     })(modes[mi]);
   }
-  var sep=document.createElement('div');sep.className='view-bar-sep';bar.appendChild(sep);
+  var sep=document.createElement('div');sep.className='view-bar-sep';mainRow.appendChild(sep);
   var toggle=document.createElement('div');
   toggle.className='lang-toggle';
   var pill=document.createElement('div');
@@ -2279,14 +2409,102 @@ function buildShell(){
   lblEn.textContent='EN';
   toggle.appendChild(pill);toggle.appendChild(lblJa);toggle.appendChild(lblEn);
   toggle.onclick=function(){_lang=_lang==='ja'?'en':'ja';buildShell();if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else render();};
-  bar.appendChild(toggle);
+  mainRow.appendChild(toggle);
+  var nightBtn=document.createElement('button');
+  nightBtn.className='view-bar-btn';
+  nightBtn.style.cssText='font-size:13px;padding:4px 8px;min-width:28px';
+  nightBtn.textContent=NIGHT?'☀':'☾';
+  nightBtn.title=NIGHT?'Light mode':'Dark mode';
+  nightBtn.onclick=function(){
+    NIGHT=!NIGHT;
+    if(NIGHT)document.documentElement.classList.add('night');
+    else document.documentElement.classList.remove('night');
+    buildShell();
+    if(viewMode==='network')renderNetwork();
+    else if(viewMode==='timeline')renderTimeline();
+    else render();
+  };
+  mainRow.appendChild(nightBtn);
+  /* zoom controls */
+  var sep2=document.createElement('div');sep2.className='view-bar-sep';mainRow.appendChild(sep2);
+  var zoomCtrl=document.createElement('div');zoomCtrl.className='zoom-ctrl';
+  var zoomOut=document.createElement('button');zoomOut.className='zoom-btn';zoomOut.textContent='−';zoomOut.title='Zoom out';
+  var zoomSlider=document.createElement('input');zoomSlider.type='range';zoomSlider.className='zoom-range';
+  zoomSlider.min='20';zoomSlider.max='300';zoomSlider.value=String(Math.round(zoom*100));
+  var zoomIn=document.createElement('button');zoomIn.className='zoom-btn';zoomIn.textContent='+';zoomIn.title='Zoom in';
+  var zoomNote=document.createElement('span');zoomNote.className='zoom-note';zoomNote.textContent='※wheel';
+  function syncSlider(){
+    var pct;
+    if(viewMode==='network'&&window._nwVB){pct=Math.round(1200/window._nwVB.w*100);}
+    else{pct=Math.round(zoom*100);}
+    zoomSlider.value=String(pct);
+    zoomSlider.title=pct+'%';
+  }
+  window._syncZoomSlider=syncSlider;
+  function applyZoom(val){
+    if(viewMode==='network'&&window._nwVB&&window._nwApplyVB){
+      var ratio=100/val;
+      var cx=window._nwVB.x+window._nwVB.w/2,cy=window._nwVB.y+window._nwVB.h/2;
+      window._nwVB.w=1200*ratio;window._nwVB.h=800*ratio;
+      window._nwVB.x=cx-window._nwVB.w/2;window._nwVB.y=cy-window._nwVB.h/2;
+      window._nwApplyVB();
+    }else{
+      zoom=val/100;setTfm();
+    }
+    syncSlider();
+  }
+  zoomOut.onclick=function(e){e.stopPropagation();var cur=parseInt(zoomSlider.value);applyZoom(Math.max(20,cur-10));};
+  zoomIn.onclick=function(e){e.stopPropagation();var cur=parseInt(zoomSlider.value);applyZoom(Math.min(300,cur+10));};
+  zoomSlider.oninput=function(){applyZoom(parseInt(this.value));};
+  zoomCtrl.appendChild(zoomOut);zoomCtrl.appendChild(zoomSlider);zoomCtrl.appendChild(zoomIn);zoomCtrl.appendChild(zoomNote);
+  mainRow.appendChild(zoomCtrl);
+  bar.appendChild(mainRow);
+  /* Row 2: sort options (only in proposer mode) */
+  if(viewMode==='proposer'){
+    var sortRow=document.createElement('div');
+    sortRow.className='view-bar-sort';
+    var sortLabel=document.createElement('span');
+    sortLabel.className='view-bar-sort-label';
+    sortLabel.textContent=_lang==='ja'?'並び替え':'Sort';
+    sortRow.appendChild(sortLabel);
+    var sortModes=[
+      {key:'',ja:'標準',en:'Def'},
+      {key:'count',ja:'数順',en:'#'},
+      {key:'solo',ja:'単独',en:'Solo'},
+      {key:'co',ja:'共同',en:'Co'},
+      {key:'named',ja:'名義',en:'Named'},
+      {key:'total',ja:'関連',en:'Total'}
+    ];
+    for(var si=0;si<sortModes.length;si++){
+      (function(sm){
+        var sBtn=document.createElement('button');
+        sBtn.className='sort-btn'+(sortMode===sm.key?' active':'');
+        sBtn.textContent=_lang==='ja'?sm.ja:sm.en;
+        sBtn.onclick=function(e){e.stopPropagation();sortMode=sm.key;buildShell();render();};
+        sortRow.appendChild(sBtn);
+      })(sortModes[si]);
+    }
+    bar.appendChild(sortRow);
+  }
+  /* Legend strip — right side */
+  var legStrip=document.createElement('div');legStrip.className='legend-strip';
+  legStrip.innerHTML=_lang==='ja'
+    ?'<span><i style="background:var(--st-ok)"></i>完了</span>'
+    +'<span><i style="background:var(--st-wip)"></i>進行中</span>'
+    +'<span><i style="background:var(--st-dnf)"></i>中止</span>'
+    :'<span><i style="background:var(--st-ok)"></i>Done</span>'
+    +'<span><i style="background:var(--st-wip)"></i>Active</span>'
+    +'<span><i style="background:var(--st-dnf)"></i>Stopped</span>';
   document.body.appendChild(bar);
+
+  /* Legend strip — above card list */
+  sb.appendChild(legStrip);
 
   /* ALL card */
   var allCard=document.createElement('div');
   allCard.className='s-card s-all'+(filterSec===null&&filterBy===null?' active':'');
   allCard.innerHTML='<div class="s-name">ALL</div><div class="s-amt">'+TOTAL_FUNDED+'</div><div class="s-cnt">PROPOSALS · '+TOTAL_COMPLETED+' COMPLETE</div>';
-  allCard.onclick=function(){filterSec=null;filterBy=null;toggleExpandAll();buildSidebar();updateMeta()};
+  allCard.onclick=function(){filterSec=null;filterBy=null;toggleExpandAll();centerView();buildSidebar();updateMeta()};
   sb.appendChild(allCard);
 
   if(viewMode==='sector'){
@@ -2304,7 +2522,8 @@ function buildShell(){
         card.onclick=function(){
           filterSec=(filterSec===ind.id?null:ind.id);
           filterBy=null;vis.clear();
-          render();buildSidebar();updateMeta();
+          if(filterSec){vis.add('root');vis.add(filterSec);}
+          render();centerView();buildSidebar();updateMeta();
         };
         sb.appendChild(card);
       })(INDUSTRIES[i]);
@@ -2407,14 +2626,14 @@ function buildShell(){
     +'</div><div class="meta"></div>';
   var srcDiv=document.createElement('div');
   srcDiv.className='hdr-src';
-  srcDiv.style.cssText='position:fixed;bottom:8px;right:16px;z-index:49;max-width:60vw;display:flex;flex-direction:column;align-items:flex-end;gap:4px';
+  srcDiv.style.cssText='position:fixed;bottom:8px;left:190px;right:16px;z-index:49;display:flex;align-items:center;gap:12px;justify-content:flex-end';
   var _refLinks=[
     {url:'https://catalystexplorer.com',title:'Catalyst Explorer',domain:'catalystexplorer.com',label:'Explorer'},
     {url:'https://projectcatalyst.io',title:'Project Catalyst',domain:'projectcatalyst.io',label:'Catalyst'},
-    {url:'https://rido.tech',title:'RIDO',domain:'rido.tech',label:'RIDO'},
+    {url:'https://www.lidonation.com/en/catalyst-explorer',title:'LIDO Nation',domain:'lidonation.com',label:'LIDO'},
     {url:'https://projectcatalyst.io/global-map',title:'Catalyst Map',domain:'projectcatalyst.io',label:'Map'}
   ];
-  var _refLabel='font-family:JetBrains Mono,monospace;font-size:7px;letter-spacing:0.06em;color:rgba(255,255,255,0.25);text-transform:uppercase';
+  var _refLabel='font-family:JetBrains Mono,monospace;font-size:8px;letter-spacing:0.06em;color:var(--ref-text);text-transform:uppercase';
   var refHtml='<div class="ref-links">'
     +'<span style="'+_refLabel+'">'+(_lang==='ja'?'参考':'Ref')+'</span>';
   for(var ri=0;ri<_refLinks.length;ri++){
@@ -2423,13 +2642,13 @@ function buildShell(){
       +'<img src="https://www.google.com/s2/favicons?domain='+r.domain+'&sz=32" alt="'+r.title+'">'
       +r.label+'</a>';
   }
-  refHtml+='<span style="width:1px;height:12px;background:rgba(255,255,255,0.1);margin:0 3px"></span>'
+  refHtml+='<span style="width:1px;height:12px;background:var(--bar-sep);margin:0 3px"></span>'
     +'<span style="'+_refLabel+'">'+(_lang==='ja'?'作成者':'By')+'</span>'
     +'<a href="https://x.com/Hardfork_OT" target="_blank" title="CORN🌽 @Hardfork_OT">'
     +'<img src="https://unavatar.io/x/Hardfork_OT" alt="CORN" style="border-radius:50%">'
     +'CORN</a>'
     +'</div>';
-  srcDiv.innerHTML=refHtml+'<span style="pointer-events:none">'+srcText+'</span>';
+  srcDiv.innerHTML=refHtml+'<span style="pointer-events:none;opacity:0.5;font-size:9px;white-space:normal;min-width:0;flex-shrink:1">'+srcText+'</span>';
   stage.appendChild(srcDiv);
   stage.appendChild(hdr);
 
@@ -2491,6 +2710,24 @@ function buildShell(){
   stage.addEventListener('pointermove',ptrMove);
   stage.addEventListener('pointerup',ptrUp);
   stage.addEventListener('wheel',onWheel,{passive:false});
+
+  /* mobile hamburger toggle */
+  var mobBtn=document.getElementById('mob-toggle');
+  var mobBg=document.getElementById('mob-backdrop');
+  function closeMobSidebar(){
+    sb.classList.remove('mob-open');if(mobBg)mobBg.classList.remove('show');if(mobBtn)mobBtn.textContent='☰';
+  }
+  if(mobBtn){
+    mobBtn.onclick=function(){
+      var open=sb.classList.toggle('mob-open');
+      mobBtn.textContent=open?'✕':'☰';
+      if(mobBg){open?mobBg.classList.add('show'):mobBg.classList.remove('show');}
+    };
+    if(mobBg)mobBg.onclick=closeMobSidebar;
+    sb.addEventListener('click',function(e){
+      if(e.target.closest('.s-card')&&window.innerWidth<=768)closeMobSidebar();
+    });
+  }
 }
 
 function buildSidebar(){
@@ -2583,12 +2820,16 @@ function onWheel(e){
   var d=e.deltaY>0?-0.06:0.06;
   zoom=Math.max(0.2,Math.min(3,zoom+d));
   setTfm();
+  if(window._syncZoomSlider)window._syncZoomSlider();
 }
 function setTfm(){
   var layer=document.querySelector('.layer');
   var svg=document.querySelector('.lines');
-  if(layer)layer.style.transform='translate('+panX+'px,'+panY+'px) scale('+zoom+')';
-  if(svg)svg.style.transform='translate('+panX+'px,'+panY+'px) scale('+zoom+')';
+  var tlLayer=document.querySelector('.tl-layer');
+  var tfm='translate('+panX+'px,'+panY+'px) scale('+zoom+')';
+  if(layer)layer.style.transform=tfm;
+  if(svg)svg.style.transform=tfm;
+  if(tlLayer)tlLayer.style.transform=tfm;
 }
 
 /* ================================================================
@@ -2598,6 +2839,7 @@ function renderTimeline(){
   var wrap=document.getElementById('tl-wrap');
   if(!wrap)return;
   wrap.innerHTML='';
+  panX=0;panY=0;zoom=1;
 
   /* collect all funds used */
   var fundSet={};
@@ -2644,7 +2886,7 @@ function renderTimeline(){
   /* grid */
   var grid=document.createElement('div');
   grid.className='tl-grid';
-  grid.style.gridTemplateColumns='140px repeat('+funds.length+',minmax(100px,1fr))';
+  grid.style.gridTemplateColumns='140px repeat('+funds.length+',140px)';
 
   /* header row */
   var hdrName=document.createElement('div');
@@ -2701,7 +2943,33 @@ function renderTimeline(){
     }
   }
 
-  wrap.appendChild(grid);
+  /* wrap grid in scroll container for sticky headers */
+  var tlScroll=document.createElement('div');
+  tlScroll.className='tl-scroll';
+  tlScroll.appendChild(grid);
+
+  var tlLayer=document.createElement('div');
+  tlLayer.className='tl-layer';
+  tlLayer.appendChild(tlScroll);
+  wrap.appendChild(tlLayer);
+
+  /* wheel inside scroll area = native scroll (not zoom) */
+  tlScroll.addEventListener('wheel',function(e){e.stopPropagation();},{passive:true});
+
+  /* drag = transform-based pan (move entire diagram) */
+  wrap.addEventListener('wheel',onWheel,{passive:false});
+  wrap.addEventListener('pointerdown',function(e){
+    if(e.target.closest('.tl-pip'))return;
+    dragging=true;dragX=e.clientX;dragY=e.clientY;
+    wrap.classList.add('grabbing');
+    e.target.setPointerCapture&&e.target.setPointerCapture(e.pointerId);
+  });
+  wrap.addEventListener('pointermove',function(e){
+    if(!dragging)return;
+    panX+=e.clientX-dragX;panY+=e.clientY-dragY;
+    dragX=e.clientX;dragY=e.clientY;setTfm();
+  });
+  wrap.addEventListener('pointerup',function(){dragging=false;wrap.classList.remove('grabbing');});
 }
 
 /* ================================================================
@@ -3119,6 +3387,39 @@ function renderNetwork(){
     }
   };
   stage.appendChild(bbar);
+
+  /* ---- pan / zoom for network ---- */
+  var nwVB={x:0,y:0,w:VW,h:VH};
+  window._nwVB=nwVB;
+  var nwDrag=false,nwDragX=0,nwDragY=0;
+  function nwApplyVB(){svg.setAttribute('viewBox',nwVB.x+' '+nwVB.y+' '+nwVB.w+' '+nwVB.h);}
+  window._nwApplyVB=nwApplyVB;
+  stage.addEventListener('wheel',function(e){
+    e.preventDefault();
+    var factor=e.deltaY>0?1.08:0.93;
+    var rect=svgWrap.getBoundingClientRect();
+    var mx=(e.clientX-rect.left)/rect.width;
+    var my=(e.clientY-rect.top)/rect.height;
+    var nw=nwVB.w*factor,nh=nwVB.h*factor;
+    nw=Math.max(200,Math.min(VW*4,nw));nh=Math.max(150,Math.min(VH*4,nh));
+    nwVB.x+=(nwVB.w-nw)*mx;nwVB.y+=(nwVB.h-nh)*my;
+    nwVB.w=nw;nwVB.h=nh;nwApplyVB();
+    if(window._syncZoomSlider)window._syncZoomSlider();
+  },{passive:false});
+  stage.addEventListener('pointerdown',function(e){
+    if(e.target.closest('.nw-node-g')||e.target.closest('.nw-popup')||e.target.closest('.nw-legend')||e.target.closest('.nw-bottombar')||e.target.closest('.nw-detail'))return;
+    nwDrag=true;nwDragX=e.clientX;nwDragY=e.clientY;
+    stage.style.cursor='grabbing';
+    e.target.setPointerCapture&&e.target.setPointerCapture(e.pointerId);
+  });
+  stage.addEventListener('pointermove',function(e){
+    if(!nwDrag)return;
+    var rect=svgWrap.getBoundingClientRect();
+    var sx=nwVB.w/rect.width,sy=nwVB.h/rect.height;
+    nwVB.x-=(e.clientX-nwDragX)*sx;nwVB.y-=(e.clientY-nwDragY)*sy;
+    nwDragX=e.clientX;nwDragY=e.clientY;nwApplyVB();
+  });
+  stage.addEventListener('pointerup',function(){nwDrag=false;stage.style.cursor='';});
 
   wrap.appendChild(stage);
 
