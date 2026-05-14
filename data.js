@@ -366,7 +366,23 @@ var FUND_MAP={
   'gv-6':10,'gv-7':11,'gv-8':13,
   'co-22':14,'co-23':9,'ed-11':12
 };
-var FUND_PRICES={2:0.17,5:1.50,6:2.10,7:1.20,8:0.60,9:0.43,10:0.27,11:0.55,12:0.42,13:0.68,14:0.85};
+/* Fund結果発表/配布時期のUnixタイムスタンプ (各Fundの代表日) */
+var FUND_DATES={
+  2:  '03-03-2021',  /* 2021-03 */
+  5:  '01-09-2021',  /* 2021-09 */
+  6:  '01-12-2021',  /* 2021-12 */
+  7:  '01-03-2022',  /* 2022-03 */
+  8:  '01-06-2022',  /* 2022-06 */
+  9:  '15-09-2022',  /* 2022-09 */
+  10: '15-01-2023',  /* 2023-01 */
+  11: '15-07-2023',  /* 2023-07 */
+  12: '15-01-2024',  /* 2024-01 */
+  13: '15-07-2024',  /* 2024-07 */
+  14: '15-01-2025',  /* 2025-01 */
+  15: '15-04-2025'   /* 2025-04 */
+};
+/* フォールバック値 (API失敗時) */
+var FUND_PRICES={2:0.17,5:1.50,6:2.10,7:1.20,8:0.60,9:0.43,10:0.27,11:0.55,12:0.42,13:0.68,14:0.85,15:0.75};
 
 var CLASSIFY={
   'dt-2':'co','dt-3':'co','dt-4':'co','dt-5':'co','dt-6':'co','dt-7':'co',
@@ -516,17 +532,55 @@ function recalcTotals(){
   DATA.totalFunded=tf;DATA.totalCompleted=tc;DATA.totalProgress=tp;DATA.totalDnf=td;DATA.totalUsdK=tu;
 }
 
-(function fetchLivePrices(){
-  var url='https://api.coingecko.com/api/v3/simple/price?ids=cardano&vs_currencies=usd,jpy';
-  fetch(url).then(function(r){return r.json()}).then(function(d){
-    if(d&&d.cardano){
-      if(d.cardano.usd){ADA_USD=d.cardano.usd;DATA.ADA_USD=ADA_USD;}
-      if(d.cardano.jpy&&d.cardano.usd){USD_JPY=d.cardano.jpy/d.cardano.usd;DATA.USD_JPY=USD_JPY;}
-      recalcTotals();
-      console.log('[CJ] Live prices: ADA=$'+ADA_USD+' USD/JPY='+USD_JPY.toFixed(1));
-      if(window._cjPriceCallback) window._cjPriceCallback();
-    }
-  }).catch(function(e){console.log('[CJ] Price fetch failed, using defaults',e)});
-})();
+/* 1) 現在のADA価格 + USD/JPYを取得 */
+function fetchCurrentPrice(){
+  return fetch('https://api.coingecko.com/api/v3/simple/price?ids=cardano&vs_currencies=usd,jpy')
+    .then(function(r){return r.json()}).then(function(d){
+      if(d&&d.cardano){
+        if(d.cardano.usd){ADA_USD=d.cardano.usd;DATA.ADA_USD=ADA_USD;}
+        if(d.cardano.jpy&&d.cardano.usd){USD_JPY=d.cardano.jpy/d.cardano.usd;DATA.USD_JPY=USD_JPY;}
+        console.log('[CJ] Current ADA=$'+ADA_USD+' USD/JPY='+USD_JPY.toFixed(1));
+      }
+    });
+}
+
+/* 2) 各Fundの提案時点ADA価格を取得 (CoinGecko /coins/cardano/history) */
+function fetchFundPrices(){
+  var funds=Object.keys(FUND_DATES);
+  var done=0,total=funds.length;
+  funds.forEach(function(f,idx){
+    /* レート制限回避: 500ms間隔でリクエスト */
+    setTimeout(function(){
+      var date=FUND_DATES[f];
+      fetch('https://api.coingecko.com/api/v3/coins/cardano/history?date='+date+'&localization=false')
+        .then(function(r){return r.json()}).then(function(d){
+          if(d&&d.market_data&&d.market_data.current_price){
+            var p=d.market_data.current_price.usd;
+            if(p){
+              FUND_PRICES[f]=p;
+              DATA.FUND_PRICES=FUND_PRICES;
+              console.log('[CJ] F'+f+' ('+date+'): $'+p.toFixed(4));
+            }
+          }
+        }).catch(function(){/* use fallback */})
+        .finally(function(){
+          done++;
+          if(done>=total){
+            recalcTotals();
+            console.log('[CJ] All fund prices updated, recalculated totals');
+            if(window._cjPriceCallback) window._cjPriceCallback();
+          }
+        });
+    }, idx*600);
+  });
+}
+
+/* 起動: 現在価格→Fund価格の順 */
+fetchCurrentPrice()
+  .then(function(){fetchFundPrices();})
+  .catch(function(e){
+    console.log('[CJ] Price fetch failed, using defaults',e);
+    fetchFundPrices();
+  });
 
 })();
