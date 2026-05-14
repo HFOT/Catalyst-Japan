@@ -825,6 +825,30 @@ html.night .cls-bridge{background:hsl(30 35% 22%);color:hsl(30 55% 75%);border:n
   padding:2px 7px;border-radius:999px;background:var(--paper);border:1px solid var(--border);
 }
 
+/* ── Detail sub-views ── */
+.nw-back-btn{
+  display:flex;align-items:center;gap:4px;padding:10px 16px;border:none;background:var(--bg);
+  cursor:pointer;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:10px;
+  letter-spacing:0.04em;border-bottom:1px solid var(--border);transition:color .2s,background .15s;width:100%;
+  position:sticky;top:0;z-index:2;
+}
+.nw-back-btn:hover{color:var(--ink);background:var(--dim)}
+.nw-sub-sec-hdr{
+  display:flex;align-items:center;gap:8px;padding:12px 16px 6px;
+  font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;
+  color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);
+}
+.nw-sub-sec-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.nw-sub-sec-cnt{margin-left:auto;font-size:9px;opacity:0.7}
+.nw-sub-prop{
+  padding:8px 16px;border-bottom:1px solid color-mix(in srgb,var(--border) 50%,transparent);
+  cursor:pointer;transition:background .15s;
+}
+.nw-sub-prop:hover{background:var(--dim)}
+.nw-sub-prop:last-child{border-bottom:none}
+.nw-sub-prop-title{font-size:11px;color:var(--ink);font-weight:500;margin-bottom:3px}
+.nw-sub-prop-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted)}
+
 /* ── Popup ── */
 .nw-popup{
   position:absolute;pointer-events:auto;z-index:10;
@@ -1012,6 +1036,8 @@ var _i18n={
   categories:{ja:'カテゴリ',en:'Categories'},completionReport:{ja:'完了報告',en:'Completion Report'},
   openPeople:{ja:'📋 アカウントで開く',en:'📋 Open in Accounts'},
   openRelation:{ja:'🔗 関連で開く',en:'🔗 Open Relations'},
+  backToGraph:{ja:'← 関係図に戻る',en:'← Back to Graph'},
+  bySector:{ja:'セクター別',en:'By Sector'},
   sector:{ja:'業界',en:'Sector'},peopleTab:{ja:'アカウント別',en:'Accounts'},timeline:{ja:'時系列',en:'Timeline'},
   avg:{ja:'平均',en:'Avg'},max:{ja:'最大',en:'Max'},funded:{ja:'PROPOSALS FUNDED',en:'PROPOSALS FUNDED'},
   propS:{ja:'提案',en:'Proposals'},nameLabel:{ja:'名',en:''},
@@ -3450,6 +3476,7 @@ function renderNetwork(){
     var d=document.getElementById('nw-detail');
     if(!d)return;
     d.innerHTML='';
+    d.scrollTop=0;
     if(!node){
       d.innerHTML='<div class="nw-detail-empty"><div class="glyph">⦿</div>'+T('selectNodeHint')+'</div>';
       return;
@@ -3521,15 +3548,9 @@ function renderNetwork(){
       return b;
     }
     var relBtn=makeNwBtn(T('openRelation'),true);
-    relBtn.onclick=function(){
-      filterBy=node.name;vis.clear();vis.add('root');
-      buildShell();render();centerView();
-    };
+    relBtn.onclick=function(){ renderSubView(node,'relation'); };
     var accBtn=makeNwBtn(T('openPeople'),false);
-    accBtn.onclick=function(){
-      filterBy=node.name;viewMode='proposer';vis.clear();vis.add('root');
-      buildShell();render();centerView();
-    };
+    accBtn.onclick=function(){ renderSubView(node,'account'); };
     btnWrap.appendChild(relBtn);
     btnWrap.appendChild(accBtn);
     head.appendChild(btnWrap);
@@ -3615,6 +3636,80 @@ function renderNetwork(){
         csec.appendChild(cr);
       });
       d.appendChild(csec);
+    }
+  }
+
+  function renderSubView(node,mode){
+    var d=document.getElementById('nw-detail');
+    if(!d)return;
+    d.innerHTML='';
+    d.scrollTop=0;
+
+    /* back button */
+    var back=document.createElement('button');
+    back.className='nw-back-btn';
+    back.textContent=T('backToGraph');
+    back.onclick=function(){ renderDetail(node); };
+    d.appendChild(back);
+
+    /* header summary */
+    var hdr=document.createElement('div');
+    hdr.style.cssText='padding:14px 16px 10px;border-bottom:1px solid var(--border)';
+    var h=node.hue;
+    hdr.innerHTML='<div style="display:flex;align-items:center;gap:10px">'
+      +'<div class="nw-detail-avatar" style="border-color:'+hsl(h)+'">'+node.name.charAt(0).toUpperCase()+'</div>'
+      +'<div><div class="nw-detail-name" style="font-size:14px">'+esc(node.name)+'</div>'
+      +'<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--muted);margin-top:2px">'
+      +node.props.length+T('propsOf')+' · '+fmtJpy(node.soloUsdK+node.coUsdK)+'</div></div></div>';
+    d.appendChild(hdr);
+
+    if(mode==='relation'){
+      /* Group by sector */
+      var secs={};
+      for(var i=0;i<node.props.length;i++){
+        var p=node.props[i];
+        var sk=p._secJa||'Other';
+        if(!secs[sk])secs[sk]={hue:p._secHue,props:[]};
+        secs[sk].props.push(p);
+      }
+      for(var sn in secs){
+        var sg=secs[sn];
+        var shdr=document.createElement('div');
+        shdr.className='nw-sub-sec-hdr';
+        shdr.innerHTML='<div class="nw-sub-sec-dot" style="background:'+hsl(sg.hue)+'"></div>'
+          +esc(sn)+'<span class="nw-sub-sec-cnt">'+sg.props.length+'</span>';
+        d.appendChild(shdr);
+        for(var j=0;j<sg.props.length;j++){
+          var pr=sg.props[j];
+          var row=document.createElement('div');
+          row.className='nw-sub-prop';
+          row.innerHTML='<div class="nw-sub-prop-title">'+esc(pLabel(pr))+'</div>'
+            +'<div class="nw-sub-prop-meta">'+stBadge(pr.st)+clsTag(pr.cls)
+            +'<span class="cat-tag fund-tag">F'+(pr.fund||'?')+'</span>'
+            +'<span>'+fmtAmt(pr.amt,pr.u)+'</span>'
+            +(pr.role&&pr.role!=='提案者'?'<span style="color:var(--accent)">'+esc(roleName(pr.role))+'</span>':'')
+            +'</div>';
+          (function(p){row.onclick=function(){openInLens(p);};})(pr);
+          d.appendChild(row);
+        }
+      }
+    } else {
+      /* Account view: flat list sorted by fund */
+      var sorted=node.props.slice().sort(function(a,b){return (b.fund||0)-(a.fund||0);});
+      for(var i=0;i<sorted.length;i++){
+        var pr=sorted[i];
+        var row=document.createElement('div');
+        row.className='nw-sub-prop';
+        row.innerHTML='<div class="nw-sub-prop-title">'+esc(pLabel(pr))+'</div>'
+          +'<div class="nw-sub-prop-meta">'+stBadge(pr.st)+clsTag(pr.cls)
+          +'<span class="cat-tag fund-tag">F'+(pr.fund||'?')+'</span>'
+          +'<span>'+fmtAmt(pr.amt,pr.u)+'</span>'
+          +'<span style="color:var(--muted)">'+esc(pr._secJa||'')+'</span>'
+          +(pr.role&&pr.role!=='提案者'?'<span style="color:var(--accent)">'+esc(roleName(pr.role))+'</span>':'')
+          +'</div>';
+        (function(p){row.onclick=function(){openInLens(p);};})(pr);
+        d.appendChild(row);
+      }
     }
   }
 
