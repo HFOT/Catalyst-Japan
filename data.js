@@ -480,7 +480,7 @@ for(i=0;i<INDUSTRIES.length;i++){
 }
 
 /* ---- Export ---- */
-window.CJ_DATA={
+var DATA={
   INDUSTRIES:INDUSTRIES,
   JA_LABELS:JA_LABELS,
   ADA_USD:ADA_USD,
@@ -495,4 +495,38 @@ window.CJ_DATA={
   sectorCount:INDUSTRIES.length,
   funds:Object.keys(fundSet).map(Number).sort(function(a,b){return a-b})
 };
+window.CJ_DATA=DATA;
+
+/* ---- Live price fetch (CoinGecko free API) ---- */
+function recalcTotals(){
+  var tf=0,tc=0,tp=0,td=0,tu=0;
+  for(var i=0;i<INDUSTRIES.length;i++){
+    var ind=INDUSTRIES[i],ok=0,wip=0,dn=0,secK=0;
+    for(var j=0;j<ind.children.length;j++){
+      var p=ind.children[j];
+      p.adaPrice=FUND_PRICES[p.fund]||ADA_USD;
+      var uK=p.u==='ada'?p.amt*p.adaPrice:p.amt;
+      if(p.st==='complete'){ok++;tc++;}
+      else if(p.st==='progress'){wip++;tp++;}
+      else{dn++;td++;}
+      tf++;tu+=uK;secK+=uK;
+    }
+    ind._ok=ok;ind._wip=wip;ind._dnf=dn;ind._total=ok+wip+dn;ind._usdK=secK;
+  }
+  DATA.totalFunded=tf;DATA.totalCompleted=tc;DATA.totalProgress=tp;DATA.totalDnf=td;DATA.totalUsdK=tu;
+}
+
+(function fetchLivePrices(){
+  var url='https://api.coingecko.com/api/v3/simple/price?ids=cardano&vs_currencies=usd,jpy';
+  fetch(url).then(function(r){return r.json()}).then(function(d){
+    if(d&&d.cardano){
+      if(d.cardano.usd){ADA_USD=d.cardano.usd;DATA.ADA_USD=ADA_USD;}
+      if(d.cardano.jpy&&d.cardano.usd){USD_JPY=d.cardano.jpy/d.cardano.usd;DATA.USD_JPY=USD_JPY;}
+      recalcTotals();
+      console.log('[CJ] Live prices: ADA=$'+ADA_USD+' USD/JPY='+USD_JPY.toFixed(1));
+      if(window._cjPriceCallback) window._cjPriceCallback();
+    }
+  }).catch(function(e){console.log('[CJ] Price fetch failed, using defaults',e)});
+})();
+
 })();

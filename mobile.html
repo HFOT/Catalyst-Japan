@@ -291,6 +291,7 @@ html.night .da-relnet-prop{background:#0c0d10}
 var D=window.CJ_DATA;
 var NIGHT=false, LANG='ja', CURRENCY='ada';
 var ADA_USD=D.ADA_USD, USD_JPY=D.USD_JPY;
+window._cjPriceCallback=function(){ADA_USD=D.ADA_USD;USD_JPY=D.USD_JPY;render();};
 
 function stColor(st){
   var n=NIGHT;

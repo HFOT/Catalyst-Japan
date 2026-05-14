@@ -1034,6 +1034,16 @@ if(NIGHT)document.documentElement.classList.add('night');
 
 /* ---- Helpers ---- */
 var ADA_USD=0.75, USD_JPY=150;
+(function(){
+  fetch('https://api.coingecko.com/api/v3/simple/price?ids=cardano&vs_currencies=usd,jpy')
+  .then(function(r){return r.json()}).then(function(d){
+    if(d&&d.cardano){
+      if(d.cardano.usd) ADA_USD=d.cardano.usd;
+      if(d.cardano.jpy&&d.cardano.usd) USD_JPY=d.cardano.jpy/d.cardano.usd;
+      console.log('[CJ] Live prices: ADA=$'+ADA_USD+' USD/JPY='+USD_JPY.toFixed(1));
+    }
+  }).catch(function(e){console.log('[CJ] Price fetch failed',e)});
+})();
 var _amtMode='ada'; /* 'auto'=follow _lang | 'jpy' | 'usd' | 'ada' */
 function esc(s){return s?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):''}
 function trunc(s,m){if(!s)return'';s=s.replace(/\s+/g,' ').trim();return s.length>m?s.slice(0,m-1)+'…':s}
