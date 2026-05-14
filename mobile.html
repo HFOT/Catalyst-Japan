@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1a1715">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;width:100%;overflow:hidden;font-family:'Noto Sans JP','Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
@@ -23,6 +23,7 @@ a{color:inherit;text-decoration:none}
   --border:rgba(26,23,21,0.10);--border-h:rgba(26,23,21,0.18);--dim:rgba(26,23,21,0.04);
   --st-ok:#3d8b6e;--st-wip:#c49b2a;--st-dnf:#b85450;
   --serif:'Fraunces',Georgia,serif;
+  --num:'Inter','Helvetica Neue',sans-serif;
   --mono:'JetBrains Mono','SF Mono',ui-monospace,monospace;
   --jp:'Noto Sans JP',system-ui,sans-serif;
 }
@@ -44,7 +45,7 @@ body{background:var(--bg);color:var(--ink)}
 .da-title-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
 .da-title{font-family:var(--serif);font-size:30px;font-weight:500;letter-spacing:-0.01em;line-height:1;font-variation-settings:"opsz" 96;white-space:nowrap}
 .da-title em{font-style:italic;font-weight:400;color:var(--muted);margin-left:4px}
-.da-h-amt{font-family:var(--serif);font-size:20px;font-weight:500;letter-spacing:-0.015em;line-height:1;font-variation-settings:"opsz" 96;font-feature-settings:"tnum"}
+.da-h-amt{font-family:var(--num);font-size:20px;font-weight:600;letter-spacing:-0.02em;line-height:1;font-feature-settings:"tnum"}
 
 /* Search */
 .da-search{margin:12px 20px 0;display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--paper);border-radius:10px;border:1px solid var(--border)}
@@ -184,7 +185,7 @@ html.night .cj-ask-btn{background:#e8e6e1;color:#0c0d10}
 html.night .da-map-root{background:#e8e6e1;color:#0c0d10}
 .da-mr-name{font-family:var(--serif);font-size:15px;font-weight:500;font-variation-settings:"opsz" 96;letter-spacing:-0.005em;line-height:1.1}
 .da-mr-meta{display:flex;align-items:baseline;gap:6px;font-family:var(--mono);font-size:10px;letter-spacing:0.04em;opacity:0.85}
-.da-mr-num{font-weight:600}
+.da-mr-num{font-family:var(--num);font-weight:600;font-feature-settings:"tnum"}
 .da-mr-meta em{opacity:0.4;font-style:normal}
 .da-mr-leg{display:flex;gap:7px;font-family:var(--mono);font-size:8px;letter-spacing:0.04em;opacity:0.85}
 .da-mr-leg span{display:inline-flex;align-items:center;gap:3px}
@@ -201,7 +202,7 @@ html.night .da-map-node{background:#16171a}
 .da-mn-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .da-mn-row-sub{margin-top:auto;opacity:0.7}
 .da-mn-name{font-family:var(--jp);font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
-.da-mn-amt{font-family:var(--serif);font-size:15px;font-weight:500;font-variation-settings:"opsz" 96;line-height:1;flex-shrink:0}
+.da-mn-amt{font-family:var(--num);font-size:15px;font-weight:600;letter-spacing:-0.01em;line-height:1;flex-shrink:0;font-feature-settings:"tnum"}
 .da-mn-count{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.04em}
 .da-mn-chev{font-family:var(--mono);font-size:14px;color:var(--muted);line-height:1}
 .da-mn-bar{display:flex;height:2px;border-radius:1px;background:var(--dim);overflow:hidden;margin-top:5px}
@@ -218,7 +219,7 @@ html.night .da-map-prop{background:#16171a}
 .da-mp-row{display:flex;align-items:baseline;justify-content:space-between;gap:6px}
 .da-mp-row-sub{opacity:0.75}
 .da-mp-title{font-family:var(--jp);font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;line-height:1.2}
-.da-mp-amt{font-family:var(--serif);font-size:12px;font-weight:500;font-variation-settings:"opsz" 96;line-height:1;flex-shrink:0}
+.da-mp-amt{font-family:var(--num);font-size:12px;font-weight:500;letter-spacing:-0.01em;line-height:1;flex-shrink:0;font-feature-settings:"tnum"}
 .da-mp-by{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.04em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
 .da-mp-fund{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.04em;padding:1px 4px;background:var(--dim);border-radius:3px;flex-shrink:0}
 
