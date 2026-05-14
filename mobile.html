@@ -451,7 +451,7 @@ function renderSearchResults(scroll,q){
 function renderSectors(scroll){
   var sectors=[].concat(D.INDUSTRIES).sort(function(a,b){return b._usdK-a._usdK});
   var W=Math.min(window.innerWidth,440);
-  var rootW=196,rootH=64,rootX=18,rootY=24;
+  var rootW=196,rootH=64,rootX=18,rootY=10;
   var spineX=rootX+26,cardX=spineX+30;
   var cardW=W-cardX-12,cardH=60,gap=12;
   var firstCardY=rootY+rootH+22;
@@ -662,7 +662,7 @@ function renderProposers(scroll){
 /* ---- Shared tree map renderer ---- */
 function renderTreeMap(scroll,items,prefix,labelFn,hueFn,rootSub,subFn,amtFn,optCardH){
   var W=Math.min(window.innerWidth,440);
-  var rootW=196,rootH=64,rootX=18,rootY=24;
+  var rootW=196,rootH=64,rootX=18,rootY=10;
   var spineX=rootX+26,cardX=spineX+30;
   var cardW=W-cardX-12,cardH=optCardH||60,gap=12;
   var firstCardY=rootY+rootH+22;
@@ -835,7 +835,7 @@ function renderTimeline(scroll){
 
   /* Geometry — taller cards for fund strip */
   var W=Math.min(window.innerWidth,440);
-  var rootW=196,rootH=64,rootX=18,rootY=24;
+  var rootW=196,rootH=64,rootX=18,rootY=10;
   var spineX=rootX+26,cardX=spineX+30,cardW=W-cardX-12,cardH=76,gap=12;
   var firstCardY=rootY+rootH+22;
   var pIndent=22,pX=cardX+pIndent,pW=cardW-pIndent;
