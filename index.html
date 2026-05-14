@@ -378,6 +378,17 @@ html.night .sort-hl{color:#fff!important;font-weight:500;text-shadow:none}
 }
 .lang-toggle-pill.en{left:3px}
 .lang-toggle-pill.jp{left:calc(50% - 3px)}
+.price-mode-toggle{
+  display:flex;align-items:center;
+  background:var(--bar-pill);border-radius:8px;padding:3px;cursor:pointer;
+  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:0.04em;line-height:1;
+  border:1px solid var(--bar-border);margin-left:4px;
+}
+.pm-toggle-label{
+  padding:4px 7px;color:var(--bar-text);transition:color .2s;user-select:none;
+  cursor:pointer;white-space:nowrap;border-radius:5px;
+}
+.pm-toggle-label.active{color:var(--bar-text-a);font-weight:700;background:rgba(255,255,255,0.1)}
 
 /* Nodes */
 .node{
@@ -1124,7 +1135,8 @@ var _i18n={
   prosAndCons:{ja:'賛否の論点',en:'Pros & Cons'},comparison:{ja:'類似比較',en:'Compare similar'},
   lensAsk:{ja:'してください。',en:'. Please provide details.'},
   nwTooltipPeople:{ja:'アカウント別へ',en:'Go to Accounts view'},nwTooltipAll:{ja:'全ノード表示',en:'Show all nodes'},
-  members:{ja:'名',en:' members'}
+  members:{ja:'名',en:' members'},
+  'pm-submit':{ja:'提案時',en:'Proposal'},'pm-result':{ja:'採択時',en:'Result'}
 };
 function T(k){return _i18n[k]?(_i18n[k][_lang==='jp'?'ja':_lang]||_i18n[k].ja):k}
 function secName(sec){return _lang==='en'?sec.label:sec.ja}
@@ -1304,7 +1316,7 @@ function openInLens(p){
   var adaVal=p.u==='ada'?p.amt:p.amt/adaP;
   localHtml+='<div class="ct-d-section"><div class="ct-d-label">'+T('proposalInfo')+'</div><div class="ct-d-text">'
     +'<b>'+fmtDual(p.amt,p.u,adaP)+'</b><br>'
-    +T('adaPriceLabel')+': $'+adaP.toFixed(2)+' (F'+(p.fund||'?')+')'
+    +T('adaPriceLabel')+': $'+adaP.toFixed(2)+' (F'+(p.fund||'?')+' '+T('pm-'+_priceMode)+')'
     +(p.cls&&p.cls!=='main'?' · <span style="color:hsl(270 50% 65%)">'+clsLabel(p.cls)+'</span>':'')
     +'</div></div>';
 
@@ -1903,12 +1915,23 @@ var FUND_MAP={
   'co-22':14,'co-23':9,
   'ed-11':12
 };
-var FUND_PRICES={2:0.17,5:1.50,6:2.10,7:1.20,8:0.60,9:0.43,10:0.27,11:0.55,12:0.42,13:0.68,14:0.85,15:0.75};
-var FUND_DATES={
-  2:'03-03-2021',5:'01-09-2021',6:'01-12-2021',7:'01-03-2022',
-  8:'01-06-2022',9:'15-09-2022',10:'15-01-2023',11:'15-07-2023',
-  12:'15-01-2024',13:'15-07-2024',14:'15-01-2025',15:'15-04-2025'
+/* 提案提出時期 (提案者が予算を組んだ時点) */
+var FUND_SUBMIT_DATES={
+  2:'01-12-2020',5:'15-06-2021',6:'01-09-2021',7:'15-11-2021',
+  8:'01-03-2022',9:'15-06-2022',10:'01-07-2023',11:'20-11-2023',
+  12:'01-05-2024',13:'01-10-2024',14:'01-08-2025'
 };
+/* 採択結果発表時期 */
+var FUND_RESULT_DATES={
+  2:'15-01-2021',5:'09-08-2021',6:'15-11-2021',7:'10-02-2022',
+  8:'01-06-2022',9:'01-10-2022',10:'01-10-2023',11:'08-02-2024',
+  12:'16-07-2024',13:'15-01-2025',14:'10-10-2025'
+};
+/* フォールバック値 (API失敗時) */
+var FUND_SUBMIT_PRICES={2:0.17,5:1.40,6:3.10,7:2.00,8:0.85,9:0.55,10:0.29,11:0.38,12:0.45,13:0.35,14:0.75};
+var FUND_RESULT_PRICES={2:0.35,5:1.50,6:2.10,7:1.10,8:0.60,9:0.38,10:0.27,11:0.55,12:0.42,13:0.68,14:0.85};
+var FUND_PRICES={}; for(var _k in FUND_SUBMIT_PRICES) FUND_PRICES[_k]=FUND_SUBMIT_PRICES[_k];
+var _priceMode='submit'; /* 'submit' | 'result' */
 
 /* ---- 分類: メイン / 共同 / 仲介 ---- */
 var CLASSIFY={
@@ -2568,6 +2591,22 @@ function buildShell(){
   }
   curTog.insertBefore(curPill,curTog.firstChild);
   mainRow.appendChild(curTog);
+
+  /* Price mode toggle: 提案時 / 採択時 */
+  var pmTog=document.createElement('div');
+  pmTog.className='price-mode-toggle';
+  var _pmModes=['submit','result'],_pmLabels=[T('pm-submit'),T('pm-result')];
+  for(var pi=0;pi<_pmModes.length;pi++){
+    (function(mode,label){
+      var pl=document.createElement('span');
+      pl.className='pm-toggle-label'+(_priceMode===mode?' active':'');
+      pl.textContent=label;
+      pl.onclick=function(e){e.stopPropagation();setPriceMode(mode);};
+      pmTog.appendChild(pl);
+    })(_pmModes[pi],_pmLabels[pi]);
+  }
+  mainRow.appendChild(pmTog);
+
   var sep=document.createElement('div');sep.className='view-bar-sep';mainRow.appendChild(sep);
   var toggle=document.createElement('div');
   toggle.className='lang-toggle';
@@ -4153,37 +4192,45 @@ window.addEventListener('message',function(e){
 
 /* ================================================================
    LIVE PRICE API (CoinGecko)
-   現在のADA価格 + 各Fund提案時点の過去価格を取得し全額を再計算
+   現在のADA価格 + 各Fund提案時/採択時の過去価格を取得し全額を再計算
    ================================================================ */
-(function(){
-  /* 全統計を再計算 (FUND_PRICES 更新後に呼ぶ) */
-  function recalcAll(){
-    /* 1) adaPrice を再セット */
-    for(var i=0;i<INDUSTRIES.length;i++){
-      for(var j=0;j<INDUSTRIES[i].children.length;j++){
-        var p=INDUSTRIES[i].children[j];
-        p.adaPrice=FUND_PRICES[p.fund]||ADA_USD;
-      }
+/* 全統計を再計算 (FUND_PRICES 更新後に呼ぶ) */
+function recalcAll(){
+  var src=_priceMode==='result'?FUND_RESULT_PRICES:FUND_SUBMIT_PRICES;
+  for(var k in src) FUND_PRICES[k]=src[k];
+  /* 1) adaPrice を再セット */
+  for(var i=0;i<INDUSTRIES.length;i++){
+    for(var j=0;j<INDUSTRIES[i].children.length;j++){
+      var p=INDUSTRIES[i].children[j];
+      p.adaPrice=FUND_PRICES[p.fund]||ADA_USD;
     }
-    /* 2) グローバル集計やり直し */
-    TOTAL_USD_K=0;TOTAL_ADA=0;TOTAL_FUNDED=0;TOTAL_COMPLETED=0;TOTAL_PROGRESS=0;TOTAL_DNF=0;
-    for(var i2=0;i2<INDUSTRIES.length;i2++){
-      var ind=INDUSTRIES[i2],ok=0,wip=0,dnf=0,secK=0;
-      for(var j2=0;j2<ind.children.length;j2++){
-        var q=ind.children[j2];
-        var uK=q.u==='ada'?q.amt*q.adaPrice:q.amt;
-        if(q.st==='complete'){ok++;TOTAL_COMPLETED++;}
-        else if(q.st==='progress'){wip++;TOTAL_PROGRESS++;}
-        else{dnf++;TOTAL_DNF++;}
-        TOTAL_FUNDED++;TOTAL_USD_K+=uK;secK+=uK;
-        TOTAL_ADA+=q.u==='ada'?q.amt:q.amt/(q.adaPrice||ADA_USD);
-      }
-      ind._ok=ok;ind._wip=wip;ind._dnf=dnf;ind._total=ok+wip+dnf;ind._usdK=secK;
-    }
-    AVG_USD_K=TOTAL_FUNDED?Math.round(TOTAL_USD_K/TOTAL_FUNDED):0;
-    console.log('[CJ] Recalculated: TOTAL_USD_K='+TOTAL_USD_K.toFixed(1)+' TOTAL_ADA='+Math.round(TOTAL_ADA));
   }
+  /* 2) グローバル集計やり直し */
+  TOTAL_USD_K=0;TOTAL_ADA=0;TOTAL_FUNDED=0;TOTAL_COMPLETED=0;TOTAL_PROGRESS=0;TOTAL_DNF=0;
+  for(var i2=0;i2<INDUSTRIES.length;i2++){
+    var ind=INDUSTRIES[i2],ok=0,wip=0,dnf=0,secK=0;
+    for(var j2=0;j2<ind.children.length;j2++){
+      var q=ind.children[j2];
+      var uK=q.u==='ada'?q.amt*q.adaPrice:q.amt;
+      if(q.st==='complete'){ok++;TOTAL_COMPLETED++;}
+      else if(q.st==='progress'){wip++;TOTAL_PROGRESS++;}
+      else{dnf++;TOTAL_DNF++;}
+      TOTAL_FUNDED++;TOTAL_USD_K+=uK;secK+=uK;
+      TOTAL_ADA+=q.u==='ada'?q.amt:q.amt/(q.adaPrice||ADA_USD);
+    }
+    ind._ok=ok;ind._wip=wip;ind._dnf=dnf;ind._total=ok+wip+dnf;ind._usdK=secK;
+  }
+  AVG_USD_K=TOTAL_FUNDED?Math.round(TOTAL_USD_K/TOTAL_FUNDED):0;
+  console.log('[CJ] Recalculated ('+_priceMode+'): TOTAL_USD_K='+TOTAL_USD_K.toFixed(1)+' TOTAL_ADA='+Math.round(TOTAL_ADA));
+}
 
+/* 価格モード切替 */
+function setPriceMode(mode){
+  _priceMode=mode;recalcAll();buildShell();
+  if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else render();
+}
+
+(function(){
   /* 1) 現在のADA価格 + USD/JPYを取得 */
   function fetchCurrentPrice(){
     return fetch('https://api.coingecko.com/api/v3/simple/price?ids=cardano&vs_currencies=usd,jpy')
@@ -4196,32 +4243,39 @@ window.addEventListener('message',function(e){
       });
   }
 
-  /* 2) 各Fundの提案時点ADA価格を取得 (CoinGecko /coins/cardano/history) */
+  /* 2) 両セットのFund価格を取得 (提案時 + 採択時) */
   function fetchFundPrices(){
-    var funds=Object.keys(FUND_DATES);
-    var done=0,total=funds.length;
-    funds.forEach(function(f,idx){
+    var allDates={};
+    var sf=Object.keys(FUND_SUBMIT_DATES);
+    var rf=Object.keys(FUND_RESULT_DATES);
+    for(var i=0;i<sf.length;i++) allDates['s:'+sf[i]]=FUND_SUBMIT_DATES[sf[i]];
+    for(var j=0;j<rf.length;j++) allDates['r:'+rf[j]]=FUND_RESULT_DATES[rf[j]];
+    var keys=Object.keys(allDates);
+    var done=0,total=keys.length;
+    keys.forEach(function(key,idx){
       setTimeout(function(){
-        var date=FUND_DATES[f];
+        var date=allDates[key];
+        var parts=key.split(':');
+        var type=parts[0],fund=parts[1];
         fetch('https://api.coingecko.com/api/v3/coins/cardano/history?date='+date+'&localization=false')
           .then(function(r){return r.json()}).then(function(d){
             if(d&&d.market_data&&d.market_data.current_price){
               var p=d.market_data.current_price.usd;
               if(p){
-                FUND_PRICES[f]=p;
-                console.log('[CJ] F'+f+' ('+date+'): $'+p.toFixed(4));
+                if(type==='s') FUND_SUBMIT_PRICES[fund]=p;
+                else FUND_RESULT_PRICES[fund]=p;
+                console.log('[CJ] F'+fund+' '+(type==='s'?'submit':'result')+' ('+date+'): $'+p.toFixed(4));
               }
             }
           }).catch(function(){/* use fallback */})
           .finally(function(){
             done++;
             if(done>=total){
-              recalcAll();
-              buildShell();render();
-              console.log('[CJ] All fund prices updated, tree re-rendered');
+              recalcAll();buildShell();render();
+              console.log('[CJ] All fund prices updated (submit+result)');
             }
           });
-      }, idx*600);
+      }, idx*500);
     });
   }
 

@@ -153,6 +153,7 @@ html.night .cj-badge-cls{background:hsl(270 30% 22%);color:hsl(270 55% 75%)}
 .cj-d-amts{margin-top:14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 .cj-d-amt-big{font-family:var(--serif);font-size:30px;font-weight:500;line-height:1;font-variation-settings:"opsz" 96}
 .cj-d-amt-sub{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:0.04em}
+.cj-d-price{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.04em;margin-top:4px}
 .cj-sheet-body{flex:1;overflow-y:auto;padding:18px 22px;scrollbar-width:thin}
 .cj-sheet-body::-webkit-scrollbar{width:4px}
 .cj-sheet-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
@@ -291,7 +292,7 @@ html.night .da-relnet-prop{background:#0c0d10}
 var D=window.CJ_DATA;
 var NIGHT=false, LANG='ja', CURRENCY='ada';
 var ADA_USD=D.ADA_USD, USD_JPY=D.USD_JPY;
-window._cjPriceCallback=function(){ADA_USD=D.ADA_USD;USD_JPY=D.USD_JPY;render();};
+window._cjPriceCallback=function(){ADA_USD=D.ADA_USD;USD_JPY=D.USD_JPY;D=window.CJ_DATA;render();};
 
 function stColor(st){
   var n=NIGHT;
@@ -1389,6 +1390,21 @@ function buildDock(){
   });
   ctrls.appendChild(cGrp);
 
+  /* Price mode: 提案時 / 採択時 */
+  ctrls.appendChild(sep());
+  var pmGrp=document.createElement('div');
+  pmGrp.className='da-dock-grp sm';
+  [{id:'submit',ja:'提案時',en:'Submit'},{id:'result',ja:'採択時',en:'Result'}].forEach(function(m){
+    var b=document.createElement('button');
+    b.textContent=LANG==='ja'?m.ja:m.en;
+    if((D.priceMode||'submit')===m.id) b.className='on';
+    b.addEventListener('click',function(){
+      window._cjSetPriceMode(m.id);
+    });
+    pmGrp.appendChild(b);
+  });
+  ctrls.appendChild(pmGrp);
+
   /* Proposer sort (only on ppl tab) */
   if(TAB==='ppl'){
     ctrls.appendChild(sep());
@@ -1509,7 +1525,12 @@ function openSheet(p){
     +'<span class="cj-d-amt-sub">'+amtSub+'</span>'
     +'</div>';
 
-  head.innerHTML=sectorInfo+title+badges+amts;
+  /* ADA price info */
+  var adaP=p.adaPrice||ADA_USD;
+  var pmLabel=(D.priceMode||'submit')==='submit'?(LANG==='ja'?'提案時':'Proposal'):(LANG==='ja'?'採択時':'Result');
+  var priceInfo='<div class="cj-d-price">ADA $'+adaP.toFixed(2)+' (F'+(p.fund||'?')+' '+pmLabel+')</div>';
+
+  head.innerHTML=sectorInfo+title+badges+amts+priceInfo;
   sheet.appendChild(head);
 
   /* Body */

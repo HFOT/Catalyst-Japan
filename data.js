@@ -366,23 +366,24 @@ var FUND_MAP={
   'gv-6':10,'gv-7':11,'gv-8':13,
   'co-22':14,'co-23':9,'ed-11':12
 };
-/* Fund結果発表/配布時期のUnixタイムスタンプ (各Fundの代表日) */
-var FUND_DATES={
-  2:  '03-03-2021',  /* 2021-03 */
-  5:  '01-09-2021',  /* 2021-09 */
-  6:  '01-12-2021',  /* 2021-12 */
-  7:  '01-03-2022',  /* 2022-03 */
-  8:  '01-06-2022',  /* 2022-06 */
-  9:  '15-09-2022',  /* 2022-09 */
-  10: '15-01-2023',  /* 2023-01 */
-  11: '15-07-2023',  /* 2023-07 */
-  12: '15-01-2024',  /* 2024-01 */
-  13: '15-07-2024',  /* 2024-07 */
-  14: '15-01-2025',  /* 2025-01 */
-  15: '15-04-2025'   /* 2025-04 */
+/* 提案提出時期 (提案者が予算を組んだ時点) */
+var FUND_SUBMIT_DATES={
+  2:'01-12-2020', 5:'15-06-2021', 6:'01-09-2021', 7:'15-11-2021',
+  8:'01-03-2022', 9:'15-06-2022', 10:'01-07-2023', 11:'20-11-2023',
+  12:'01-05-2024', 13:'01-10-2024', 14:'01-08-2025'
+};
+/* 採択結果発表時期 */
+var FUND_RESULT_DATES={
+  2:'15-01-2021', 5:'09-08-2021', 6:'15-11-2021', 7:'10-02-2022',
+  8:'01-06-2022', 9:'01-10-2022', 10:'01-10-2023', 11:'08-02-2024',
+  12:'16-07-2024', 13:'15-01-2025', 14:'10-10-2025'
 };
 /* フォールバック値 (API失敗時) */
-var FUND_PRICES={2:0.17,5:1.50,6:2.10,7:1.20,8:0.60,9:0.43,10:0.27,11:0.55,12:0.42,13:0.68,14:0.85,15:0.75};
+var FUND_SUBMIT_PRICES={2:0.17,5:1.40,6:3.10,7:2.00,8:0.85,9:0.55,10:0.29,11:0.38,12:0.45,13:0.35,14:0.75};
+var FUND_RESULT_PRICES={2:0.35,5:1.50,6:2.10,7:1.10,8:0.60,9:0.38,10:0.27,11:0.55,12:0.42,13:0.68,14:0.85};
+/* アクティブな価格セット (デフォルト=提案時) */
+var FUND_PRICES={}; for(var _k in FUND_SUBMIT_PRICES) FUND_PRICES[_k]=FUND_SUBMIT_PRICES[_k];
+var _priceMode='submit'; /* 'submit' | 'result' */
 
 var CLASSIFY={
   'dt-2':'co','dt-3':'co','dt-4':'co','dt-5':'co','dt-6':'co','dt-7':'co',
@@ -502,6 +503,9 @@ var DATA={
   ADA_USD:ADA_USD,
   USD_JPY:USD_JPY,
   FUND_PRICES:FUND_PRICES,
+  FUND_SUBMIT_PRICES:FUND_SUBMIT_PRICES,
+  FUND_RESULT_PRICES:FUND_RESULT_PRICES,
+  priceMode:_priceMode,
   totalFunded:totalFunded,
   totalCompleted:totalCompleted,
   totalProgress:totalProgress,
@@ -515,6 +519,8 @@ window.CJ_DATA=DATA;
 
 /* ---- Live price fetch (CoinGecko free API) ---- */
 function recalcTotals(){
+  var src=_priceMode==='result'?FUND_RESULT_PRICES:FUND_SUBMIT_PRICES;
+  for(var k in src) FUND_PRICES[k]=src[k];
   var tf=0,tc=0,tp=0,td=0,tu=0;
   for(var i=0;i<INDUSTRIES.length;i++){
     var ind=INDUSTRIES[i],ok=0,wip=0,dn=0,secK=0;
@@ -530,7 +536,16 @@ function recalcTotals(){
     ind._ok=ok;ind._wip=wip;ind._dnf=dn;ind._total=ok+wip+dn;ind._usdK=secK;
   }
   DATA.totalFunded=tf;DATA.totalCompleted=tc;DATA.totalProgress=tp;DATA.totalDnf=td;DATA.totalUsdK=tu;
+  DATA.FUND_PRICES=FUND_PRICES;DATA.priceMode=_priceMode;
 }
+
+/* 価格モード切替 */
+function setPriceMode(mode){
+  _priceMode=mode;DATA.priceMode=mode;
+  recalcTotals();
+  if(window._cjPriceCallback) window._cjPriceCallback();
+}
+window._cjSetPriceMode=setPriceMode;
 
 /* 1) 現在のADA価格 + USD/JPYを取得 */
 function fetchCurrentPrice(){
@@ -544,22 +559,28 @@ function fetchCurrentPrice(){
     });
 }
 
-/* 2) 各Fundの提案時点ADA価格を取得 (CoinGecko /coins/cardano/history) */
+/* 2) 両セットのFund価格を取得 (提案時 + 採択時) */
 function fetchFundPrices(){
-  var funds=Object.keys(FUND_DATES);
-  var done=0,total=funds.length;
-  funds.forEach(function(f,idx){
-    /* レート制限回避: 500ms間隔でリクエスト */
+  var allDates={};
+  var sf=Object.keys(FUND_SUBMIT_DATES);
+  var rf=Object.keys(FUND_RESULT_DATES);
+  for(var i=0;i<sf.length;i++) allDates['s:'+sf[i]]=FUND_SUBMIT_DATES[sf[i]];
+  for(var j=0;j<rf.length;j++) allDates['r:'+rf[j]]=FUND_RESULT_DATES[rf[j]];
+  var keys=Object.keys(allDates);
+  var done=0,total=keys.length;
+  keys.forEach(function(key,idx){
     setTimeout(function(){
-      var date=FUND_DATES[f];
+      var date=allDates[key];
+      var parts=key.split(':');
+      var type=parts[0],fund=parts[1];
       fetch('https://api.coingecko.com/api/v3/coins/cardano/history?date='+date+'&localization=false')
         .then(function(r){return r.json()}).then(function(d){
           if(d&&d.market_data&&d.market_data.current_price){
             var p=d.market_data.current_price.usd;
             if(p){
-              FUND_PRICES[f]=p;
-              DATA.FUND_PRICES=FUND_PRICES;
-              console.log('[CJ] F'+f+' ('+date+'): $'+p.toFixed(4));
+              if(type==='s'){FUND_SUBMIT_PRICES[fund]=p;DATA.FUND_SUBMIT_PRICES=FUND_SUBMIT_PRICES;}
+              else{FUND_RESULT_PRICES[fund]=p;DATA.FUND_RESULT_PRICES=FUND_RESULT_PRICES;}
+              console.log('[CJ] F'+fund+' '+( type==='s'?'submit':'result')+' ('+date+'): $'+p.toFixed(4));
             }
           }
         }).catch(function(){/* use fallback */})
@@ -567,11 +588,11 @@ function fetchFundPrices(){
           done++;
           if(done>=total){
             recalcTotals();
-            console.log('[CJ] All fund prices updated, recalculated totals');
+            console.log('[CJ] All fund prices updated (submit+result)');
             if(window._cjPriceCallback) window._cjPriceCallback();
           }
         });
-    }, idx*600);
+    }, idx*500);
   });
 }
 
