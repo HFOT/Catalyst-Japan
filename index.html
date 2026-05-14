@@ -2271,10 +2271,10 @@ function buildTreeBySector(){
     for(var m=0;m<propKids.length;m++){var s=propKids[m].st;if(s==='complete')ok++;else if(s==='progress')wip++;else dnf++;}
     rootKids.push({id:ind.id,label:secName(ind),amt:0,hue:ind.hue,children:propKids,_ok:ok,_wip:wip,_dnf:dnf,_total:propKids.length,_usdK:sumUsdK(propKids)});
   }
-  var rootLabel='Catalyst Japan', rootSub=fmtTotal(TOTAL_USD_K);
+  var rootLabel='Catalyst Japan', rootSub=TOTAL_FUNDED+' / '+fmtTotal(TOTAL_USD_K);
   if(filterBy){
     var allKids=[];for(var i=0;i<rootKids.length;i++)allKids=allKids.concat(rootKids[i].children);
-    rootLabel=filterBy; rootSub=fmtTotal(sumUsdK(allKids));
+    rootLabel=filterBy; rootSub=allKids.length+' / '+fmtTotal(sumUsdK(allKids));
   }
   return {id:'root',label:rootLabel,sub:rootSub,children:rootKids};
 }
@@ -2331,10 +2331,10 @@ function buildTreeByProposer(){
       _ok:ok,_wip:wip,_dnf:dnf,_total:propKids.length,_usdK:personUsd,
       _mainUsdK:ps.mainUsdK,_coUsdK:ps.coUsdK,_teamCount:ps.teamCount,_teamUsdK:ps.teamUsdK,_namedFor:ps.namedFor,_allUsdK:ps.allUsdK});
   }
-  var rootLabel='Catalyst Japan', rootSub=fmtTotal(TOTAL_USD_K);
+  var rootLabel='Catalyst Japan', rootSub=TOTAL_FUNDED+' / '+fmtTotal(TOTAL_USD_K);
   if(filterBy){
     var allKids=[];for(var i=0;i<rootKids.length;i++)allKids=allKids.concat(rootKids[i].children);
-    rootLabel=filterBy; rootSub=fmtTotal(sumUsdK(allKids));
+    rootLabel=filterBy; rootSub=allKids.length+' / '+fmtTotal(sumUsdK(allKids));
   }
   return {id:'root',label:rootLabel,sub:rootSub,children:rootKids};
 }
