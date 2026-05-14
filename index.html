@@ -2544,9 +2544,9 @@ function render(){
       var rootSub=n.raw.sub||'';
       var subLine=rootSub?rootSub:'PROJECT CATALYST · JAPAN';
       var statsHtml='<div class="root-stats">'
-        +'<span><i style="background:var(--st-ok)"></i>'+TOTAL_COMPLETED+'</span>'
-        +'<span><i style="background:var(--st-wip)"></i>'+TOTAL_PROGRESS+'</span>'
-        +'<span><i style="background:var(--st-dnf)"></i>'+TOTAL_DNF+'</span>'
+        +'<span><i style="background:var(--st-ok)"></i>'+(_lang==='en'?'Done ':'完了 ')+TOTAL_COMPLETED+'</span>'
+        +'<span><i style="background:var(--st-wip)"></i>'+(_lang==='en'?'Active ':'途中 ')+TOTAL_PROGRESS+'</span>'
+        +'<span><i style="background:var(--st-dnf)"></i>'+(_lang==='en'?'Stop ':'停止 ')+TOTAL_DNF+'</span>'
         +'</div>';
       card.innerHTML='<div class="sub">'+esc(subLine)+'</div><div class="label">'+esc(n.label)+'</div>'+statsHtml;
     } else if(n.depth===1){
@@ -2966,9 +2966,9 @@ function buildShell(){
   allCard.innerHTML='<div class="s-name">ALL</div>'
     +'<div class="s-all-row1"><span class="s-all-num">'+TOTAL_FUNDED+'</span><span class="s-all-sep">/</span><span class="s-all-amt">'+fmtJpy(TOTAL_USD_K)+'</span></div>'
     +'<div class="s-all-stats">'
-    +'<span><i style="background:var(--st-ok)"></i>'+TOTAL_COMPLETED+'</span>'
-    +'<span><i style="background:var(--st-wip)"></i>'+TOTAL_PROGRESS+'</span>'
-    +'<span><i style="background:var(--st-dnf)"></i>'+TOTAL_DNF+'</span>'
+    +'<span><i style="background:var(--st-ok)"></i>'+(_lang==='en'?'Done ':'完了 ')+TOTAL_COMPLETED+'</span>'
+    +'<span><i style="background:var(--st-wip)"></i>'+(_lang==='en'?'Active ':'途中 ')+TOTAL_PROGRESS+'</span>'
+    +'<span><i style="background:var(--st-dnf)"></i>'+(_lang==='en'?'Stop ':'停止 ')+TOTAL_DNF+'</span>'
     +'</div>';
   allCard.onclick=function(){filterSec=null;filterBy=null;toggleExpandAll();centerView();buildSidebar();updateMeta()};
   sb.appendChild(allCard);
