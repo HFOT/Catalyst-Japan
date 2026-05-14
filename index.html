@@ -410,6 +410,9 @@ html.night .st-dnf{background:hsl(0 35% 20%);color:hsl(0 55% 70%);border:none}
 .node.root .node-card:hover{transform:none;box-shadow:0 8px 24px -8px var(--card-shadow)}
 .node.root .label{color:var(--bg);font-family:'Fraunces',serif;font-size:18px;letter-spacing:-0.01em;text-align:center;font-weight:500;white-space:normal}
 .node.root .sub{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.25em;color:var(--muted);text-transform:uppercase;text-align:center;margin-bottom:4px}
+.root-stats{display:flex;justify-content:center;gap:8px;margin-top:5px;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:0.04em}
+.root-stats span{display:flex;align-items:center;gap:3px}
+.root-stats i{display:inline-block;width:5px;height:5px;border-radius:50%}
 
 /* L1 industry group */
 .node.l1 .node-card{padding:10px 16px;width:480px;min-height:42px;height:auto;position:relative}
@@ -2540,7 +2543,12 @@ function render(){
     if(n.depth===0){
       var rootSub=n.raw.sub||'';
       var subLine=rootSub?rootSub:'PROJECT CATALYST · JAPAN';
-      card.innerHTML='<div class="sub">'+esc(subLine)+'</div><div class="label">'+esc(n.label)+'</div>';
+      var statsHtml='<div class="root-stats">'
+        +'<span><i style="background:var(--st-ok)"></i>'+TOTAL_COMPLETED+'</span>'
+        +'<span><i style="background:var(--st-wip)"></i>'+TOTAL_PROGRESS+'</span>'
+        +'<span><i style="background:var(--st-dnf)"></i>'+TOTAL_DNF+'</span>'
+        +'</div>';
+      card.innerHTML='<div class="sub">'+esc(subLine)+'</div><div class="label">'+esc(n.label)+'</div>'+statsHtml;
     } else if(n.depth===1){
       var raw=n.raw;
       var miniBar='';
