@@ -1010,7 +1010,8 @@ var _i18n={
   overview:{ja:'概況',en:'Overview'},people:{ja:'アカウント',en:'Accounts'},
   hasCollab:{ja:'共同提案あり',en:'Co-proposed'},sharedProp:{ja:'共有提案',en:'Shared'},
   categories:{ja:'カテゴリ',en:'Categories'},completionReport:{ja:'完了報告',en:'Completion Report'},
-  openPeople:{ja:'アカウント別で開く →',en:'Open in Accounts view →'},
+  openPeople:{ja:'📋 アカウントで開く',en:'📋 Open in Accounts'},
+  openRelation:{ja:'🔗 関連で開く',en:'🔗 Open Relations'},
   sector:{ja:'業界',en:'Sector'},peopleTab:{ja:'アカウント別',en:'Accounts'},timeline:{ja:'時系列',en:'Timeline'},
   avg:{ja:'平均',en:'Avg'},max:{ja:'最大',en:'Max'},funded:{ja:'PROPOSALS FUNDED',en:'PROPOSALS FUNDED'},
   propS:{ja:'提案',en:'Proposals'},nameLabel:{ja:'名',en:''},
@@ -3506,17 +3507,32 @@ function renderNetwork(){
     amtSec.innerHTML=amtInner;
     head.appendChild(amtSec);
 
-    /* go to proposer button */
-    var goBtn=document.createElement('button');
-    goBtn.style.cssText='margin-top:12px;width:100%;padding:8px 0;border:1px solid color-mix(in srgb,'+hsl(h)+' 30%,var(--border));border-radius:8px;background:color-mix(in srgb,'+hsl(h)+' 6%,var(--paper));color:var(--ink);font-family:\'JetBrains Mono\',monospace;font-size:10px;cursor:pointer;letter-spacing:0.04em;transition:background .2s,border-color .2s,transform .15s';
-    goBtn.textContent=T('openPeople');
-    goBtn.onmouseenter=function(){goBtn.style.background='color-mix(in srgb,'+hsl(h)+' 14%,var(--paper))';goBtn.style.borderColor='color-mix(in srgb,'+hsl(h)+' 50%,var(--border))'};
-    goBtn.onmouseleave=function(){goBtn.style.background='color-mix(in srgb,'+hsl(h)+' 6%,var(--paper))';goBtn.style.borderColor='color-mix(in srgb,'+hsl(h)+' 30%,var(--border))'};
-    goBtn.onclick=function(){
+    /* action buttons: relation + account */
+    var btnWrap=document.createElement('div');
+    btnWrap.style.cssText='display:flex;gap:6px;margin-top:12px';
+    function makeNwBtn(label,primary){
+      var b=document.createElement('button');
+      var bg=primary?'color-mix(in srgb,'+hsl(h)+' 12%,var(--paper))':'color-mix(in srgb,'+hsl(h)+' 4%,var(--paper))';
+      var bd=primary?'color-mix(in srgb,'+hsl(h)+' 40%,var(--border))':'color-mix(in srgb,'+hsl(h)+' 20%,var(--border))';
+      b.style.cssText='flex:1;padding:9px 0;border:1px solid '+bd+';border-radius:8px;background:'+bg+';color:var(--ink);font-family:\'JetBrains Mono\',monospace;font-size:10px;cursor:pointer;letter-spacing:0.04em;transition:background .2s,border-color .2s';
+      b.textContent=label;
+      b.onmouseenter=function(){b.style.background='color-mix(in srgb,'+hsl(h)+' 18%,var(--paper))';b.style.borderColor='color-mix(in srgb,'+hsl(h)+' 50%,var(--border))'};
+      b.onmouseleave=function(){b.style.background=bg;b.style.borderColor=bd};
+      return b;
+    }
+    var relBtn=makeNwBtn(T('openRelation'),true);
+    relBtn.onclick=function(){
+      filterBy=node.name;vis.clear();vis.add('root');
+      buildShell();render();centerView();
+    };
+    var accBtn=makeNwBtn(T('openPeople'),false);
+    accBtn.onclick=function(){
       filterBy=node.name;viewMode='proposer';vis.clear();vis.add('root');
       buildShell();render();centerView();
     };
-    head.appendChild(goBtn);
+    btnWrap.appendChild(relBtn);
+    btnWrap.appendChild(accBtn);
+    head.appendChild(btnWrap);
     d.appendChild(head);
 
     /* proposals section */
