@@ -132,6 +132,9 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(
 .s-all-num{font-family:'Fraunces',serif;font-size:26px;font-weight:500;line-height:1;font-variation-settings:"opsz" 96}
 .s-all-sep{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);opacity:0.5}
 .s-all-amt{font-family:'Fraunces',serif;font-size:22px;font-weight:500;line-height:1;font-variation-settings:"opsz" 96;opacity:0.85}
+.s-all-stats{display:flex;justify-content:center;gap:10px;margin-top:6px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:0.04em}
+.s-all-stats span{display:flex;align-items:center;gap:4px}
+.s-all-stats i{display:inline-block;width:6px;height:6px;border-radius:50%;flex-shrink:0}
 
 .sector-bar .s-divider{
   font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.2em;
@@ -2954,7 +2957,11 @@ function buildShell(){
   allCard.className='s-card s-all'+(filterSec===null&&filterBy===null?' active':'');
   allCard.innerHTML='<div class="s-name">ALL</div>'
     +'<div class="s-all-row1"><span class="s-all-num">'+TOTAL_FUNDED+'</span><span class="s-all-sep">/</span><span class="s-all-amt">'+fmtJpy(TOTAL_USD_K)+'</span></div>'
-    +'<div class="s-cnt" style="text-align:center;margin-top:5px">PROPOSALS · '+TOTAL_COMPLETED+' COMPLETE</div>';
+    +'<div class="s-all-stats">'
+    +'<span><i style="background:var(--st-ok)"></i>'+TOTAL_COMPLETED+'</span>'
+    +'<span><i style="background:var(--st-wip)"></i>'+TOTAL_PROGRESS+'</span>'
+    +'<span><i style="background:var(--st-dnf)"></i>'+TOTAL_DNF+'</span>'
+    +'</div>';
   allCard.onclick=function(){filterSec=null;filterBy=null;toggleExpandAll();centerView();buildSidebar();updateMeta()};
   sb.appendChild(allCard);
 
