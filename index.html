@@ -126,8 +126,12 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(
 .sector-bar .s-cnt{
   font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:0.05em;
 }
-.sector-bar .s-card.s-all{align-items:center;justify-content:center;gap:2px;padding:16px 16px}
+.sector-bar .s-card.s-all{align-items:center;justify-content:center;gap:2px;padding:14px 16px}
 .sector-bar .s-card.s-all .s-name{font-size:10px;letter-spacing:0.15em}
+.s-all-row1{display:flex;align-items:baseline;gap:6px;justify-content:center}
+.s-all-num{font-family:'Fraunces',serif;font-size:28px;font-weight:500;line-height:1;font-variation-settings:"opsz" 96}
+.s-all-amt{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);opacity:0.7;letter-spacing:0.04em;text-align:center;margin-top:4px}
+.s-all .s-cnt{text-align:center;margin-top:3px}
 
 .sector-bar .s-divider{
   font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.2em;
@@ -2948,7 +2952,9 @@ function buildShell(){
   /* ALL card */
   var allCard=document.createElement('div');
   allCard.className='s-card s-all'+(filterSec===null&&filterBy===null?' active':'');
-  allCard.innerHTML='<div class="s-name">ALL</div><div class="s-amt">'+TOTAL_FUNDED+' <span style="font-size:10px;opacity:0.6;font-family:JetBrains Mono,monospace">'+fmtJpy(TOTAL_USD_K)+'</span></div><div class="s-cnt">PROPOSALS · '+TOTAL_COMPLETED+' COMPLETE</div>';
+  allCard.innerHTML='<div class="s-all-row1"><div class="s-name">ALL</div><div class="s-all-num">'+TOTAL_FUNDED+'</div></div>'
+    +'<div class="s-all-amt">'+fmtJpy(TOTAL_USD_K)+'</div>'
+    +'<div class="s-cnt">PROPOSALS · '+TOTAL_COMPLETED+' COMPLETE</div>';
   allCard.onclick=function(){filterSec=null;filterBy=null;toggleExpandAll();centerView();buildSidebar();updateMeta()};
   sb.appendChild(allCard);
 
