@@ -2687,9 +2687,13 @@ function buildShell(){
           +amtLine+tagLine
           +'<div class="s-row3"><span class="s-by-cnt'+_hCnt+'">'+ps.allCount+' proposals</span></div>';
         card.onclick=function(){
-          filterBy=(filterBy===ps.name?null:ps.name);
-          filterSec=null;vis.clear();vis.add('root');
-          render();buildSidebar();updateMeta();
+          if(viewMode==='network'&&window._nwSelectByName){
+            window._nwSelectByName(ps.name);
+          } else {
+            filterBy=(filterBy===ps.name?null:ps.name);
+            filterSec=null;vis.clear();vis.add('root');
+            render();buildSidebar();updateMeta();
+          }
         };
         sb.appendChild(card);
       })(sorted[pi]);
@@ -3313,6 +3317,12 @@ function renderNetwork(){
     applyHighlight(ni);
     renderDetail(ni!=null?nodes[ni]:null);
   }
+  /* expose for sidebar clicks */
+  window._nwSelectByName=function(name){
+    for(var i=0;i<nodes.length;i++){
+      if(nodes[i].name===name){selectNode(i);return;}
+    }
+  };
 
   for(var i=0;i<nodeEls.length;i++){
     (function(ne){
