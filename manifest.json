@@ -1,7 +1,7 @@
 {
   "name": "Catalyst Japan",
   "short_name": "Catalyst JP",
-  "start_url": "/catalyst-japan/mobile.html",
+  "start_url": "./mobile.html",
   "display": "standalone",
   "background_color": "#fafaf7",
   "theme_color": "#1a1715",
