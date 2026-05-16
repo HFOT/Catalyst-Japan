@@ -435,6 +435,9 @@ function renderContent(scroll){
   } else if(TAB==='chart'){
     renderMobileChart(scroll);
   }
+  /* Hide global search bar on chart tab (chart has its own search inline) */
+  var globalSrch=document.querySelector('.da-search');
+  if(globalSrch) globalSrch.style.display=(TAB==='chart')?'none':'';
 
   /* PC link at bottom */
   var lnk=document.createElement('div');
@@ -973,8 +976,20 @@ function renderTimeline(scroll){
 /* ---- Chart view (mobile-optimized lightweight-charts) ---- */
 var _mobileChart=null, _mobileAdaLine=null, _mobileWdSeries=null;
 var _mobileSubTab='acct';
+var _mobileSearchQ='';
 /* Chart filter: null = global, {type:'acct',name:X} = account-filtered, {type:'prop',id:X} = proposal-filtered */
 var _mobileChartFilter=null;
+function _mobileApplySearchFilter(){
+  var q=_mobileSearchQ;
+  /* Find all rows with text content in the chart's account/proposal lists */
+  var lists=document.querySelectorAll('#mainScroll > div > div[style*="cursor: pointer"], #mainScroll > div > div[style*="cursor:pointer"]');
+  /* Easier: walk through scroll children below fund strip — apply to all rows containing text we know is searchable */
+  document.querySelectorAll('#mainScroll [data-row-search]').forEach(function(el){
+    if(!q){el.style.display='';return;}
+    var hay=el.getAttribute('data-row-search').toLowerCase();
+    el.style.display=(hay.indexOf(q)>=0)?'':'none';
+  });
+}
 function _mobileUpdateSelectionStrip(){
   var strip=document.getElementById('mobile-chart-selection');
   var lbl=document.getElementById('mobile-sel-label');
@@ -994,6 +1009,7 @@ function _mobileMakeProposalRow(p){
   var stLbl=p.st==='complete'?'完':p.st==='progress'?'進':'止';
   var row=document.createElement('div');
   row.style.cssText='border-bottom:1px solid var(--border);cursor:pointer';
+  row.setAttribute('data-row-search',(p.label||'')+' '+(p.labelJa||'')+' '+(p.by||'')+' F'+(p.fund||''));
   var head=document.createElement('div');
   head.style.cssText='display:flex;align-items:center;gap:6px;padding:8px 4px';
   head.innerHTML='<span style="display:inline-block;width:18px;height:18px;border-radius:3px;background:'+stCol+';color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+stLbl+'</span>'
@@ -1090,17 +1106,12 @@ function renderMobileChart(scroll){
   });
   var compRate=Math.round((statsCnt.complete/statsCnt.total)*100);
   var statsCard=document.createElement('div');
-  statsCard.style.cssText='margin:8px;padding:10px 12px;background:var(--dim);border-radius:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px';
+  statsCard.style.cssText='margin:6px 8px 4px;padding:5px 10px;background:var(--dim);border-radius:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;align-items:center';
   statsCard.innerHTML=
-    '<div style="text-align:center"><div style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.06em">提案</div>'
-    +'<div style="font-family:var(--serif);font-size:18px;color:var(--ink);font-weight:600;margin-top:2px">'+statsCnt.total+'</div></div>'
-    +'<div style="text-align:center"><div style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.06em">完了</div>'
-    +'<div style="font-family:var(--serif);font-size:18px;color:#3d8b6e;font-weight:600;margin-top:2px">'+compRate+'%</div>'
-    +'<div style="font-size:9px;color:var(--muted)">'+statsCnt.complete+'/'+statsCnt.total+'</div></div>'
-    +'<div style="text-align:center"><div style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.06em">採択ADA</div>'
-    +'<div style="font-family:var(--serif);font-size:18px;color:var(--ink);font-weight:600;margin-top:2px">'+(statsCnt.sumAda/1000).toFixed(1)+'M</div></div>'
-    +'<div style="text-align:center"><div style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.06em">支払済</div>'
-    +'<div style="font-family:var(--serif);font-size:18px;color:rgba(232,160,72,1);font-weight:600;margin-top:2px">'+(statsCnt.sumDistributed/1000).toFixed(1)+'M</div></div>';
+    '<div style="text-align:center;display:flex;align-items:baseline;justify-content:center;gap:4px"><span style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.04em">提案</span><span style="font-family:var(--serif);font-size:14px;color:var(--ink);font-weight:600">'+statsCnt.total+'</span></div>'
+    +'<div style="text-align:center;display:flex;align-items:baseline;justify-content:center;gap:4px"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">完了</span><span style="font-family:var(--serif);font-size:14px;color:#3d8b6e;font-weight:600">'+compRate+'%</span><span style="font-size:8px;color:var(--muted)">'+statsCnt.complete+'/'+statsCnt.total+'</span></div>'
+    +'<div style="text-align:center;display:flex;align-items:baseline;justify-content:center;gap:4px"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">採択</span><span style="font-family:var(--serif);font-size:14px;color:var(--ink);font-weight:600">'+(statsCnt.sumAda/1000).toFixed(1)+'M</span></div>'
+    +'<div style="text-align:center;display:flex;align-items:baseline;justify-content:center;gap:4px"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">支払</span><span style="font-family:var(--serif);font-size:14px;color:rgba(232,160,72,1);font-weight:600">'+(statsCnt.sumDistributed/1000).toFixed(1)+'M</span></div>';
   scroll.appendChild(statsCard);
 
   /* === 2. Chart container === */
@@ -1142,26 +1153,29 @@ function renderMobileChart(scroll){
     });
   });
   var fundList=Object.keys(fundStats).map(function(k){return fundStats[k];}).sort(function(a,b){return a.f-b.f;});
-  var fundTitle=document.createElement('div');
-  fundTitle.style.cssText='font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.06em;padding:10px 12px 4px';
-  fundTitle.textContent=LANG==='ja'?'Fund 別':'BY FUND';
-  scroll.appendChild(fundTitle);
+  /* 2-row compact grid (no title — labels embedded) */
   var fundStrip=document.createElement('div');
-  fundStrip.style.cssText='display:flex;gap:6px;padding:0 8px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch';
+  fundStrip.style.cssText='display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:4px 8px 4px';
   fundList.forEach(function(fs){
     var cell=document.createElement('div');
-    cell.style.cssText='flex:0 0 auto;min-width:78px;padding:8px 10px;background:var(--dim);border-radius:8px';
+    cell.style.cssText='padding:3px 4px;background:var(--dim);border-radius:5px;display:flex;flex-direction:column;align-items:center;gap:1px';
     var rate=fs.total>0?Math.round((fs.complete/fs.total)*100):0;
-    cell.innerHTML='<div style="font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink);letter-spacing:0.04em">F'+fs.f+'</div>'
-      +'<div style="display:flex;align-items:baseline;gap:3px;margin-top:3px"><span style="font-family:var(--serif);font-size:15px;color:var(--ink);font-weight:600">'+fs.total+'</span><span style="font-size:9px;color:var(--muted)">件</span></div>'
-      +'<div style="display:flex;height:3px;border-radius:2px;overflow:hidden;margin-top:4px;background:var(--border)">'
+    cell.innerHTML='<div style="display:flex;align-items:baseline;gap:2px"><span style="font-family:var(--mono);font-size:9px;color:var(--muted);font-weight:500">F'+fs.f+'</span><span style="font-family:var(--serif);font-size:12px;color:var(--ink);font-weight:600">'+fs.total+'</span></div>'
+      +'<div style="display:flex;height:2px;width:100%;border-radius:1px;overflow:hidden;background:var(--border)">'
       +'<div style="width:'+rate+'%;background:#3d8b6e"></div>'
       +'<div style="width:'+(fs.total>0?Math.round((fs.progress/fs.total)*100):0)+'%;background:#c49b2a"></div>'
       +'<div style="width:'+(fs.total>0?Math.round((fs.dnf/fs.total)*100):0)+'%;background:#b85450"></div></div>'
-      +'<div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:3px">'+(fs.ada/1000).toFixed(1)+'M ₳</div>';
+      +'<div style="font-family:var(--mono);font-size:8px;color:var(--muted)">'+(fs.ada/1000).toFixed(1)+'M</div>';
     fundStrip.appendChild(cell);
   });
   scroll.appendChild(fundStrip);
+
+  /* Chart-specific search bar (after Fund strip) */
+  var chartSearch=document.createElement('div');
+  chartSearch.style.cssText='margin:6px 8px 2px;padding:5px 10px;background:var(--dim);border-radius:6px;display:flex;align-items:center;gap:6px';
+  chartSearch.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted);flex-shrink:0"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>'
+    +'<input id="mobile-chart-search" placeholder="'+(LANG==='ja'?'タイトル / 提案者 で絞り込み…':'Filter title / proposer…')+'" style="flex:1;background:transparent;border:none;outline:none;font-size:12px;color:var(--ink);font-family:inherit">';
+  scroll.appendChild(chartSearch);
 
   /* === 4. Sub-tab: アカウント / 提案 / MS+金額 === */
   var subBar=document.createElement('div');
@@ -1183,7 +1197,20 @@ function renderMobileChart(scroll){
   /* Render the active sub-tab content */
   if(_mobileSubTab==='acct'){_renderMobileAcctList(scroll);}
   else if(_mobileSubTab==='prop'){_renderMobilePropList(scroll);}
-  else if(_mobileSubTab==='ms'){_renderMobileMsList(scroll);}
+
+  /* Wire chart-internal search input */
+  setTimeout(function(){
+    var inp=document.getElementById('mobile-chart-search');
+    if(inp){
+      inp.value=_mobileSearchQ;
+      inp.addEventListener('input',function(){
+        _mobileSearchQ=inp.value.trim().toLowerCase();
+        /* Hide rows that don't match */
+        _mobileApplySearchFilter();
+      });
+      _mobileApplySearchFilter();
+    }
+  },50);
 
   /* Build the chart asynchronously to let DOM settle */
   setTimeout(function(){_mobileBuildChart(chartBox);},50);
@@ -1220,6 +1247,7 @@ function _renderMobileAcctList(scroll){
   accts.forEach(function(a){
     var row=document.createElement('div');
     row.style.cssText='padding:10px 8px;border-bottom:1px solid var(--border);cursor:pointer';
+    row.setAttribute('data-row-search',a.name+' '+a.props.map(function(p){return (p.label||'')+(p.labelJa||'');}).join(' '));
     var flags='';
     function chip(t,bg,c){return '<span style="background:'+bg+';color:'+c+';font-size:9px;padding:1px 4px;border-radius:3px;margin-left:3px">'+t+'</span>';}
     if(a.end>0) flags+=chip('END'+a.end,'rgba(220,110,55,0.9)','#fff');
