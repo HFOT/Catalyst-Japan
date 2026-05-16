@@ -176,6 +176,34 @@ html.night .cj-badge-cls{background:hsl(270 30% 22%);color:hsl(270 55% 75%)}
 .cj-ask-btn{width:100%;padding:14px 16px;border-radius:14px;background:var(--ink);color:var(--bg);display:flex;align-items:center;justify-content:center;gap:8px;font-family:var(--mono);font-size:13px;letter-spacing:0.06em;font-weight:500}
 html.night .cj-ask-btn{background:#e8e6e1;color:#0c0d10}
 
+/* Status flag chips (mobile) — match PC index.html flag styles */
+.m-flag{display:inline-block;padding:0 4px;font-size:8px;font-weight:600;border-radius:3px;line-height:1.5;letter-spacing:0.02em;font-family:var(--mono);white-space:nowrap}
+.m-flag.dnf{color:#fff;background:rgba(220,110,55,0.9)}
+.m-flag.unfunded{color:#fff;background:rgba(80,140,200,0.85)}
+.m-flag.stale{color:#1a1715;background:rgba(232,180,72,0.85)}
+.m-flag.gap{color:#1a1715;background:rgba(150,180,220,0.85)}
+.m-flag.longgap{color:#1a1715;background:rgba(180,180,180,0.7)}
+.m-flag.pastovr{color:#1a1715;background:rgba(200,170,140,0.8)}
+.m-flag.old{color:#1a1715;background:rgba(180,160,200,0.8)}
+
+/* Chart flip card */
+.m-chart-flip{perspective:1200px;width:100%;height:240px;position:relative}
+.m-chart-flip-inner{position:relative;width:100%;height:100%;transition:transform 0.6s cubic-bezier(0.2,0.8,0.2,1);transform-style:preserve-3d}
+.m-chart-flip.flipped .m-chart-flip-inner{transform:rotateY(180deg)}
+.m-chart-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:8px;overflow:hidden}
+.m-chart-back{transform:rotateY(180deg);background:var(--dim);border:1px solid var(--border);padding:10px 12px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;font-family:var(--mono);font-size:10px;color:var(--ink);line-height:1.4}
+.m-chart-back .row{display:flex;align-items:center;gap:6px}
+.m-chart-back .row .cond{color:var(--muted);font-size:9px;flex:1;min-width:0}
+.m-chart-back .row .lbl{color:var(--ink);font-weight:600;font-size:10px}
+
+/* Flip button (title bar) */
+.m-flip-btn{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 8px;background:var(--dim);border:1px solid transparent;border-radius:6px;cursor:pointer;user-select:none;margin-bottom:4px;transition:background 0.15s}
+.m-flip-btn:active{background:var(--border)}
+.m-flip-btn .title{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.08em;flex-shrink:0}
+.m-flip-btn .chips{display:flex;gap:2px;align-items:center;overflow:hidden;flex:1;justify-content:flex-end}
+.m-flip-btn .arrow{font-size:11px;color:var(--muted);flex-shrink:0;transition:transform 0.3s}
+.m-chart-flip.flipped + .m-flip-btn .arrow,.m-flip-btn.flipped .arrow{transform:rotate(180deg)}
+
 /* Tree map */
 .da-map{overflow:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .da-map::-webkit-scrollbar{display:none}
@@ -1186,14 +1214,64 @@ function renderMobileChart(scroll){
   /* === 2. Chart container with selection chip overlay === */
   var wrap=document.createElement('div');
   wrap.style.cssText='padding:6px 8px 4px;position:relative';
+
+  /* Flag legend / flip button (chart title) */
+  var flipBtn=document.createElement('div');
+  flipBtn.className='m-flip-btn';
+  flipBtn.id='mobile-chart-flip-btn';
+  var _flagDefs=[
+    {cls:'dnf',     emoji:'END',label:LANG==='ja'?'停止':'Stopped',          cond:LANG==='ja'?'dnf + 資金受領済 (納品せず終了)':'dnf + funds received'},
+    {cls:'unfunded',emoji:'💧', label:LANG==='ja'?'不発':'Unfunded',         cond:LANG==='ja'?'dnf + 資金未受領':'dnf + no funds'},
+    {cls:'stale',   emoji:'⚠️', label:LANG==='ja'?'期限超過':'Overdue',      cond:LANG==='ja'?'進行中 + 未署名MS 3ヶ月超過':'progress + unsigned MS >3mo late'},
+    {cls:'gap',     emoji:'⏳', label:LANG==='ja'?'進行中ギャップ':'Active gap',cond:LANG==='ja'?'進行中 + MS間6ヶ月以上':'progress + ≥6mo between MS'},
+    {cls:'longgap', emoji:'↔️', label:LANG==='ja'?'過去ギャップ':'Past gap',  cond:LANG==='ja'?'完了 + MS間8ヶ月以上':'complete + ≥8mo between MS'},
+    {cls:'pastovr', emoji:'⌚', label:LANG==='ja'?'期限超過完了':'Late completion',cond:LANG==='ja'?'完了 + 個別MS 6ヶ月+遅延':'complete + MS ≥6mo past plan'},
+    {cls:'old',     emoji:'2️⃣',label:LANG==='ja'?'長期化':'Long duration',  cond:LANG==='ja'?'採択→完了が2/3/4年以上':'2/3/4+ yrs adoption → completion'}
+  ];
+  var _chipsHtml=_flagDefs.map(function(f){return '<span class="m-flag '+f.cls+'">'+f.emoji+'</span>';}).join('');
+  flipBtn.innerHTML='<span class="title">'+(LANG==='ja'?'フラグ解説':'Flag Guide')+'</span>'
+    +'<span class="chips">'+_chipsHtml+'</span>'
+    +'<span class="arrow">⇋</span>';
+  wrap.appendChild(flipBtn);
+
+  /* Flip card: front = chart, back = flag descriptions */
+  var flipCard=document.createElement('div');
+  flipCard.className='m-chart-flip';
+  flipCard.id='mobile-chart-flip';
+  var flipInner=document.createElement('div');
+  flipInner.className='m-chart-flip-inner';
+
   var chartBox=document.createElement('div');
   chartBox.id='mobile-chart';
-  chartBox.style.cssText='width:100%;height:240px;background:'+(NIGHT?'#16171a':'#fff')+';border-radius:8px;overflow:hidden;position:relative';
-  wrap.appendChild(chartBox);
+  chartBox.className='m-chart-face';
+  chartBox.style.cssText+=';background:'+(NIGHT?'#16171a':'#fff');
+  flipInner.appendChild(chartBox);
+
+  var chartBack=document.createElement('div');
+  chartBack.className='m-chart-face m-chart-back';
+  var backHtml='';
+  _flagDefs.forEach(function(f){
+    backHtml+='<div class="row">'
+      +'<span class="m-flag '+f.cls+'" style="flex-shrink:0;min-width:24px;text-align:center">'+f.emoji+'</span>'
+      +'<span class="lbl" style="flex-shrink:0">'+f.label+'</span>'
+      +'<span class="cond">'+f.cond+'</span>'
+      +'</div>';
+  });
+  chartBack.innerHTML=backHtml;
+  flipInner.appendChild(chartBack);
+  flipCard.appendChild(flipInner);
+  wrap.appendChild(flipCard);
+
+  /* Flip click handler */
+  flipBtn.addEventListener('click',function(){
+    flipCard.classList.toggle('flipped');
+    flipBtn.classList.toggle('flipped');
+  });
+
   /* Selection chip — overlayed top-left inside chart (no longer contains input) */
   var selStrip=document.createElement('div');
   selStrip.id='mobile-chart-selection';
-  selStrip.style.cssText='display:none;position:absolute;top:14px;left:16px;max-width:65%;padding:3px 6px;background:var(--bar-bg,rgba(20,20,22,0.85));border:1px solid var(--bar-border,rgba(255,255,255,0.12));border-radius:5px;font-family:var(--mono);font-size:10px;color:var(--ink);align-items:center;gap:5px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:5';
+  selStrip.style.cssText='display:none;position:absolute;top:48px;left:16px;max-width:65%;padding:3px 6px;background:var(--bar-bg,rgba(20,20,22,0.85));border:1px solid var(--bar-border,rgba(255,255,255,0.12));border-radius:5px;font-family:var(--mono);font-size:10px;color:var(--ink);align-items:center;gap:5px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:5';
   selStrip.innerHTML=
     '<span id="mobile-sel-label" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>'
     +'<button id="mobile-sel-clear" style="font-size:12px;padding:0 5px;background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--muted);cursor:pointer;flex-shrink:0;line-height:1.2">×</button>';
