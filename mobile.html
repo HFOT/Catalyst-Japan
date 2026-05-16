@@ -973,59 +973,163 @@ function renderTimeline(scroll){
 /* ---- Chart view (mobile-optimized lightweight-charts) ---- */
 var _mobileChart=null, _mobileAdaLine=null, _mobileWdSeries=null;
 function renderMobileChart(scroll){
-  /* Chart container (~50% viewport height) */
+  /* === 1. Top aggregate stats === */
+  var statsCnt={complete:0,progress:0,dnf:0,total:0,sumAda:0,sumDistributed:0};
+  D.INDUSTRIES.forEach(function(ind){
+    ind.children.forEach(function(p){
+      statsCnt.total++;
+      if(p.st==='complete') statsCnt.complete++;
+      else if(p.st==='progress') statsCnt.progress++;
+      else statsCnt.dnf++;
+      var ada=(p.u==='ada'?p.amt:p.amt/(p.adaPrice||0.5));
+      statsCnt.sumAda+=ada;
+      /* Distributed approximation: signed MS sum, or full amount if pre-MS complete */
+      var MS=window.CJ_MILESTONES||{};
+      var ms=MS[p.id];
+      if(ms&&ms.length){
+        var signed=0,total=0;
+        for(var i=0;i<ms[0].milestones.length;i++){
+          total+=ms[0].milestones[i].cost;
+          if(ms[0].milestones[i].signoff) signed+=ms[0].milestones[i].cost;
+        }
+        var portion=total>0?(signed/total)*ada:0;
+        statsCnt.sumDistributed+=portion;
+      } else if(p.st==='complete'||p.st==='dnf'){
+        statsCnt.sumDistributed+=ada;
+      }
+    });
+  });
+  var compRate=Math.round((statsCnt.complete/statsCnt.total)*100);
+  var statsCard=document.createElement('div');
+  statsCard.style.cssText='margin:8px;padding:10px 12px;background:var(--dim);border-radius:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px';
+  statsCard.innerHTML=
+    '<div style="text-align:center"><div style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.06em">提案</div>'
+    +'<div style="font-family:var(--serif);font-size:18px;color:var(--ink);font-weight:600;margin-top:2px">'+statsCnt.total+'</div></div>'
+    +'<div style="text-align:center"><div style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.06em">完了</div>'
+    +'<div style="font-family:var(--serif);font-size:18px;color:#3d8b6e;font-weight:600;margin-top:2px">'+compRate+'%</div>'
+    +'<div style="font-size:9px;color:var(--muted)">'+statsCnt.complete+'/'+statsCnt.total+'</div></div>'
+    +'<div style="text-align:center"><div style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.06em">採択ADA</div>'
+    +'<div style="font-family:var(--serif);font-size:18px;color:var(--ink);font-weight:600;margin-top:2px">'+(statsCnt.sumAda/1000).toFixed(1)+'M</div></div>'
+    +'<div style="text-align:center"><div style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.06em">支払済</div>'
+    +'<div style="font-family:var(--serif);font-size:18px;color:rgba(232,160,72,1);font-weight:600;margin-top:2px">'+(statsCnt.sumDistributed/1000).toFixed(1)+'M</div></div>';
+  scroll.appendChild(statsCard);
+
+  /* === 2. Chart container === */
   var wrap=document.createElement('div');
-  wrap.style.cssText='padding:8px 8px 4px';
+  wrap.style.cssText='padding:0 8px 4px';
   var chartBox=document.createElement('div');
   chartBox.id='mobile-chart';
-  chartBox.style.cssText='width:100%;height:240px;background:'+(NIGHT?'#16171a':'#fff')+';border-radius:8px;overflow:hidden';
+  chartBox.style.cssText='width:100%;height:220px;background:'+(NIGHT?'#16171a':'#fff')+';border-radius:8px;overflow:hidden';
   wrap.appendChild(chartBox);
   scroll.appendChild(wrap);
 
-  /* Account aggregate list below the chart */
-  var listWrap=document.createElement('div');
-  listWrap.style.cssText='padding:0 8px 12px';
-  var listTitle=document.createElement('div');
-  listTitle.style.cssText='font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.06em;padding:8px 4px 4px';
-  listTitle.textContent=LANG==='ja'?'アカウント別 状態':'BY ACCOUNT';
-  listWrap.appendChild(listTitle);
+  /* === 3. Fund breakdown (horizontal scroll cards F2-F14) === */
+  var fundStats={};
+  D.INDUSTRIES.forEach(function(ind){
+    ind.children.forEach(function(p){
+      var f=p.fund||0;if(!f) return;
+      if(!fundStats[f]) fundStats[f]={f:f,total:0,complete:0,progress:0,dnf:0,ada:0};
+      fundStats[f].total++;
+      if(p.st==='complete') fundStats[f].complete++;
+      else if(p.st==='progress') fundStats[f].progress++;
+      else fundStats[f].dnf++;
+      fundStats[f].ada+=(p.u==='ada'?p.amt:p.amt/(p.adaPrice||0.5));
+    });
+  });
+  var fundList=Object.keys(fundStats).map(function(k){return fundStats[k];}).sort(function(a,b){return a.f-b.f;});
+  var fundTitle=document.createElement('div');
+  fundTitle.style.cssText='font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.06em;padding:10px 12px 4px';
+  fundTitle.textContent=LANG==='ja'?'Fund 別':'BY FUND';
+  scroll.appendChild(fundTitle);
+  var fundStrip=document.createElement('div');
+  fundStrip.style.cssText='display:flex;gap:6px;padding:0 8px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch';
+  fundList.forEach(function(fs){
+    var cell=document.createElement('div');
+    cell.style.cssText='flex:0 0 auto;min-width:78px;padding:8px 10px;background:var(--dim);border-radius:8px';
+    var rate=fs.total>0?Math.round((fs.complete/fs.total)*100):0;
+    cell.innerHTML='<div style="font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink);letter-spacing:0.04em">F'+fs.f+'</div>'
+      +'<div style="display:flex;align-items:baseline;gap:3px;margin-top:3px"><span style="font-family:var(--serif);font-size:15px;color:var(--ink);font-weight:600">'+fs.total+'</span><span style="font-size:9px;color:var(--muted)">件</span></div>'
+      +'<div style="display:flex;height:3px;border-radius:2px;overflow:hidden;margin-top:4px;background:var(--border)">'
+      +'<div style="width:'+rate+'%;background:#3d8b6e"></div>'
+      +'<div style="width:'+(fs.total>0?Math.round((fs.progress/fs.total)*100):0)+'%;background:#c49b2a"></div>'
+      +'<div style="width:'+(fs.total>0?Math.round((fs.dnf/fs.total)*100):0)+'%;background:#b85450"></div></div>'
+      +'<div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:3px">'+(fs.ada/1000).toFixed(1)+'M ₳</div>';
+    fundStrip.appendChild(cell);
+  });
+  scroll.appendChild(fundStrip);
 
-  /* Build per-account aggregate (END/⚠/⏳/↔/⌚/年) */
+  /* === 4. Account aggregate list with flags (tappable) === */
+  var listTitle=document.createElement('div');
+  listTitle.style.cssText='font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.06em;padding:14px 12px 4px';
+  listTitle.textContent=LANG==='ja'?'アカウント別 (タップで提案一覧)':'BY ACCOUNT (tap to expand)';
+  scroll.appendChild(listTitle);
+
   var byAcct={};
   D.INDUSTRIES.forEach(function(ind){
     ind.children.forEach(function(p){
-      var key=p.by||'未確認';
-      if(!byAcct[key]) byAcct[key]={name:key,total:0,end:0,unfunded:0,overdue:0,gap:0,longGap:0,pastOverdue:0,old:0,ada:0};
-      var a=byAcct[key];
-      a.total++;
-      a.ada+=(p.u==='ada'?p.amt:p.amt/(p.adaPrice||0.5));
-      var ps=_mobileProposalStatus(p);
-      if(p.st==='dnf'){if(_mobileDnfFunded(p)) a.end++; else a.unfunded++;}
-      if(ps.overdue) a.overdue++;
-      if(ps.gap) a.gap++;
-      if(ps.longGap) a.longGap++;
-      if(ps.pastOverdue) a.pastOverdue++;
-      if(ps.years>=2 && (window.CJ_MILESTONES||{})[p.id]) a.old++;
+      function trackAcct(name){
+        if(!byAcct[name]) byAcct[name]={name:name,total:0,end:0,unfunded:0,overdue:0,gap:0,longGap:0,pastOverdue:0,old:0,ada:0,props:[]};
+        var a=byAcct[name];
+        a.total++;
+        a.ada+=(p.u==='ada'?p.amt:p.amt/(p.adaPrice||0.5));
+        a.props.push(p);
+        var ps=_mobileProposalStatus(p);
+        if(p.st==='dnf'){if(_mobileDnfFunded(p)) a.end++; else a.unfunded++;}
+        if(ps.overdue) a.overdue++;
+        if(ps.gap) a.gap++;
+        if(ps.longGap) a.longGap++;
+        if(ps.pastOverdue) a.pastOverdue++;
+        if(ps.years>=2 && (window.CJ_MILESTONES||{})[p.id]) a.old++;
+      }
+      if(p.by) trackAcct(p.by);
+      if(p.team) p.team.forEach(function(t){trackAcct(t.name);});
     });
   });
   var accts=Object.keys(byAcct).map(function(k){return byAcct[k];})
     .sort(function(a,b){return b.total-a.total;});
 
+  var listWrap=document.createElement('div');
+  listWrap.style.cssText='padding:0 8px 12px';
   accts.forEach(function(a){
     var row=document.createElement('div');
-    row.style.cssText='display:flex;align-items:center;gap:8px;padding:8px 6px;border-bottom:1px solid var(--border);font-size:12px';
+    row.style.cssText='padding:10px 8px;border-bottom:1px solid var(--border);cursor:pointer';
     var flags='';
-    if(a.end>0) flags+='<span style="background:rgba(220,110,55,0.9);color:#fff;font-size:9px;padding:1px 4px;border-radius:3px">END'+a.end+'</span>';
-    if(a.unfunded>0) flags+='<span style="background:rgba(80,140,200,0.85);color:#fff;font-size:9px;padding:1px 4px;border-radius:3px;margin-left:3px">💧'+a.unfunded+'</span>';
-    if(a.overdue>0) flags+='<span style="background:rgba(232,180,72,0.85);color:#1a1715;font-size:9px;padding:1px 4px;border-radius:3px;margin-left:3px">⚠'+a.overdue+'</span>';
-    if(a.gap>0) flags+='<span style="background:rgba(150,180,220,0.85);color:#1a1715;font-size:9px;padding:1px 4px;border-radius:3px;margin-left:3px">⏳'+a.gap+'</span>';
-    if(a.longGap>0) flags+='<span style="background:rgba(180,180,180,0.7);color:#1a1715;font-size:9px;padding:1px 4px;border-radius:3px;margin-left:3px">↔'+a.longGap+'</span>';
-    if(a.pastOverdue>0) flags+='<span style="background:rgba(200,170,140,0.8);color:#1a1715;font-size:9px;padding:1px 4px;border-radius:3px;margin-left:3px">⌚'+a.pastOverdue+'</span>';
-    if(a.old>0) flags+='<span style="background:rgba(180,160,200,0.8);color:#1a1715;font-size:9px;padding:1px 4px;border-radius:3px;margin-left:3px">2️⃣'+a.old+'</span>';
-    row.innerHTML='<div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
-      +'<span style="font-weight:500;color:var(--ink)">'+esc(a.name)+'</span> '
-      +'<span style="color:var(--muted);font-size:10px">'+a.total+'件 / '+Math.round(a.ada/1000)+'K ₳</span></div>'
-      +'<div style="flex-shrink:0">'+flags+'</div>';
+    function chip(t,bg,c){return '<span style="background:'+bg+';color:'+c+';font-size:9px;padding:1px 4px;border-radius:3px;margin-left:3px">'+t+'</span>';}
+    if(a.end>0) flags+=chip('END'+a.end,'rgba(220,110,55,0.9)','#fff');
+    if(a.unfunded>0) flags+=chip('💧'+a.unfunded,'rgba(80,140,200,0.85)','#fff');
+    if(a.overdue>0) flags+=chip('⚠'+a.overdue,'rgba(232,180,72,0.85)','#1a1715');
+    if(a.gap>0) flags+=chip('⏳'+a.gap,'rgba(150,180,220,0.85)','#1a1715');
+    if(a.longGap>0) flags+=chip('↔'+a.longGap,'rgba(180,180,180,0.7)','#1a1715');
+    if(a.pastOverdue>0) flags+=chip('⌚'+a.pastOverdue,'rgba(200,170,140,0.8)','#1a1715');
+    if(a.old>0) flags+=chip('2️⃣'+a.old,'rgba(180,160,200,0.8)','#1a1715');
+    row.innerHTML=
+      '<div style="display:flex;align-items:center;gap:8px">'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(a.name)+'</div>'
+      +'<div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px">'+a.total+'件 · '+Math.round(a.ada)+'K ₳</div>'
+      +'</div>'
+      +'<div style="flex-shrink:0;text-align:right">'+flags+'</div>'
+      +'</div>';
+    var expandRow=null;
+    row.addEventListener('click',function(){
+      if(expandRow){expandRow.remove();expandRow=null;return;}
+      expandRow=document.createElement('div');
+      expandRow.style.cssText='padding:6px 8px 4px;background:var(--dim);border-radius:6px;margin-top:6px';
+      var sorted=a.props.slice().sort(function(x,y){return (x.fund||0)-(y.fund||0);});
+      sorted.forEach(function(p){
+        var stCol=p.st==='complete'?'#3d8b6e':p.st==='progress'?'#c49b2a':'#b85450';
+        var stLbl=p.st==='complete'?'完':p.st==='progress'?'進':'止';
+        var item=document.createElement('div');
+        item.style.cssText='display:flex;align-items:center;gap:6px;padding:5px 4px;font-size:11px;border-bottom:1px solid var(--border)';
+        item.innerHTML='<span style="display:inline-block;width:16px;height:16px;border-radius:3px;background:'+stCol+';color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+stLbl+'</span>'
+          +'<span style="font-size:9px;color:var(--muted);font-family:var(--mono);flex-shrink:0">F'+(p.fund||'?')+'</span>'
+          +'<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)">'+esc(p.labelJa||p.label)+'</span>'
+          +'<span style="font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0">'+p.amt+(p.u==='ada'?'K ₳':'K $')+'</span>';
+        item.addEventListener('click',function(e){e.stopPropagation();openSheet(p);});
+        expandRow.appendChild(item);
+      });
+      row.appendChild(expandRow);
+    });
     listWrap.appendChild(row);
   });
   scroll.appendChild(listWrap);
