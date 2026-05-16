@@ -1104,6 +1104,11 @@ function renderMobileChart(scroll){
       }
     });
   });
+  /* ── Sticky top section (stats + chart + fund strip + search) ── */
+  var stickyTop=document.createElement('div');
+  stickyTop.style.cssText='position:sticky;top:0;z-index:10;background:var(--bg);padding-bottom:2px;border-bottom:1px solid var(--border)';
+  scroll.appendChild(stickyTop);
+
   var compRate=Math.round((statsCnt.complete/statsCnt.total)*100);
   var statsCard=document.createElement('div');
   statsCard.style.cssText='margin:6px 8px 4px;padding:5px 10px;background:var(--dim);border-radius:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;align-items:center';
@@ -1112,7 +1117,7 @@ function renderMobileChart(scroll){
     +'<div style="text-align:center;display:flex;align-items:baseline;justify-content:center;gap:4px"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">完了</span><span style="font-family:var(--serif);font-size:14px;color:#3d8b6e;font-weight:600">'+compRate+'%</span><span style="font-size:8px;color:var(--muted)">'+statsCnt.complete+'/'+statsCnt.total+'</span></div>'
     +'<div style="text-align:center;display:flex;align-items:baseline;justify-content:center;gap:4px"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">採択</span><span style="font-family:var(--serif);font-size:14px;color:var(--ink);font-weight:600">'+(statsCnt.sumAda/1000).toFixed(1)+'M</span></div>'
     +'<div style="text-align:center;display:flex;align-items:baseline;justify-content:center;gap:4px"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">支払</span><span style="font-family:var(--serif);font-size:14px;color:rgba(232,160,72,1);font-weight:600">'+(statsCnt.sumDistributed/1000).toFixed(1)+'M</span></div>';
-  scroll.appendChild(statsCard);
+  stickyTop.appendChild(statsCard);
 
   /* === 2. Chart container === */
   var wrap=document.createElement('div');
@@ -1128,7 +1133,7 @@ function renderMobileChart(scroll){
   chartBox.id='mobile-chart';
   chartBox.style.cssText='width:100%;height:220px;background:'+(NIGHT?'#16171a':'#fff')+';border-radius:8px;overflow:hidden';
   wrap.appendChild(chartBox);
-  scroll.appendChild(wrap);
+  stickyTop.appendChild(wrap);
   /* Wire clear button */
   setTimeout(function(){
     var clrBtn=document.getElementById('mobile-sel-clear');
@@ -1153,12 +1158,12 @@ function renderMobileChart(scroll){
     });
   });
   var fundList=Object.keys(fundStats).map(function(k){return fundStats[k];}).sort(function(a,b){return a.f-b.f;});
-  /* 2-row compact grid (no title — labels embedded) */
+  /* Single-row horizontal scroll Fund strip */
   var fundStrip=document.createElement('div');
-  fundStrip.style.cssText='display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:4px 8px 4px';
+  fundStrip.style.cssText='display:flex;gap:4px;padding:4px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch';
   fundList.forEach(function(fs){
     var cell=document.createElement('div');
-    cell.style.cssText='padding:3px 4px;background:var(--dim);border-radius:5px;display:flex;flex-direction:column;align-items:center;gap:1px';
+    cell.style.cssText='flex:0 0 auto;min-width:62px;padding:4px 6px;background:var(--dim);border-radius:5px;display:flex;flex-direction:column;gap:2px';
     var rate=fs.total>0?Math.round((fs.complete/fs.total)*100):0;
     cell.innerHTML='<div style="display:flex;align-items:baseline;gap:2px"><span style="font-family:var(--mono);font-size:9px;color:var(--muted);font-weight:500">F'+fs.f+'</span><span style="font-family:var(--serif);font-size:12px;color:var(--ink);font-weight:600">'+fs.total+'</span></div>'
       +'<div style="display:flex;height:2px;width:100%;border-radius:1px;overflow:hidden;background:var(--border)">'
@@ -1168,14 +1173,14 @@ function renderMobileChart(scroll){
       +'<div style="font-family:var(--mono);font-size:8px;color:var(--muted)">'+(fs.ada/1000).toFixed(1)+'M</div>';
     fundStrip.appendChild(cell);
   });
-  scroll.appendChild(fundStrip);
+  stickyTop.appendChild(fundStrip);
 
-  /* Chart-specific search bar (after Fund strip) */
+  /* Chart-specific search bar (after Fund strip) — last item in sticky top */
   var chartSearch=document.createElement('div');
-  chartSearch.style.cssText='margin:6px 8px 2px;padding:5px 10px;background:var(--dim);border-radius:6px;display:flex;align-items:center;gap:6px';
+  chartSearch.style.cssText='margin:4px 8px;padding:5px 10px;background:var(--dim);border-radius:6px;display:flex;align-items:center;gap:6px';
   chartSearch.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted);flex-shrink:0"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>'
     +'<input id="mobile-chart-search" placeholder="'+(LANG==='ja'?'タイトル / 提案者 で絞り込み…':'Filter title / proposer…')+'" style="flex:1;background:transparent;border:none;outline:none;font-size:12px;color:var(--ink);font-family:inherit">';
-  scroll.appendChild(chartSearch);
+  stickyTop.appendChild(chartSearch);
 
   /* === 4. Sub-tab: アカウント / 提案 / MS+金額 === */
   var subBar=document.createElement('div');
