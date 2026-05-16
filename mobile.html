@@ -1650,12 +1650,20 @@ function _mobileBuildChart(el){
     timeScale:{borderColor:isNight?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.1)',timeVisible:false,secondsVisible:false,fixLeftEdge:true,fixRightEdge:true,rightOffset:5}
   });
 
-  /* Withdrawal histogram FIRST (renders behind), uses 'wd' scale spanning bottom ~40% */
+  /* Blue Fund-adoption histogram (separate scale 'fundBar') so it doesn't dominate the wd scale */
+  var fundBarSeries=_mobileChart.addHistogramSeries({
+    color:'rgba(91,138,240,0.75)',priceLineVisible:false,lastValueVisible:false,
+    priceScaleId:'fundBar'
+  });
+  _mobileChart.priceScale('fundBar').applyOptions({scaleMargins:{top:0.3,bottom:0},visible:false});
+  window._mobileFundBarSeries=fundBarSeries;
+
+  /* Orange withdrawal histogram on 'wd' scale spanning bottom 85% */
   _mobileWdSeries=_mobileChart.addHistogramSeries({
-    color:'rgba(232,160,72,0.55)',priceLineVisible:false,lastValueVisible:false,
+    color:'rgba(232,160,72,0.7)',priceLineVisible:false,lastValueVisible:false,
     priceScaleId:'wd'
   });
-  _mobileChart.priceScale('wd').applyOptions({scaleMargins:{top:0.15,bottom:0}});
+  _mobileChart.priceScale('wd').applyOptions({scaleMargins:{top:0.15,bottom:0},visible:false});
 
   /* ADA price line on TOP (rendered after bars, so it's in front) */
   _mobileAdaLine=_mobileChart.addLineSeries({color:'#5b8af0',lineWidth:2,lastValueVisible:true,priceLineVisible:false,
@@ -1668,6 +1676,9 @@ function _mobileBuildChart(el){
   _mobileAdaLine.setData(pricePts);
   _mobileWdSeries.createPriceLine({price:0,color:'rgba(255,255,255,0.12)',lineWidth:2,axisLabelVisible:false});
   _mobileWdSeries.setData(_mobileBuildWdData(_mobileChartFilter));
+  if(window._mobileFundBarSeries){
+    window._mobileFundBarSeries.setData(_mobileBuildFundBarData(_mobileChartFilter));
+  }
 
   /* Markers — combine Fund result + MS signoff markers based on filter */
   var markers=[];
@@ -1822,11 +1833,16 @@ function _mobileBuildWdData(filter){
     bars.push({time:tryDt,value:ada,color:'rgba(232,160,72,0.55)'});
   });});
 
-  /* Blue Fund-adoption bars at each fund result date showing total Fund commitment */
+  bars.sort(function(a,b){return a.time<b.time?-1:1;});
+  return bars;
+}
+
+/* Build blue Fund-adoption bars on a SEPARATE series so they don't squash the orange bars' scale */
+function _mobileBuildFundBarData(filter){
+  var FRD=(D&&D.FUND_RESULT_DATES)||{};
   var fundTotals={};
   D.INDUSTRIES.forEach(function(ind){ind.children.forEach(function(p){
     var f=p.fund||0;if(!f) return;
-    /* Apply same filter */
     if(filter){
       if(filter.type==='prop' && p.id!==filter.id) return;
       if(filter.type==='acct'){
@@ -1838,16 +1854,20 @@ function _mobileBuildWdData(filter){
     var ada=(p.u==='ada'?p.amt:p.amt/(p.adaPrice||0.5));
     fundTotals[f]=(fundTotals[f]||0)+ada;
   });});
+  var bars=[];
+  var seenDates={};
   for(var ff in fundTotals){
     if(!FRD[ff]) continue;
     var fparts=FRD[ff].split('-');
     var fdt=fparts[2]+'-'+fparts[1]+'-'+fparts[0];
-    var fattempt=0,fTryDt=fdt;
-    while(used[fTryDt]){fattempt++;var fdd=new Date(fdt);fdd.setDate(fdd.getDate()-fattempt-1);fTryDt=fdd.toISOString().substring(0,10);}
-    used[fTryDt]=true;
-    bars.push({time:fTryDt,value:fundTotals[ff],color:'rgba(91,138,240,0.75)'});
+    /* Place fund bar 1 day BEFORE the fund result date so it doesn't collide with MS bars */
+    var fdtObj=new Date(fdt);fdtObj.setDate(fdtObj.getDate()-1);
+    var dKey=fdtObj.toISOString().substring(0,10);
+    var attempt=0,tryDt=dKey;
+    while(seenDates[tryDt]){attempt++;var dd=new Date(dKey);dd.setDate(dd.getDate()-attempt);tryDt=dd.toISOString().substring(0,10);}
+    seenDates[tryDt]=true;
+    bars.push({time:tryDt,value:fundTotals[ff]});
   }
-
   bars.sort(function(a,b){return a.time<b.time?-1:1;});
   return bars;
 }
