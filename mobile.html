@@ -198,21 +198,22 @@ html.night .cj-ask-btn{background:#e8e6e1;color:#0c0d10}
 
 /* Chart-title row: 50/50 split → [flag legend flip] | [hide chart toggle] */
 .m-chart-titles{display:flex;gap:6px;margin-bottom:4px}
-.m-chart-titles > button{flex:1 1 0;min-width:0}
+.m-chart-titles > button{flex:1 1 0;min-width:0;height:28px}
 
 /* Flip button (left half — flag legend) */
-.m-flip-btn{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 8px;background:var(--dim);border:1px solid transparent;border-radius:6px;cursor:pointer;user-select:none;transition:background 0.15s}
-.m-flip-btn:active{background:var(--border)}
+.m-flip-btn{display:flex;align-items:center;justify-content:space-between;gap:5px;padding:4px 8px;background:linear-gradient(135deg, rgba(232,160,72,0.10) 0%, var(--dim) 65%);border:1px solid transparent;border-radius:6px;cursor:pointer;user-select:none;transition:filter 0.15s}
+.m-flip-btn:active{filter:brightness(0.92)}
 .m-flip-btn .title{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.08em;flex-shrink:0}
-.m-flip-btn .chips{display:flex;gap:2px;align-items:center;overflow:hidden;flex:1;justify-content:flex-end}
-.m-flip-btn .arrow{font-size:11px;color:var(--muted);flex-shrink:0;transition:transform 0.3s}
+.m-flip-btn .chips{display:flex;gap:2px;align-items:center;flex-shrink:0}
+.m-flip-btn .etc{font-family:var(--mono);font-size:8px;color:var(--muted);opacity:0.7;letter-spacing:0.02em;margin-left:1px}
+.m-flip-btn .arrow{font-size:11px;color:var(--muted);flex-shrink:0;transition:transform 0.3s;margin-left:auto}
 .m-flip-btn.flipped .arrow{transform:rotate(180deg)}
 
 /* Hide-chart button (right half) */
-.m-hide-btn{display:flex;align-items:center;justify-content:center;gap:5px;padding:4px 8px;background:var(--dim);border:1px solid transparent;border-radius:6px;cursor:pointer;user-select:none;transition:background 0.15s;font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.08em}
-.m-hide-btn:active{background:var(--border)}
+.m-hide-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:4px 8px;background:linear-gradient(135deg, rgba(91,138,240,0.10) 0%, var(--dim) 65%);border:1px solid transparent;border-radius:6px;cursor:pointer;user-select:none;transition:filter 0.15s;font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.08em}
+.m-hide-btn:active{filter:brightness(0.92)}
 .m-hide-btn .icon{font-size:11px;color:var(--muted);line-height:1}
-.m-hide-btn.on{background:rgba(91,138,240,0.18);color:var(--ink)}
+.m-hide-btn.on{background:linear-gradient(135deg, rgba(91,138,240,0.32) 0%, rgba(91,138,240,0.15) 100%);color:var(--ink)}
 .m-hide-btn.on .icon{color:var(--ink)}
 
 /* Tree map */
@@ -1307,9 +1308,13 @@ function renderMobileChart(scroll){
     {cls:'pastovr', emoji:'⌚', label:LANG==='ja'?'期限超過完了':'Late completion',cond:LANG==='ja'?'完了 + 個別MS 6ヶ月+遅延':'complete + MS ≥6mo past plan'},
     {cls:'old',     emoji:'2️⃣',label:LANG==='ja'?'長期化':'Long duration',  cond:LANG==='ja'?'採択→完了が2/3/4年以上':'2/3/4+ yrs adoption → completion'}
   ];
-  var _chipsHtml=_flagDefs.map(function(f){return '<span class="m-flag '+f.cls+'">'+f.emoji+'</span>';}).join('');
-  flipBtn.innerHTML='<span class="title">'+(LANG==='ja'?'フラグ解説':'Flag Guide')+'</span>'
+  /* Show first 4 chips + 'etc' (remaining count) for compact 50% width */
+  var _previewN=4;
+  var _chipsHtml=_flagDefs.slice(0,_previewN).map(function(f){return '<span class="m-flag '+f.cls+'">'+f.emoji+'</span>';}).join('');
+  var _restN=_flagDefs.length-_previewN;
+  flipBtn.innerHTML='<span class="title">'+(LANG==='ja'?'フラグ':'Flags')+'</span>'
     +'<span class="chips">'+_chipsHtml+'</span>'
+    +(_restN>0?'<span class="etc">+'+_restN+' etc</span>':'')
     +'<span class="arrow">⇋</span>';
 
   /* Hide-chart button (right half) — collapses the chart card so Fund strip rises */
