@@ -1300,8 +1300,8 @@ function _mobileDnfFunded(p){
 }
 function _mobileProposalStatus(p){
   var out={overdue:false,gap:false,longGap:false,pastOverdue:false,years:0};
-  if(typeof FUND_RESULT_DATES==='undefined') return out;
-  var frd=FUND_RESULT_DATES[p.fund||0];if(!frd) return out;
+  var FRD=(D&&D.FUND_RESULT_DATES)||{};
+  var frd=FRD[p.fund||0];if(!frd) return out;
   var pp=frd.split('-');
   var fd=new Date(parseInt(pp[2]),parseInt(pp[1])-1,parseInt(pp[0]));
   var now=new Date();
@@ -1383,13 +1383,12 @@ function _mobileBuildChart(el){
 
   /* Markers — switch based on _mobileChartMode */
   var markers=[];
+  var FRD2=(D&&D.FUND_RESULT_DATES)||{};
   if(_mobileChartMode==='fund'){
     /* Fund result markers (F2-F14 採択時期) */
-    if(typeof FUND_RESULT_DATES!=='undefined'){
-      for(var f in FUND_RESULT_DATES){
-        var d=FUND_RESULT_DATES[f].split('-');
-        markers.push({time:d[2]+'-'+d[1]+'-'+d[0],position:'belowBar',color:'rgba(61,139,110,0.7)',shape:'arrowUp',text:'F'+f});
-      }
+    for(var f in FRD2){
+      var d=FRD2[f].split('-');
+      markers.push({time:d[2]+'-'+d[1]+'-'+d[0],position:'belowBar',color:'rgba(61,139,110,0.7)',shape:'arrowUp',text:'F'+f});
     }
   } else {
     /* MS signoff markers (chronological MS署名時期) — show top recent signoffs */
@@ -1431,8 +1430,8 @@ function _mobileBuildPriceData(){
       raw.push({t:ms,v:prices[f]||0.3});
     }
   }
-  if(typeof FUND_SUBMIT_DATES!=='undefined') addPts(FUND_SUBMIT_DATES,D.FUND_SUBMIT_PRICES);
-  if(typeof FUND_RESULT_DATES!=='undefined') addPts(FUND_RESULT_DATES,D.FUND_RESULT_PRICES);
+  if(D.FUND_SUBMIT_DATES) addPts(D.FUND_SUBMIT_DATES,D.FUND_SUBMIT_PRICES);
+  if(D.FUND_RESULT_DATES) addPts(D.FUND_RESULT_DATES,D.FUND_RESULT_PRICES);
   /* Known reference points */
   raw.push({t:new Date(2021,8,2).getTime(),v:3.10});
   raw.push({t:new Date(2022,5,18).getTime(),v:0.44});
