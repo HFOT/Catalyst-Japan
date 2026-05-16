@@ -1206,20 +1206,38 @@ function renderMobileChart(scroll){
       fundStats[f].ada+=(p.u==='ada'?p.amt:p.amt/(p.adaPrice||0.5));
     });
   });
-  var fundList=Object.keys(fundStats).map(function(k){return fundStats[k];}).sort(function(a,b){return a.f-b.f;});
-  /* Single-row compact Fund strip — fits F2..F14 in viewport width */
+  var fundList=Object.keys(fundStats).map(function(k){return fundStats[k];}).sort(function(a,b){return b.f-a.f;});
+  /* Fund strip — horizontal scroll with sticky ALL button on the left */
+  var fundStripWrap=document.createElement('div');
+  fundStripWrap.style.cssText='display:flex;align-items:stretch;padding:4px 0;position:relative';
+  /* ALL button — sticky on the left edge */
+  var allBtn=document.createElement('div');
+  var allActive=!_mobileChartFilter;
+  allBtn.style.cssText='flex:0 0 auto;margin:0 4px 0 6px;padding:3px 8px;background:'+(allActive?'var(--ink)':'var(--dim)')+';color:'+(allActive?'var(--bg)':'var(--ink)')+';border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;min-width:36px';
+  allBtn.innerHTML='<div style="font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.06em">ALL</div>'
+    +'<div style="font-family:var(--serif);font-size:11px;font-weight:600">'+statsCnt.total+'</div>';
+  allBtn.addEventListener('click',function(){
+    _mobileChartFilter=null;
+    _mobileUpdateSelectionStrip();
+    var cb=document.getElementById('mobile-chart');
+    if(cb) _mobileBuildChart(cb);
+    /* Update visual state */
+    render();
+  });
+  fundStripWrap.appendChild(allBtn);
   var fundStrip=document.createElement('div');
-  fundStrip.style.cssText='display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:2px;padding:4px 6px';
+  fundStrip.style.cssText='display:flex;gap:3px;padding:0 8px 0 0;overflow-x:auto;-webkit-overflow-scrolling:touch;flex:1;mask-image:linear-gradient(to right,#000 calc(100% - 16px),transparent);-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 16px),transparent)';
   fundList.forEach(function(fs){
     var cell=document.createElement('div');
-    cell.style.cssText='padding:3px 2px;background:var(--dim);border-radius:4px;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;min-width:0';
+    var isActive=_mobileChartFilter&&_mobileChartFilter.type==='fund'&&_mobileChartFilter.fund===fs.f;
+    cell.style.cssText='flex:0 0 auto;min-width:48px;padding:3px 6px;background:'+(isActive?'rgba(91,138,240,0.25)':'var(--dim)')+';border:1px solid '+(isActive?'rgba(91,138,240,0.6)':'transparent')+';border-radius:4px;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer';
     var rate=fs.total>0?Math.round((fs.complete/fs.total)*100):0;
-    cell.innerHTML='<div style="display:flex;align-items:baseline;gap:1px"><span style="font-family:var(--mono);font-size:8px;color:var(--muted);font-weight:500">F'+fs.f+'</span><span style="font-family:var(--serif);font-size:11px;color:var(--ink);font-weight:600">'+fs.total+'</span></div>'
-      +'<div style="display:flex;height:2px;width:90%;border-radius:1px;overflow:hidden;background:var(--border)">'
+    cell.innerHTML='<div style="display:flex;align-items:baseline;gap:2px"><span style="font-family:var(--mono);font-size:9px;color:var(--muted);font-weight:500">F'+fs.f+'</span><span style="font-family:var(--serif);font-size:12px;color:var(--ink);font-weight:600">'+fs.total+'</span></div>'
+      +'<div style="display:flex;height:2px;width:100%;border-radius:1px;overflow:hidden;background:var(--border)">'
       +'<div style="width:'+rate+'%;background:#3d8b6e"></div>'
       +'<div style="width:'+(fs.total>0?Math.round((fs.progress/fs.total)*100):0)+'%;background:#c49b2a"></div>'
       +'<div style="width:'+(fs.total>0?Math.round((fs.dnf/fs.total)*100):0)+'%;background:#b85450"></div></div>'
-      +'<div style="font-family:var(--mono);font-size:7px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:clip;max-width:100%">'+fmtAmt(fs.ada*(ADA_USD||0.5)).replace(/\s/g,'')+'</div>';
+      +'<div style="font-family:var(--mono);font-size:8px;color:var(--muted);white-space:nowrap">'+fmtAmt(fs.usdK,fs.ada).replace(/\s/g,'')+'</div>';
     cell.addEventListener('click',function(){
       _mobileChartFilter={type:'fund',fund:fs.f,label:'F'+fs.f+' ('+fs.total+'件 / '+(fs.ada/1000).toFixed(1)+'M ₳)'};
       _mobileSubTab='fund';
@@ -1230,14 +1248,12 @@ function renderMobileChart(scroll){
       setTimeout(function(){
         var sc=document.getElementById('mainScroll');
         var stickyTop=sc && sc.querySelector('div[style*="position: sticky"], div[style*="position:sticky"]');
-        var subBar=sc && sc.querySelectorAll('div[style*="border-bottom"]');
-        /* Find Fund row by data-row-search containing F<n> */
         var fundRows=sc.querySelectorAll('div[data-row-search]');
         for(var r=0;r<fundRows.length;r++){
           if(fundRows[r].getAttribute('data-row-search').indexOf('F'+fs.f+' ')===0){
             var stickyH=stickyTop?stickyTop.offsetHeight:0;
             var rowTop=fundRows[r].offsetTop;
-            sc.scrollTop=rowTop-stickyH-50; /* account for sub-tab bar */
+            sc.scrollTop=rowTop-stickyH-50;
             return;
           }
         }
@@ -1245,7 +1261,8 @@ function renderMobileChart(scroll){
     });
     fundStrip.appendChild(cell);
   });
-  stickyTop.appendChild(fundStrip);
+  fundStripWrap.appendChild(fundStrip);
+  stickyTop.appendChild(fundStripWrap);
 
   /* === 4. Sub-tab: アカウント / 提案 / Fund (sticky) === */
   var subBar=document.createElement('div');
@@ -1410,7 +1427,7 @@ function _renderMobileFundList(scroll){
       bf.props.push(p);
     });
   });
-  var fundList=Object.keys(byFund).map(function(k){return byFund[k];}).sort(function(a,b){return a.f-b.f;});
+  var fundList=Object.keys(byFund).map(function(k){return byFund[k];}).sort(function(a,b){return b.f-a.f;});
   /* If a Fund was tapped from the strip, move it to the top */
   if(_mobileFundFirst){
     var idx=-1;for(var i=0;i<fundList.length;i++) if(fundList[i].f===_mobileFundFirst){idx=i;break;}
