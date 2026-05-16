@@ -972,7 +972,76 @@ function renderTimeline(scroll){
 
 /* ---- Chart view (mobile-optimized lightweight-charts) ---- */
 var _mobileChart=null, _mobileAdaLine=null, _mobileWdSeries=null;
-var _mobileSubTab='acct', _mobileChartMode='fund'; /* 'fund' = adoption markers, 'ms' = MS signoff markers */
+var _mobileSubTab='acct';
+/* Chart filter: null = global, {type:'acct',name:X} = account-filtered, {type:'prop',id:X} = proposal-filtered */
+var _mobileChartFilter=null;
+function _mobileUpdateSelectionStrip(){
+  var strip=document.getElementById('mobile-chart-selection');
+  var lbl=document.getElementById('mobile-sel-label');
+  if(!strip||!lbl) return;
+  if(_mobileChartFilter){
+    strip.style.display='flex';
+    var prefix=_mobileChartFilter.type==='acct'?'🧑 ':'📋 ';
+    lbl.textContent=prefix+(_mobileChartFilter.label||_mobileChartFilter.name||'');
+  } else {
+    strip.style.display='none';
+  }
+}
+/* Compact proposal row used by both Proposal tab and Account-expanded list.
+   Tap → filter chart + expand inline MS tiles (number + amount, 2-line) */
+function _mobileMakeProposalRow(p){
+  var stCol=p.st==='complete'?'#3d8b6e':p.st==='progress'?'#c49b2a':'#b85450';
+  var stLbl=p.st==='complete'?'完':p.st==='progress'?'進':'止';
+  var row=document.createElement('div');
+  row.style.cssText='border-bottom:1px solid var(--border);cursor:pointer';
+  var head=document.createElement('div');
+  head.style.cssText='display:flex;align-items:center;gap:6px;padding:8px 4px';
+  head.innerHTML='<span style="display:inline-block;width:18px;height:18px;border-radius:3px;background:'+stCol+';color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+stLbl+'</span>'
+    +'<div style="flex:1;min-width:0">'
+    +'<div style="font-size:12px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.labelJa||p.label)+_mobileFlagChips(p)+'</div>'
+    +'<div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">F'+(p.fund||'?')+' · '+esc(p.by||'未確認')+' · '+p.amt+(p.u==='ada'?'K ₳':'K $')+'</div>'
+    +'</div>';
+  row.appendChild(head);
+  var expanded=null;
+  row.addEventListener('click',function(e){
+    e.stopPropagation();
+    /* Filter chart to this proposal */
+    _mobileChartFilter={type:'prop',id:p.id,label:p.labelJa||p.label};
+    _mobileUpdateSelectionStrip();
+    var cb=document.getElementById('mobile-chart');
+    if(cb) _mobileBuildChart(cb);
+    /* Toggle MS expand */
+    if(expanded){expanded.remove();expanded=null;return;}
+    var MS=window.CJ_MILESTONES||{};
+    var ms=MS[p.id];
+    if(!ms||!ms.length){
+      expanded=document.createElement('div');
+      expanded.style.cssText='padding:4px 8px 8px;font-family:var(--mono);font-size:9px;color:var(--muted)';
+      expanded.textContent=p.fund<10?'MS制度前 (F2-F9)':'MS データなし';
+      row.appendChild(expanded);
+      return;
+    }
+    expanded=document.createElement('div');
+    expanded.style.cssText='display:flex;gap:6px;padding:4px 4px 10px;overflow-x:auto;-webkit-overflow-scrolling:touch';
+    var totalCost=0;
+    ms[0].milestones.forEach(function(m){totalCost+=m.cost;});
+    var adaK=(p.u==='ada'?p.amt:p.amt/(p.adaPrice||0.5));
+    ms[0].milestones.forEach(function(m){
+      var num=m.ms<=10?'①②③④⑤⑥⑦⑧⑨⑩'.charAt(m.ms-1):'M'+m.ms;
+      var msAda=totalCost>0?Math.round((m.cost/totalCost)*adaK):Math.round(m.cost/1000);
+      var signed=!!m.signoff;
+      var tile=document.createElement('div');
+      tile.style.cssText='flex:0 0 auto;min-width:54px;padding:4px 6px;background:'+(signed?'rgba(91,138,240,0.15)':'var(--dim)')+';border:1px solid '+(signed?'rgba(91,138,240,0.5)':'var(--border)')+';border-radius:5px;text-align:center';
+      tile.innerHTML=
+        '<div style="font-size:14px;font-weight:600;color:'+(signed?'#5b8af0':'var(--muted)')+';line-height:1.1">'+num+'</div>'
+        +'<div style="font-family:var(--mono);font-size:9px;color:var(--ink);margin-top:2px;font-weight:500">₳'+msAda+'K</div>'
+        +(signed?'<div style="font-size:8px;color:var(--muted);margin-top:1px">'+m.signoff.substring(2,7).replace('-','/')+'</div>':'<div style="font-size:8px;color:var(--muted);opacity:0.5;margin-top:1px">未署名</div>');
+      expanded.appendChild(tile);
+    });
+    row.appendChild(expanded);
+  });
+  return row;
+}
 /* Compute proposal-level flags helper */
 function _mobileFlagChips(p){
   var flags='';
@@ -1034,38 +1103,30 @@ function renderMobileChart(scroll){
     +'<div style="font-family:var(--serif);font-size:18px;color:rgba(232,160,72,1);font-weight:600;margin-top:2px">'+(statsCnt.sumDistributed/1000).toFixed(1)+'M</div></div>';
   scroll.appendChild(statsCard);
 
-  /* === 2. Chart container + mode toggle === */
+  /* === 2. Chart container === */
   var wrap=document.createElement('div');
-  wrap.style.cssText='padding:0 8px 4px';
-  /* Mode toggle: Fund (採択時期) vs MS (署名時期) */
-  var modeToggle=document.createElement('div');
-  modeToggle.style.cssText='display:flex;gap:4px;padding:4px 0 6px';
-  var modes=[
-    {id:'fund',ja:'採択時期',en:'Adoption'},
-    {id:'ms',ja:'MS署名',en:'Signoff'}
-  ];
-  modes.forEach(function(md){
-    var btn=document.createElement('button');
-    btn.style.cssText='flex:1;padding:6px 8px;font-family:var(--mono);font-size:10px;letter-spacing:0.04em;border-radius:6px;background:'+(_mobileChartMode===md.id?'var(--ink)':'transparent')+';color:'+(_mobileChartMode===md.id?'var(--bg)':'var(--muted)')+';border:1px solid var(--border);cursor:pointer';
-    btn.textContent=LANG==='ja'?md.ja:md.en;
-    btn.addEventListener('click',function(){
-      _mobileChartMode=md.id;
-      _mobileBuildChart(chartBox);
-      /* Re-render toggle states */
-      modeToggle.querySelectorAll('button').forEach(function(b,i){
-        var on=modes[i].id===_mobileChartMode;
-        b.style.background=on?'var(--ink)':'transparent';
-        b.style.color=on?'var(--bg)':'var(--muted)';
-      });
-    });
-    modeToggle.appendChild(btn);
-  });
-  wrap.appendChild(modeToggle);
+  wrap.style.cssText='padding:6px 8px 4px';
+  /* Selection indicator strip (shown when an account or proposal is selected) */
+  var selStrip=document.createElement('div');
+  selStrip.id='mobile-chart-selection';
+  selStrip.style.cssText='display:none;padding:5px 8px;margin-bottom:4px;background:var(--dim);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--muted);align-items:center;justify-content:space-between;gap:8px';
+  selStrip.innerHTML='<span id="mobile-sel-label"></span>'
+    +'<button id="mobile-sel-clear" style="font-size:10px;padding:2px 6px;background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--muted);cursor:pointer">×</button>';
+  wrap.appendChild(selStrip);
   var chartBox=document.createElement('div');
   chartBox.id='mobile-chart';
   chartBox.style.cssText='width:100%;height:220px;background:'+(NIGHT?'#16171a':'#fff')+';border-radius:8px;overflow:hidden';
   wrap.appendChild(chartBox);
   scroll.appendChild(wrap);
+  /* Wire clear button */
+  setTimeout(function(){
+    var clrBtn=document.getElementById('mobile-sel-clear');
+    if(clrBtn) clrBtn.addEventListener('click',function(){
+      _mobileChartFilter=null;
+      _mobileUpdateSelectionStrip();
+      _mobileBuildChart(chartBox);
+    });
+  },100);
 
   /* === 3. Fund breakdown (horizontal scroll cards F2-F14) === */
   var fundStats={};
@@ -1107,8 +1168,7 @@ function renderMobileChart(scroll){
   subBar.style.cssText='display:flex;gap:0;padding:14px 8px 4px;border-bottom:1px solid var(--border);margin:0 0 8px';
   var subDefs=[
     {id:'acct',ja:'アカウント',en:'Account'},
-    {id:'prop',ja:'提案',en:'Proposal'},
-    {id:'ms',ja:'MS+金額',en:'MS+Amt'}
+    {id:'prop',ja:'提案',en:'Proposal'}
   ];
   subDefs.forEach(function(sd){
     var b=document.createElement('button');
@@ -1179,21 +1239,18 @@ function _renderMobileAcctList(scroll){
       +'</div>';
     var expandRow=null;
     row.addEventListener('click',function(){
+      /* Filter chart to this account */
+      _mobileChartFilter={type:'acct',name:a.name,label:a.name};
+      _mobileUpdateSelectionStrip();
+      var cbox=document.getElementById('mobile-chart');
+      if(cbox) _mobileBuildChart(cbox);
+      /* Toggle expand */
       if(expandRow){expandRow.remove();expandRow=null;return;}
       expandRow=document.createElement('div');
       expandRow.style.cssText='padding:6px 8px 4px;background:var(--dim);border-radius:6px;margin-top:6px';
       var sorted=a.props.slice().sort(function(x,y){return (x.fund||0)-(y.fund||0);});
       sorted.forEach(function(p){
-        var stCol=p.st==='complete'?'#3d8b6e':p.st==='progress'?'#c49b2a':'#b85450';
-        var stLbl=p.st==='complete'?'完':p.st==='progress'?'進':'止';
-        var item=document.createElement('div');
-        item.style.cssText='display:flex;align-items:center;gap:6px;padding:5px 4px;font-size:11px;border-bottom:1px solid var(--border)';
-        item.innerHTML='<span style="display:inline-block;width:16px;height:16px;border-radius:3px;background:'+stCol+';color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+stLbl+'</span>'
-          +'<span style="font-size:9px;color:var(--muted);font-family:var(--mono);flex-shrink:0">F'+(p.fund||'?')+'</span>'
-          +'<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)">'+esc(p.labelJa||p.label)+'</span>'
-          +'<span style="font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0">'+p.amt+(p.u==='ada'?'K ₳':'K $')+'</span>';
-        item.addEventListener('click',function(e){e.stopPropagation();openSheet(p);});
-        expandRow.appendChild(item);
+        expandRow.appendChild(_mobileMakeProposalRow(p));
       });
       row.appendChild(expandRow);
     });
@@ -1229,17 +1286,7 @@ function _renderMobilePropList(scroll){
       hdr.textContent='F'+curFund;
       listWrap.appendChild(hdr);
     }
-    var stCol=p.st==='complete'?'#3d8b6e':p.st==='progress'?'#c49b2a':'#b85450';
-    var stLbl=p.st==='complete'?'完':p.st==='progress'?'進':'止';
-    var row=document.createElement('div');
-    row.style.cssText='display:flex;align-items:center;gap:6px;padding:8px 4px;border-bottom:1px solid var(--border);cursor:pointer';
-    row.innerHTML='<span style="display:inline-block;width:18px;height:18px;border-radius:3px;background:'+stCol+';color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+stLbl+'</span>'
-      +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:12px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.labelJa||p.label)+_mobileFlagChips(p)+'</div>'
-      +'<div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">'+esc(p.by||'未確認')+' · '+p.amt+(p.u==='ada'?'K ₳':'K $')+'</div>'
-      +'</div>';
-    row.addEventListener('click',function(){openSheet(p);});
-    listWrap.appendChild(row);
+    listWrap.appendChild(_mobileMakeProposalRow(p));
   });
   scroll.appendChild(listWrap);
 }
@@ -1284,7 +1331,12 @@ function _renderMobileMsList(scroll){
       +'<div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">F'+f.fund+' · '+esc(f.parent.by||'?')+'</div>'
       +'</div>'
       +'<div style="flex-shrink:0;font-family:var(--mono);font-size:11px;color:rgba(232,160,72,0.9);font-weight:600">₳'+Math.round(f.cost/1000)+'K</div>';
-    row.addEventListener('click',function(){openSheet(f.parent);});
+    row.addEventListener('click',function(){
+      _mobileChartFilter={type:'prop',id:f.parent.id,label:f.parent.labelJa||f.parent.label};
+      _mobileUpdateSelectionStrip();
+      var cb=document.getElementById('mobile-chart');
+      if(cb) _mobileBuildChart(cb);
+    });
     listWrap.appendChild(row);
   });
   scroll.appendChild(listWrap);
@@ -1372,51 +1424,54 @@ function _mobileBuildChart(el){
   var pricePts=_mobileBuildPriceData();
   _mobileAdaLine.setData(pricePts);
 
-  /* Withdrawal histogram (orange bars at MS signoff dates) */
+  /* Withdrawal histogram (orange bars at MS signoff dates) — filterable */
   _mobileWdSeries=_mobileChart.addHistogramSeries({
     color:'rgba(232,160,72,0.8)',priceLineVisible:false,lastValueVisible:false,
     priceScaleId:'wd'
   });
   _mobileChart.priceScale('wd').applyOptions({scaleMargins:{top:0.5,bottom:0}});
   _mobileWdSeries.createPriceLine({price:0,color:'rgba(255,255,255,0.12)',lineWidth:2,axisLabelVisible:false});
-  _mobileWdSeries.setData(_mobileBuildWdData());
+  _mobileWdSeries.setData(_mobileBuildWdData(_mobileChartFilter));
 
-  /* Markers — switch based on _mobileChartMode */
+  /* Markers — combine Fund result + MS signoff markers based on filter */
   var markers=[];
   var FRD2=(D&&D.FUND_RESULT_DATES)||{};
-  if(_mobileChartMode==='fund'){
-    /* Fund result markers (F2-F14 採択時期) */
-    for(var f in FRD2){
-      var d=FRD2[f].split('-');
-      markers.push({time:d[2]+'-'+d[1]+'-'+d[0],position:'belowBar',color:'rgba(61,139,110,0.7)',shape:'arrowUp',text:'F'+f});
-    }
-  } else {
-    /* MS signoff markers (chronological MS署名時期) — show top recent signoffs */
+  var filter=_mobileChartFilter;
+  /* Determine which Fund result markers to show */
+  var fundsToShow={};
+  if(!filter){for(var f in FRD2) fundsToShow[f]=true;}
+  else if(filter.type==='acct'){
+    /* Only funds this account participated in */
+    D.INDUSTRIES.forEach(function(ind){ind.children.forEach(function(p){
+      var inv=(p.by===filter.name)||(p.team&&p.team.some(function(t){return t.name===filter.name;}));
+      if(inv && p.fund) fundsToShow[p.fund]=true;
+    });});
+  } else if(filter.type==='prop'){
+    /* Only this proposal's fund */
+    D.INDUSTRIES.forEach(function(ind){ind.children.forEach(function(p){
+      if(p.id===filter.id && p.fund) fundsToShow[p.fund]=true;
+    });});
+  }
+  for(var ff in fundsToShow){
+    if(!FRD2[ff]) continue;
+    var d=FRD2[ff].split('-');
+    markers.push({time:d[2]+'-'+d[1]+'-'+d[0],position:'belowBar',color:'rgba(61,139,110,0.7)',shape:'arrowUp',text:'F'+ff});
+  }
+  /* If proposal filter, also add MS signoff markers for that proposal */
+  if(filter && filter.type==='prop'){
     var MS=window.CJ_MILESTONES||{};
-    var msEvents=[];
-    for(var pid in MS){
-      var entries=MS[pid];
-      entries.forEach(function(e){
-        e.milestones.forEach(function(m){
-          if(m.signoff){
-            msEvents.push({time:m.signoff.substring(0,10),ms:m.ms,pid:pid});
-          }
-        });
+    var ms=MS[filter.id];
+    if(ms&&ms.length){
+      ms[0].milestones.forEach(function(m){
+        if(!m.signoff) return;
+        var msLbl=m.ms<=10?'①②③④⑤⑥⑦⑧⑨⑩'.charAt(m.ms-1):'M'+m.ms;
+        markers.push({time:m.signoff.substring(0,10),position:'aboveBar',color:'rgba(91,138,240,0.95)',shape:'arrowDown',size:0.5,text:msLbl});
       });
-    }
-    msEvents.sort(function(a,b){return a.time<b.time?-1:1;});
-    /* Group by month to avoid clutter */
-    var monthBuckets={};
-    msEvents.forEach(function(ev){
-      var mo=ev.time.substring(0,7);
-      monthBuckets[mo]=(monthBuckets[mo]||0)+1;
-    });
-    for(var mo in monthBuckets){
-      markers.push({time:mo+'-15',position:'aboveBar',color:'rgba(232,160,72,0.9)',shape:'circle',size:0.5,text:monthBuckets[mo]+'MS'});
     }
   }
   markers.sort(function(a,b){return a.time<b.time?-1:1;});
   if(markers.length) _mobileAdaLine.setMarkers(markers);
+  else _mobileAdaLine.setMarkers([]);
   _mobileChart.timeScale().fitContent();
 }
 
@@ -1455,10 +1510,22 @@ function _mobileBuildPriceData(){
   return pts;
 }
 
-function _mobileBuildWdData(){
+function _mobileBuildWdData(filter){
   var MS=window.CJ_MILESTONES||{};
+  /* Build lookup: pid → proposal (for account filter) */
+  var pidToProp={};
+  D.INDUSTRIES.forEach(function(ind){ind.children.forEach(function(p){pidToProp[p.id]=p;});});
   var bars=[],used={};
   for(var pid in MS){
+    /* Apply filter */
+    if(filter){
+      if(filter.type==='prop' && pid!==filter.id) continue;
+      if(filter.type==='acct'){
+        var pp=pidToProp[pid];if(!pp) continue;
+        var involved=(pp.by===filter.name)||(pp.team&&pp.team.some(function(t){return t.name===filter.name;}));
+        if(!involved) continue;
+      }
+    }
     var entries=MS[pid];
     for(var ei=0;ei<entries.length;ei++){
       var e=entries[ei];
@@ -1473,7 +1540,7 @@ function _mobileBuildWdData(){
         var attempt=0,tryDt=dt;
         while(used[tryDt]){attempt++;var dd=new Date(dt);dd.setDate(dd.getDate()+attempt);tryDt=dd.toISOString().substring(0,10);}
         used[tryDt]=true;
-        bars.push({time:tryDt,value:msAda,color:'rgba(232,160,72,0.8)'});
+        bars.push({time:tryDt,value:msAda,color:'rgba(232,160,72,0.85)'});
       }
     }
   }
