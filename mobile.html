@@ -1159,6 +1159,14 @@ function renderMobileChart(scroll){
     +'<div style="'+cellCss+'"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">支払</span><span style="font-family:var(--serif);font-size:13px;color:rgba(232,160,72,1);font-weight:600">'+fmtAmt(statsCnt.sumDistributedUsd,statsCnt.sumDistributedAda)+'</span></div>';
   stickyTop.appendChild(statsCard);
 
+  /* Search bar — second row, directly below stats card */
+  var searchRow=document.createElement('div');
+  searchRow.style.cssText='margin:2px 8px 4px;padding:5px 8px;background:var(--dim);border-radius:6px;display:flex;align-items:center;gap:5px';
+  searchRow.innerHTML=
+    '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted);flex-shrink:0;opacity:0.7"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>'
+    +'<input id="mobile-chart-search" placeholder="'+(LANG==='ja'?'タイトル/提案者で絞り込み':'Title/proposer filter')+'" style="flex:1;background:transparent;border:none;outline:none;font-size:11px;color:var(--ink);font-family:inherit;min-width:0">';
+  stickyTop.appendChild(searchRow);
+
   /* === 2. Chart container with selection chip overlay === */
   var wrap=document.createElement('div');
   wrap.style.cssText='padding:6px 8px 4px;position:relative';
@@ -1238,14 +1246,6 @@ function renderMobileChart(scroll){
     fundStrip.appendChild(cell);
   });
   stickyTop.appendChild(fundStrip);
-
-  /* Search bar row (below Fund strip, still inside sticky top) */
-  var searchRow=document.createElement('div');
-  searchRow.style.cssText='margin:4px 8px 2px;padding:5px 8px;background:var(--dim);border-radius:6px;display:flex;align-items:center;gap:5px';
-  searchRow.innerHTML=
-    '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted);flex-shrink:0;opacity:0.7"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>'
-    +'<input id="mobile-chart-search" placeholder="'+(LANG==='ja'?'タイトル/提案者で絞り込み':'Title/proposer filter')+'" style="flex:1;background:transparent;border:none;outline:none;font-size:11px;color:var(--ink);font-family:inherit;min-width:0">';
-  stickyTop.appendChild(searchRow);
 
   /* === 4. Sub-tab: アカウント / 提案 / Fund (sticky) === */
   var subBar=document.createElement('div');
@@ -1655,7 +1655,7 @@ function _mobileBuildChart(el){
     color:'rgba(232,160,72,0.55)',priceLineVisible:false,lastValueVisible:false,
     priceScaleId:'wd'
   });
-  _mobileChart.priceScale('wd').applyOptions({scaleMargins:{top:0.35,bottom:0}});
+  _mobileChart.priceScale('wd').applyOptions({scaleMargins:{top:0.15,bottom:0}});
 
   /* ADA price line on TOP (rendered after bars, so it's in front) */
   _mobileAdaLine=_mobileChart.addLineSeries({color:'#5b8af0',lineWidth:2,lastValueVisible:true,priceLineVisible:false,
