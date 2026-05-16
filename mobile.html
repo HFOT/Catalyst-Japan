@@ -435,9 +435,11 @@ function renderContent(scroll){
   } else if(TAB==='chart'){
     renderMobileChart(scroll);
   }
-  /* Hide global search bar on chart tab (chart has its own search inline) */
+  /* Hide global search bar AND top header on chart tab (more space for chart content) */
   var globalSrch=document.querySelector('.da-search');
   if(globalSrch) globalSrch.style.display=(TAB==='chart')?'none':'';
+  var globalHdr=document.querySelector('.da-header');
+  if(globalHdr) globalHdr.style.display=(TAB==='chart')?'none':'';
 
   /* PC link at bottom */
   var lnk=document.createElement('div');
@@ -1149,14 +1151,15 @@ function renderMobileChart(scroll){
   chartBox.id='mobile-chart';
   chartBox.style.cssText='width:100%;height:220px;background:'+(NIGHT?'#16171a':'#fff')+';border-radius:8px;overflow:hidden;position:relative';
   wrap.appendChild(chartBox);
-  /* Unified filter+search bar — always visible, overlayed inside chart area */
+  /* Unified filter+search bar — overlayed inside chart area, narrower (~70% width) */
   var selStrip=document.createElement('div');
   selStrip.id='mobile-chart-selection';
-  selStrip.style.cssText='display:flex;position:absolute;top:14px;left:16px;right:16px;padding:3px 6px 3px 8px;background:var(--bar-bg,rgba(20,20,22,0.85));border:1px solid var(--bar-border,rgba(255,255,255,0.12));border-radius:5px;font-family:var(--mono);font-size:10px;color:var(--ink);align-items:center;gap:6px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:5';
+  selStrip.style.cssText='display:flex;position:absolute;top:14px;left:16px;width:65%;max-width:240px;padding:3px 6px 3px 6px;background:var(--bar-bg,rgba(20,20,22,0.85));border:1px solid var(--bar-border,rgba(255,255,255,0.12));border-radius:5px;font-family:var(--mono);font-size:10px;color:var(--ink);align-items:center;gap:5px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:5';
   selStrip.innerHTML=
-    '<span id="mobile-sel-label" style="flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:50%"></span>'
-    +'<input id="mobile-chart-search" placeholder="🔍" style="flex:1;background:transparent;border:none;outline:none;font-size:10px;color:var(--ink);font-family:inherit;min-width:0">'
-    +'<button id="mobile-sel-clear" style="display:none;font-size:12px;padding:0 6px;background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--muted);cursor:pointer;flex-shrink:0;line-height:1.2">×</button>';
+    '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted);flex-shrink:0;opacity:0.6"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>'
+    +'<span id="mobile-sel-label" style="flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:50%"></span>'
+    +'<input id="mobile-chart-search" placeholder="'+(LANG==='ja'?'タイトル/提案者で絞り込み':'Title/proposer filter')+'" style="flex:1;background:transparent;border:none;outline:none;font-size:10px;color:var(--ink);font-family:inherit;min-width:0">'
+    +'<button id="mobile-sel-clear" style="display:none;font-size:12px;padding:0 5px;background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--muted);cursor:pointer;flex-shrink:0;line-height:1.2">×</button>';
   wrap.appendChild(selStrip);
   stickyTop.appendChild(wrap);
   /* Wire clear button */
@@ -1235,12 +1238,14 @@ function renderMobileChart(scroll){
     var b=document.createElement('button');
     var active=_mobileSubTab===sd.id;
     b.style.cssText='flex:1;padding:4px 6px;font-family:var(--mono);font-size:10px;letter-spacing:0.04em;background:transparent;color:'+(active?'var(--ink)':'var(--muted)')+';border:none;border-bottom:2px solid '+(active?'var(--ink)':'transparent')+';cursor:pointer;font-weight:'+(active?'600':'400');
-    /* Show sort suffix for acct/prop tabs */
+    /* Show sort suffix for acct/prop tabs, with ⇋ icon to hint at cyclable */
     var lbl=LANG==='ja'?sd.ja:sd.en;
-    if(active && (sd.id==='acct'||sd.id==='prop')){
-      lbl+=' ('+_mobileSortLabel(sd.id)+')';
+    if(sd.id==='acct'||sd.id==='prop'){
+      var sortLbl=_mobileSortLabel(sd.id);
+      if(active) lbl+=' <span style="font-size:8px;opacity:0.7">⇋ '+sortLbl+'</span>';
+      else lbl+=' <span style="font-size:8px;opacity:0.4">⇋</span>';
     }
-    b.textContent=lbl;
+    b.innerHTML=lbl;
     b.addEventListener('click',function(){
       if(_mobileSubTab===sd.id && (sd.id==='acct'||sd.id==='prop')){
         /* Same tab tapped → cycle sort mode */
@@ -1619,21 +1624,26 @@ function _mobileBuildChart(el){
     width:el.clientWidth, height:240,
     layout:{background:{type:'solid',color:isNight?'#16171a':'#ffffff'},textColor:isNight?'#7a7a74':'#8a8a83',fontSize:9},
     grid:{vertLines:{color:isNight?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)'},horzLines:{color:isNight?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)'}},
-    rightPriceScale:{borderColor:isNight?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.1)',scaleMargins:{top:0.1,bottom:0.35}},
+    rightPriceScale:{borderColor:isNight?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.1)',scaleMargins:{top:0.05,bottom:0.05}},
     timeScale:{borderColor:isNight?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.1)',timeVisible:false,fixLeftEdge:true,fixRightEdge:true}
   });
 
-  /* ADA price line (interpolated from fund dates + fallback points) */
-  _mobileAdaLine=_mobileChart.addLineSeries({color:'#5b8af0',lineWidth:2,lastValueVisible:false,priceLineVisible:false});
-  var pricePts=_mobileBuildPriceData();
-  _mobileAdaLine.setData(pricePts);
-
-  /* Withdrawal histogram (orange bars at MS signoff dates) — filterable */
+  /* Withdrawal histogram FIRST (renders behind), uses 'wd' scale spanning full height */
   _mobileWdSeries=_mobileChart.addHistogramSeries({
-    color:'rgba(232,160,72,0.8)',priceLineVisible:false,lastValueVisible:false,
+    color:'rgba(232,160,72,0.55)',priceLineVisible:false,lastValueVisible:false,
     priceScaleId:'wd'
   });
-  _mobileChart.priceScale('wd').applyOptions({scaleMargins:{top:0.5,bottom:0}});
+  _mobileChart.priceScale('wd').applyOptions({scaleMargins:{top:0.1,bottom:0}});
+
+  /* ADA price line on TOP (rendered after bars, so it's in front) */
+  _mobileAdaLine=_mobileChart.addLineSeries({color:'#5b8af0',lineWidth:2,lastValueVisible:true,priceLineVisible:false,
+    /* Limit lower display range to -1 by adding a synthetic baseline anchor below */
+    autoscaleInfoProvider:function(){
+      return {priceRange:{minValue:-1,maxValue:3.5}};
+    }
+  });
+  var pricePts=_mobileBuildPriceData();
+  _mobileAdaLine.setData(pricePts);
   _mobileWdSeries.createPriceLine({price:0,color:'rgba(255,255,255,0.12)',lineWidth:2,axisLabelVisible:false});
   _mobileWdSeries.setData(_mobileBuildWdData(_mobileChartFilter));
 
