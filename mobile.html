@@ -977,6 +977,25 @@ function renderTimeline(scroll){
 var _mobileChart=null, _mobileAdaLine=null, _mobileWdSeries=null;
 var _mobileSubTab='acct';
 var _mobileSearchQ='';
+/* Sort modes per sub-tab: 'count' / 'amount' / 'flag' */
+var _mobileAcctSort='count', _mobilePropSort='fund';
+var _mobileSortLabels={
+  acct:[{id:'count',ja:'提案順'},{id:'amount',ja:'金額順'},{id:'flag',ja:'flag順'}],
+  prop:[{id:'fund',ja:'Fund順'},{id:'amount',ja:'金額順'},{id:'flag',ja:'flag順'}]
+};
+function _mobileNextSort(tab){
+  var modes=_mobileSortLabels[tab];if(!modes) return;
+  var cur=tab==='acct'?_mobileAcctSort:_mobilePropSort;
+  var idx=0;for(var i=0;i<modes.length;i++)if(modes[i].id===cur){idx=i;break;}
+  var next=modes[(idx+1)%modes.length].id;
+  if(tab==='acct') _mobileAcctSort=next; else _mobilePropSort=next;
+}
+function _mobileSortLabel(tab){
+  var modes=_mobileSortLabels[tab];if(!modes) return '';
+  var cur=tab==='acct'?_mobileAcctSort:_mobilePropSort;
+  for(var i=0;i<modes.length;i++)if(modes[i].id===cur) return modes[i].ja;
+  return '';
+}
 /* Chart filter: null = global, {type:'acct',name:X} = account-filtered, {type:'prop',id:X} = proposal-filtered */
 var _mobileChartFilter=null;
 function _mobileApplySearchFilter(){
@@ -991,18 +1010,19 @@ function _mobileApplySearchFilter(){
   });
 }
 function _mobileUpdateSelectionStrip(){
-  var strip=document.getElementById('mobile-chart-selection');
   var lbl=document.getElementById('mobile-sel-label');
-  if(!strip||!lbl) return;
+  var clr=document.getElementById('mobile-sel-clear');
+  if(!lbl) return;
   if(_mobileChartFilter){
-    strip.style.display='flex';
     var prefix='';
     if(_mobileChartFilter.type==='acct') prefix='🧑 ';
     else if(_mobileChartFilter.type==='prop') prefix='📋 ';
     else if(_mobileChartFilter.type==='fund') prefix='💰 ';
     lbl.textContent=prefix+(_mobileChartFilter.label||_mobileChartFilter.name||'');
+    if(clr) clr.style.display='';
   } else {
-    strip.style.display='none';
+    lbl.textContent='';
+    if(clr) clr.style.display='none';
   }
 }
 /* Compact proposal row used by both Proposal tab and Account-expanded list.
@@ -1129,12 +1149,14 @@ function renderMobileChart(scroll){
   chartBox.id='mobile-chart';
   chartBox.style.cssText='width:100%;height:220px;background:'+(NIGHT?'#16171a':'#fff')+';border-radius:8px;overflow:hidden;position:relative';
   wrap.appendChild(chartBox);
-  /* Selection chip — overlayed at top-left INSIDE the chart area */
+  /* Unified filter+search bar — always visible, overlayed inside chart area */
   var selStrip=document.createElement('div');
   selStrip.id='mobile-chart-selection';
-  selStrip.style.cssText='display:none;position:absolute;top:14px;left:16px;right:16px;padding:4px 8px;background:var(--bar-bg,rgba(20,20,22,0.85));border:1px solid var(--bar-border,rgba(255,255,255,0.12));border-radius:5px;font-family:var(--mono);font-size:10px;color:var(--ink);align-items:center;justify-content:space-between;gap:8px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:5';
-  selStrip.innerHTML='<span id="mobile-sel-label" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>'
-    +'<button id="mobile-sel-clear" style="font-size:12px;padding:0 6px;background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--muted);cursor:pointer;flex-shrink:0;line-height:1.2">×</button>';
+  selStrip.style.cssText='display:flex;position:absolute;top:14px;left:16px;right:16px;padding:3px 6px 3px 8px;background:var(--bar-bg,rgba(20,20,22,0.85));border:1px solid var(--bar-border,rgba(255,255,255,0.12));border-radius:5px;font-family:var(--mono);font-size:10px;color:var(--ink);align-items:center;gap:6px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:5';
+  selStrip.innerHTML=
+    '<span id="mobile-sel-label" style="flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:50%"></span>'
+    +'<input id="mobile-chart-search" placeholder="🔍" style="flex:1;background:transparent;border:none;outline:none;font-size:10px;color:var(--ink);font-family:inherit;min-width:0">'
+    +'<button id="mobile-sel-clear" style="display:none;font-size:12px;padding:0 6px;background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--muted);cursor:pointer;flex-shrink:0;line-height:1.2">×</button>';
   wrap.appendChild(selStrip);
   stickyTop.appendChild(wrap);
   /* Wire clear button */
@@ -1178,18 +1200,28 @@ function renderMobileChart(scroll){
       _mobileChartFilter={type:'fund',fund:fs.f,label:'F'+fs.f+' ('+fs.total+'件 / '+(fs.ada/1000).toFixed(1)+'M ₳)'};
       _mobileSubTab='fund';
       _mobileExpandedFund=fs.f;
+      _mobileFundFirst=fs.f;
       render();
+      /* Scroll Fund tab list so this Fund is at the top */
+      setTimeout(function(){
+        var sc=document.getElementById('mainScroll');
+        var stickyTop=sc && sc.querySelector('div[style*="position: sticky"], div[style*="position:sticky"]');
+        var subBar=sc && sc.querySelectorAll('div[style*="border-bottom"]');
+        /* Find Fund row by data-row-search containing F<n> */
+        var fundRows=sc.querySelectorAll('div[data-row-search]');
+        for(var r=0;r<fundRows.length;r++){
+          if(fundRows[r].getAttribute('data-row-search').indexOf('F'+fs.f+' ')===0){
+            var stickyH=stickyTop?stickyTop.offsetHeight:0;
+            var rowTop=fundRows[r].offsetTop;
+            sc.scrollTop=rowTop-stickyH-50; /* account for sub-tab bar */
+            return;
+          }
+        }
+      },100);
     });
     fundStrip.appendChild(cell);
   });
   stickyTop.appendChild(fundStrip);
-
-  /* Chart-specific search bar (after Fund strip) — last item in sticky top */
-  var chartSearch=document.createElement('div');
-  chartSearch.style.cssText='margin:4px 8px;padding:5px 10px;background:var(--dim);border-radius:6px;display:flex;align-items:center;gap:6px';
-  chartSearch.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted);flex-shrink:0"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>'
-    +'<input id="mobile-chart-search" placeholder="'+(LANG==='ja'?'タイトル / 提案者 で絞り込み…':'Filter title / proposer…')+'" style="flex:1;background:transparent;border:none;outline:none;font-size:12px;color:var(--ink);font-family:inherit">';
-  stickyTop.appendChild(chartSearch);
 
   /* === 4. Sub-tab: アカウント / 提案 / MS+金額 === */
   var subBar=document.createElement('div');
@@ -1203,8 +1235,21 @@ function renderMobileChart(scroll){
     var b=document.createElement('button');
     var active=_mobileSubTab===sd.id;
     b.style.cssText='flex:1;padding:4px 6px;font-family:var(--mono);font-size:10px;letter-spacing:0.04em;background:transparent;color:'+(active?'var(--ink)':'var(--muted)')+';border:none;border-bottom:2px solid '+(active?'var(--ink)':'transparent')+';cursor:pointer;font-weight:'+(active?'600':'400');
-    b.textContent=LANG==='ja'?sd.ja:sd.en;
-    b.addEventListener('click',function(){_mobileSubTab=sd.id;render();});
+    /* Show sort suffix for acct/prop tabs */
+    var lbl=LANG==='ja'?sd.ja:sd.en;
+    if(active && (sd.id==='acct'||sd.id==='prop')){
+      lbl+=' ('+_mobileSortLabel(sd.id)+')';
+    }
+    b.textContent=lbl;
+    b.addEventListener('click',function(){
+      if(_mobileSubTab===sd.id && (sd.id==='acct'||sd.id==='prop')){
+        /* Same tab tapped → cycle sort mode */
+        _mobileNextSort(sd.id);
+      } else {
+        _mobileSubTab=sd.id;
+      }
+      render();
+    });
     subBar.appendChild(b);
   });
   scroll.appendChild(subBar);
@@ -1255,8 +1300,14 @@ function _renderMobileAcctList(scroll){
       if(p.team) p.team.forEach(function(t){trackAcct(t.name);});
     });
   });
-  var accts=Object.keys(byAcct).map(function(k){return byAcct[k];})
-    .sort(function(a,b){return b.total-a.total;});
+  var accts=Object.keys(byAcct).map(function(k){return byAcct[k];});
+  if(_mobileAcctSort==='amount') accts.sort(function(a,b){return b.ada-a.ada;});
+  else if(_mobileAcctSort==='flag') accts.sort(function(a,b){
+    var fa=a.end+a.unfunded+a.overdue+a.gap+a.longGap+a.pastOverdue+a.old;
+    var fb=b.end+b.unfunded+b.overdue+b.gap+b.longGap+b.pastOverdue+b.old;
+    return fb-fa;
+  });
+  else accts.sort(function(a,b){return b.total-a.total;}); /* count */
 
   var listWrap=document.createElement('div');
   listWrap.style.cssText='padding:0 8px 12px';
@@ -1304,7 +1355,7 @@ function _renderMobileAcctList(scroll){
 }
 
 /* ── Fund list (each Fund as a row, tap to expand its proposals) ── */
-var _mobileExpandedFund=null;
+var _mobileExpandedFund=null, _mobileFundFirst=null;
 function _renderMobileFundList(scroll){
   /* Group proposals by fund */
   var byFund={};
@@ -1322,6 +1373,11 @@ function _renderMobileFundList(scroll){
     });
   });
   var fundList=Object.keys(byFund).map(function(k){return byFund[k];}).sort(function(a,b){return a.f-b.f;});
+  /* If a Fund was tapped from the strip, move it to the top */
+  if(_mobileFundFirst){
+    var idx=-1;for(var i=0;i<fundList.length;i++) if(fundList[i].f===_mobileFundFirst){idx=i;break;}
+    if(idx>0){var first=fundList.splice(idx,1)[0];fundList.unshift(first);}
+  }
 
   var listWrap=document.createElement('div');
   listWrap.style.cssText='padding:0 8px 12px';
@@ -1379,7 +1435,6 @@ function _renderMobileFundList(scroll){
 function _renderMobilePropList(scroll){
   var all=[];
   D.INDUSTRIES.forEach(function(ind){ind.children.forEach(function(p){all.push(p);});});
-  /* Sort by fund descending (newest first), then by status (problems first) */
   function severity(p){
     if(p.st==='dnf') return 0;
     var ps=_mobileProposalStatus(p);
@@ -1389,13 +1444,16 @@ function _renderMobilePropList(scroll){
     if(ps.longGap) return 4;
     return 9;
   }
-  all.sort(function(a,b){var fd=(b.fund||0)-(a.fund||0);return fd!==0?fd:severity(a)-severity(b);});
+  function propAda(p){return p.u==='ada'?p.amt:p.amt/(p.adaPrice||0.5);}
+  if(_mobilePropSort==='amount') all.sort(function(a,b){return propAda(b)-propAda(a);});
+  else if(_mobilePropSort==='flag') all.sort(function(a,b){return severity(a)-severity(b);});
+  else all.sort(function(a,b){var fd=(b.fund||0)-(a.fund||0);return fd!==0?fd:severity(a)-severity(b);}); /* fund */
 
   var listWrap=document.createElement('div');
   listWrap.style.cssText='padding:0 8px 12px';
-  var curFund=0;
+  var curFund=0,showFundHdr=(_mobilePropSort==='fund');
   all.forEach(function(p){
-    if((p.fund||0)!==curFund){
+    if(showFundHdr && (p.fund||0)!==curFund){
       curFund=p.fund||0;
       var hdr=document.createElement('div');
       hdr.style.cssText='font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.06em;padding:10px 4px 4px;border-bottom:1px solid var(--border)';
