@@ -283,6 +283,7 @@ var TEAMS={
   'co-2':['ranket:共同提案'],'co-3':['Yujin Katsuta:共同提案','jpg.store:共同提案'],
   'df-2':['Sebastien Guillemot:共同提案','nicoarqueros:共同提案'],
   'co-8':['yutazzz:運営'],'co-9':['yutazzz:運営'],
+  'co-11':['ranket:共同提案'],
   'co-12':['Daisuke Miyashita:共同提案','yutazzz:共同提案','Yuri Kuriyama:共同提案'],
   'co-14':['ranket:共同提案'],'co-17':['yutazzz:運営'],'co-19':['ranket:共同提案'],
   'co-23':['yutazzz:共同提案'],
