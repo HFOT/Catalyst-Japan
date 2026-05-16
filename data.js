@@ -491,21 +491,23 @@ for(i=0;i<INDUSTRIES.length;i++){
 }
 
 /* ---- Computed stats per industry ---- */
-var totalFunded=0,totalCompleted=0,totalProgress=0,totalDnf=0,totalUsdK=0;
+var totalFunded=0,totalCompleted=0,totalProgress=0,totalDnf=0,totalUsdK=0,totalAdaK=0;
 var proposerSet={},fundSet={};
 for(i=0;i<INDUSTRIES.length;i++){
-  var ind=INDUSTRIES[i],ok=0,wip=0,dn=0,secK=0;
+  var ind=INDUSTRIES[i],ok=0,wip=0,dn=0,secK=0,secAdaK=0;
   for(j=0;j<ind.children.length;j++){
     p=ind.children[j];
     var uK=p.u==='ada'?p.amt*p.adaPrice:p.amt;
+    /* Real ADA amount committed (using each proposal's adoption-time ADA price) */
+    var adaK=p.u==='ada'?p.amt:(p.amt/(p.adaPrice||0.5));
     if(p.st==='complete'){ok++;totalCompleted++;}
     else if(p.st==='progress'){wip++;totalProgress++;}
     else{dn++;totalDnf++;}
-    totalFunded++;totalUsdK+=uK;secK+=uK;
+    totalFunded++;totalUsdK+=uK;totalAdaK+=adaK;secK+=uK;secAdaK+=adaK;
     if(p.fund)fundSet[p.fund]=true;
     if(p.by)proposerSet[p.by]=true;
   }
-  ind._ok=ok;ind._wip=wip;ind._dnf=dn;ind._total=ok+wip+dn;ind._usdK=secK;
+  ind._ok=ok;ind._wip=wip;ind._dnf=dn;ind._total=ok+wip+dn;ind._usdK=secK;ind._adaK=secAdaK;
 }
 
 /* ---- Export ---- */
@@ -525,6 +527,7 @@ var DATA={
   totalProgress:totalProgress,
   totalDnf:totalDnf,
   totalUsdK:totalUsdK,
+  totalAdaK:totalAdaK,
   proposerCount:Object.keys(proposerSet).length,
   sectorCount:INDUSTRIES.length,
   funds:Object.keys(fundSet).map(Number).sort(function(a,b){return a-b})

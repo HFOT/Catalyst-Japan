@@ -305,10 +305,15 @@ function stColor(st){
 }
 function secColor(hue){return 'hsl('+hue+' 50% '+(NIGHT?60:44)+'%)'}
 function pUsdK(p){return p.u==='ada'?p.amt*(p.adaPrice||ADA_USD):p.amt}
-function fmtAmt(usdK,mode){
-  mode=mode||CURRENCY;
+/* Format an amount. Pass usdK (USD * 1000) for currency conversion.
+   Optionally pass adaK as second arg for ACCURATE ADA display
+   (uses each proposal's adoption-time price, not current market rate). */
+function fmtAmt(usdK,modeOrAdaK,modeArg){
+  var mode,adaK;
+  if(typeof modeOrAdaK==='number'){adaK=modeOrAdaK;mode=modeArg||CURRENCY;}
+  else{mode=modeOrAdaK||CURRENCY;adaK=null;}
   if(mode==='ada'){
-    var ada=usdK*1000/ADA_USD;
+    var ada=adaK!=null?adaK*1000:(usdK*1000/ADA_USD);
     if(ada>=1e6) return (ada/1e6).toFixed(2)+'M ₳';
     if(ada>=1000) return Math.round(ada/1000)+'K ₳';
     return Math.round(ada)+' ₳';
@@ -371,7 +376,7 @@ function render(){
   hdr.innerHTML=''
     +'<div class="da-title-row">'
     +'<h1 class="da-title">Catalyst <em>Japan</em></h1>'
-    +'<span class="da-h-amt">'+fmtAmt(D.totalUsdK)+'</span>'
+    +'<span class="da-h-amt">'+fmtAmt(D.totalUsdK,D.totalAdaK)+'</span>'
     +'</div>';
   root.appendChild(hdr);
 
@@ -1186,19 +1191,19 @@ function renderMobileChart(scroll){
     });
   });
   var fundList=Object.keys(fundStats).map(function(k){return fundStats[k];}).sort(function(a,b){return a.f-b.f;});
-  /* Single-row horizontal scroll Fund strip */
+  /* Single-row compact Fund strip — fits F2..F14 in viewport width */
   var fundStrip=document.createElement('div');
-  fundStrip.style.cssText='display:flex;gap:4px;padding:4px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch';
+  fundStrip.style.cssText='display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:2px;padding:4px 6px';
   fundList.forEach(function(fs){
     var cell=document.createElement('div');
-    cell.style.cssText='flex:0 0 auto;min-width:62px;padding:4px 6px;background:var(--dim);border-radius:5px;display:flex;flex-direction:column;gap:2px;cursor:pointer';
+    cell.style.cssText='padding:3px 2px;background:var(--dim);border-radius:4px;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;min-width:0';
     var rate=fs.total>0?Math.round((fs.complete/fs.total)*100):0;
-    cell.innerHTML='<div style="display:flex;align-items:baseline;gap:2px"><span style="font-family:var(--mono);font-size:9px;color:var(--muted);font-weight:500">F'+fs.f+'</span><span style="font-family:var(--serif);font-size:12px;color:var(--ink);font-weight:600">'+fs.total+'</span></div>'
-      +'<div style="display:flex;height:2px;width:100%;border-radius:1px;overflow:hidden;background:var(--border)">'
+    cell.innerHTML='<div style="display:flex;align-items:baseline;gap:1px"><span style="font-family:var(--mono);font-size:8px;color:var(--muted);font-weight:500">F'+fs.f+'</span><span style="font-family:var(--serif);font-size:11px;color:var(--ink);font-weight:600">'+fs.total+'</span></div>'
+      +'<div style="display:flex;height:2px;width:90%;border-radius:1px;overflow:hidden;background:var(--border)">'
       +'<div style="width:'+rate+'%;background:#3d8b6e"></div>'
       +'<div style="width:'+(fs.total>0?Math.round((fs.progress/fs.total)*100):0)+'%;background:#c49b2a"></div>'
       +'<div style="width:'+(fs.total>0?Math.round((fs.dnf/fs.total)*100):0)+'%;background:#b85450"></div></div>'
-      +'<div style="font-family:var(--mono);font-size:8px;color:var(--muted)">'+fmtAmt(fs.ada*(ADA_USD||0.5))+'</div>';
+      +'<div style="font-family:var(--mono);font-size:7px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:clip;max-width:100%">'+fmtAmt(fs.ada*(ADA_USD||0.5)).replace(/\s/g,'')+'</div>';
     cell.addEventListener('click',function(){
       _mobileChartFilter={type:'fund',fund:fs.f,label:'F'+fs.f+' ('+fs.total+'件 / '+(fs.ada/1000).toFixed(1)+'M ₳)'};
       _mobileSubTab='fund';
