@@ -1155,7 +1155,7 @@ function renderMobileChart(scroll){
   wrap.style.cssText='padding:6px 8px 4px;position:relative';
   var chartBox=document.createElement('div');
   chartBox.id='mobile-chart';
-  chartBox.style.cssText='width:100%;height:220px;background:'+(NIGHT?'#16171a':'#fff')+';border-radius:8px;overflow:hidden;position:relative';
+  chartBox.style.cssText='width:100%;height:240px;background:'+(NIGHT?'#16171a':'#fff')+';border-radius:8px;overflow:hidden;position:relative';
   wrap.appendChild(chartBox);
   /* Selection chip — overlayed top-left inside chart (no longer contains input) */
   var selStrip=document.createElement('div');
@@ -1634,10 +1634,11 @@ function _mobileBuildChart(el){
   var isNight=NIGHT;
   _mobileChart=LightweightCharts.createChart(el,{
     width:el.clientWidth, height:240,
+    localization:{dateFormat:'yyyy-MM'},
     layout:{background:{type:'solid',color:isNight?'#16171a':'#ffffff'},textColor:isNight?'#7a7a74':'#8a8a83',fontSize:9},
     grid:{vertLines:{color:isNight?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)'},horzLines:{color:isNight?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)'}},
     rightPriceScale:{borderColor:isNight?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.1)',scaleMargins:{top:0.05,bottom:0.05}},
-    timeScale:{borderColor:isNight?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.1)',timeVisible:false,fixLeftEdge:true,fixRightEdge:true}
+    timeScale:{borderColor:isNight?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.1)',timeVisible:false,secondsVisible:false,fixLeftEdge:true,fixRightEdge:true,rightOffset:5}
   });
 
   /* Withdrawal histogram FIRST (renders behind), uses 'wd' scale spanning full height */
@@ -1782,10 +1783,35 @@ function _mobileBuildWdData(filter){
         var attempt=0,tryDt=dt;
         while(used[tryDt]){attempt++;var dd=new Date(dt);dd.setDate(dd.getDate()+attempt);tryDt=dd.toISOString().substring(0,10);}
         used[tryDt]=true;
-        bars.push({time:tryDt,value:msAda,color:'rgba(232,160,72,0.85)'});
+        bars.push({time:tryDt,value:msAda,color:'rgba(232,160,72,0.55)'});
       }
     }
   }
+
+  /* Also add bars for pre-MS proposals (F2-F9) that don't have CJ_MILESTONES data.
+     Place at fund result date as lump-sum payment received then. */
+  D.INDUSTRIES.forEach(function(ind){ind.children.forEach(function(p){
+    if(MS[p.id]&&MS[p.id].length) return; /* already handled above */
+    if((p.fund||0)>=10) return; /* only pre-MS */
+    /* Apply filter */
+    if(filter){
+      if(filter.type==='prop' && p.id!==filter.id) return;
+      if(filter.type==='acct'){
+        var inv=(p.by===filter.name)||(p.team&&p.team.some(function(t){return t.name===filter.name;}));
+        if(!inv) return;
+      }
+      if(filter.type==='fund' && p.fund!==filter.fund) return;
+    }
+    if(!FRD[p.fund]) return;
+    var fp=FRD[p.fund].split('-');
+    var dt=fp[2]+'-'+fp[1]+'-'+fp[0];
+    var ada=(p.u==='ada'?p.amt:p.amt/(p.adaPrice||0.5));
+    var attempt=0,tryDt=dt;
+    while(used[tryDt]){attempt++;var dd=new Date(dt);dd.setDate(dd.getDate()+attempt);tryDt=dd.toISOString().substring(0,10);}
+    used[tryDt]=true;
+    /* Slightly different orange tone for pre-MS to distinguish from MS bars */
+    bars.push({time:tryDt,value:ada,color:'rgba(232,160,72,0.55)'});
+  });});
   bars.sort(function(a,b){return a.time<b.time?-1:1;});
   return bars;
 }
