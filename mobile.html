@@ -1157,15 +1157,13 @@ function renderMobileChart(scroll){
   chartBox.id='mobile-chart';
   chartBox.style.cssText='width:100%;height:220px;background:'+(NIGHT?'#16171a':'#fff')+';border-radius:8px;overflow:hidden;position:relative';
   wrap.appendChild(chartBox);
-  /* Unified filter+search bar — overlayed inside chart area, narrower (~70% width) */
+  /* Selection chip — overlayed top-left inside chart (no longer contains input) */
   var selStrip=document.createElement('div');
   selStrip.id='mobile-chart-selection';
-  selStrip.style.cssText='display:flex;position:absolute;top:14px;left:16px;width:65%;max-width:240px;padding:3px 6px 3px 6px;background:var(--bar-bg,rgba(20,20,22,0.85));border:1px solid var(--bar-border,rgba(255,255,255,0.12));border-radius:5px;font-family:var(--mono);font-size:10px;color:var(--ink);align-items:center;gap:5px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:5';
+  selStrip.style.cssText='display:none;position:absolute;top:14px;left:16px;max-width:65%;padding:3px 6px;background:var(--bar-bg,rgba(20,20,22,0.85));border:1px solid var(--bar-border,rgba(255,255,255,0.12));border-radius:5px;font-family:var(--mono);font-size:10px;color:var(--ink);align-items:center;gap:5px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:5';
   selStrip.innerHTML=
-    '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted);flex-shrink:0;opacity:0.6"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>'
-    +'<span id="mobile-sel-label" style="flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:50%"></span>'
-    +'<input id="mobile-chart-search" placeholder="'+(LANG==='ja'?'タイトル/提案者で絞り込み':'Title/proposer filter')+'" style="flex:1;background:transparent;border:none;outline:none;font-size:10px;color:var(--ink);font-family:inherit;min-width:0">'
-    +'<button id="mobile-sel-clear" style="display:none;font-size:12px;padding:0 5px;background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--muted);cursor:pointer;flex-shrink:0;line-height:1.2">×</button>';
+    '<span id="mobile-sel-label" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>'
+    +'<button id="mobile-sel-clear" style="font-size:12px;padding:0 5px;background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--muted);cursor:pointer;flex-shrink:0;line-height:1.2">×</button>';
   wrap.appendChild(selStrip);
   stickyTop.appendChild(wrap);
   /* Wire clear button */
@@ -1232,9 +1230,17 @@ function renderMobileChart(scroll){
   });
   stickyTop.appendChild(fundStrip);
 
-  /* === 4. Sub-tab: アカウント / 提案 / MS+金額 === */
+  /* Search bar row (below Fund strip, still inside sticky top) */
+  var searchRow=document.createElement('div');
+  searchRow.style.cssText='margin:4px 8px 2px;padding:5px 8px;background:var(--dim);border-radius:6px;display:flex;align-items:center;gap:5px';
+  searchRow.innerHTML=
+    '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted);flex-shrink:0;opacity:0.7"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg>'
+    +'<input id="mobile-chart-search" placeholder="'+(LANG==='ja'?'タイトル/提案者で絞り込み':'Title/proposer filter')+'" style="flex:1;background:transparent;border:none;outline:none;font-size:11px;color:var(--ink);font-family:inherit;min-width:0">';
+  stickyTop.appendChild(searchRow);
+
+  /* === 4. Sub-tab: アカウント / 提案 / Fund (sticky) === */
   var subBar=document.createElement('div');
-  subBar.style.cssText='display:flex;gap:0;padding:4px 8px 2px;border-bottom:1px solid var(--border);margin:0 0 4px';
+  subBar.style.cssText='display:flex;gap:0;padding:4px 8px 2px;border-bottom:1px solid var(--border);margin:0;background:var(--bg)';
   var subDefs=[
     {id:'acct',ja:'アカウント',en:'Account'},
     {id:'prop',ja:'提案',en:'Proposal'},
@@ -1263,7 +1269,7 @@ function renderMobileChart(scroll){
     });
     subBar.appendChild(b);
   });
-  scroll.appendChild(subBar);
+  stickyTop.appendChild(subBar);
 
   /* Render the active sub-tab content */
   if(_mobileSubTab==='acct'){_renderMobileAcctList(scroll);}
@@ -1738,6 +1744,7 @@ function _mobileBuildWdData(filter){
   /* Build lookup: pid → proposal (for account/fund filter) */
   var pidToProp={};
   D.INDUSTRIES.forEach(function(ind){ind.children.forEach(function(p){pidToProp[p.id]=p;});});
+  var FRD=(D&&D.FUND_RESULT_DATES)||{};
   var bars=[],used={};
   for(var pid in MS){
     /* Apply filter */
@@ -1753,6 +1760,13 @@ function _mobileBuildWdData(filter){
       }
     }
     var entries=MS[pid];
+    var pp=pidToProp[pid];
+    /* Compute fund result date for clamping (signoff can't predate fund result) */
+    var fundDate=null;
+    if(pp&&pp.fund&&FRD[pp.fund]){
+      var fp=FRD[pp.fund].split('-');
+      fundDate=fp[2]+'-'+fp[1]+'-'+fp[0];
+    }
     for(var ei=0;ei<entries.length;ei++){
       var e=entries[ei];
       var adaK=e.budget/1000;
@@ -1763,6 +1777,8 @@ function _mobileBuildWdData(filter){
         if(!m.signoff||m.cost<=0) continue;
         var msAda=totalCost>0?(m.cost/totalCost)*adaK:m.cost/1000;
         var dt=m.signoff.substring(0,10);
+        /* Clamp: signoff can't be before fund result date (data anomaly) */
+        if(fundDate && dt<fundDate) dt=fundDate;
         var attempt=0,tryDt=dt;
         while(used[tryDt]){attempt++;var dd=new Date(dt);dd.setDate(dd.getDate()+attempt);tryDt=dd.toISOString().substring(0,10);}
         used[tryDt]=true;
