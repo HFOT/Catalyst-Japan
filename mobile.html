@@ -1232,7 +1232,7 @@ function renderMobileChart(scroll){
     var isActive=_mobileChartFilter&&_mobileChartFilter.type==='fund'&&_mobileChartFilter.fund===fs.f;
     cell.style.cssText='flex:0 0 auto;min-width:48px;padding:3px 6px;background:'+(isActive?'rgba(91,138,240,0.25)':'var(--dim)')+';border:1px solid '+(isActive?'rgba(91,138,240,0.6)':'transparent')+';border-radius:4px;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer';
     var rate=fs.total>0?Math.round((fs.complete/fs.total)*100):0;
-    cell.innerHTML='<div style="display:flex;align-items:baseline;gap:2px"><span style="font-family:var(--mono);font-size:9px;color:var(--muted);font-weight:500">F'+fs.f+'</span><span style="font-family:var(--serif);font-size:12px;color:var(--ink);font-weight:600">'+fs.total+'</span></div>'
+    cell.innerHTML='<div style="display:flex;align-items:baseline;gap:3px"><span style="font-family:var(--mono);font-size:12px;color:var(--ink);font-weight:700;letter-spacing:0.02em">F'+fs.f+'</span><span style="font-family:var(--serif);font-size:9px;color:var(--muted);font-weight:500">'+fs.total+'</span></div>'
       +'<div style="display:flex;height:2px;width:100%;border-radius:1px;overflow:hidden;background:var(--border)">'
       +'<div style="width:'+rate+'%;background:#3d8b6e"></div>'
       +'<div style="width:'+(fs.total>0?Math.round((fs.progress/fs.total)*100):0)+'%;background:#c49b2a"></div>'
