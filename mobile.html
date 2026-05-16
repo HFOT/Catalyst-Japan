@@ -1090,16 +1090,19 @@ function _mobileMakeProposalRow(p){
     +'<div style="flex:1;min-width:0">'
     +'<div style="font-size:12px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.labelJa||p.label)+_mobileFlagChips(p)+'</div>'
     +'<div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">F'+(p.fund||'?')+' · '+esc(p.by||'未確認')+' · '+fmtAmt(pUsdK(p),pAdaK(p))+'</div>'
-    +'</div>'
-    +'<button class="m-row-detail" style="flex-shrink:0;font-family:var(--mono);font-size:9px;color:var(--muted);background:var(--dim);border:1px solid var(--border);border-radius:4px;padding:3px 6px;cursor:pointer;letter-spacing:0.04em;line-height:1.3" aria-label="詳細">詳細 ›</button>';
+    +'</div>';
   row.appendChild(head);
-  /* Wire detail button → opens full sheet without triggering row toggle */
-  var detailBtn=head.querySelector('.m-row-detail');
-  if(detailBtn){
-    detailBtn.addEventListener('click',function(e){
+  /* Helper: append a 詳細 button (right-aligned) to a given flex container */
+  function _attachDetailBtn(container){
+    var btn=document.createElement('button');
+    btn.className='m-row-detail';
+    btn.style.cssText='flex:0 0 auto;margin-left:auto;align-self:center;font-family:var(--mono);font-size:9px;color:var(--muted);background:var(--dim);border:1px solid var(--border);border-radius:4px;padding:4px 7px;cursor:pointer;letter-spacing:0.04em;line-height:1.3;white-space:nowrap';
+    btn.textContent='詳細 ›';
+    btn.addEventListener('click',function(e){
       e.stopPropagation();
       openSheet(p);
     });
+    container.appendChild(btn);
   }
   var expanded=null;
   row.addEventListener('click',function(e){
@@ -1135,20 +1138,29 @@ function _mobileMakeProposalRow(p){
           +'<div style="font-size:8px;color:var(--muted);margin-top:1px">'+dateLbl+'</div>';
         expanded.appendChild(tile);
         var note=document.createElement('div');
-        note.style.cssText='font-family:var(--mono);font-size:8px;color:var(--muted);opacity:0.6;letter-spacing:0.04em';
+        note.style.cssText='font-family:var(--mono);font-size:8px;color:var(--muted);opacity:0.6;letter-spacing:0.04em;flex:1;min-width:0';
         note.textContent=LANG==='ja'?'推定 (F2-F9 MS制度前 / 採択時一括)':'Estimate (pre-MS lump-sum at result)';
         expanded.appendChild(note);
+        _attachDetailBtn(expanded);
         row.appendChild(expanded);
         return;
       }
       expanded=document.createElement('div');
-      expanded.style.cssText='padding:4px 8px 8px;font-family:var(--mono);font-size:9px;color:var(--muted)';
-      expanded.textContent='MS データなし';
+      expanded.style.cssText='display:flex;align-items:center;padding:4px 8px 8px;font-family:var(--mono);font-size:9px;color:var(--muted)';
+      var noMsLbl=document.createElement('span');
+      noMsLbl.style.cssText='flex:1;min-width:0';
+      noMsLbl.textContent='MS データなし';
+      expanded.appendChild(noMsLbl);
+      _attachDetailBtn(expanded);
       row.appendChild(expanded);
       return;
     }
+    /* MS tiles wrapper: scrollable tiles on left + fixed detail button on right */
     expanded=document.createElement('div');
-    expanded.style.cssText='display:flex;gap:6px;padding:4px 4px 10px;overflow-x:auto;-webkit-overflow-scrolling:touch';
+    expanded.style.cssText='display:flex;align-items:center;gap:6px;padding:4px 4px 10px';
+    var msScroll=document.createElement('div');
+    msScroll.style.cssText='flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch';
+    expanded.appendChild(msScroll);
     var totalCost=0;
     ms[0].milestones.forEach(function(m){totalCost+=m.cost;});
     var adaK=(p.u==='ada'?p.amt:p.amt/(p.adaPrice||0.5));
@@ -1162,8 +1174,9 @@ function _mobileMakeProposalRow(p){
         '<div style="font-size:14px;font-weight:600;color:'+(signed?'#5b8af0':'var(--muted)')+';line-height:1.1">'+num+'</div>'
         +'<div style="font-family:var(--mono);font-size:9px;color:var(--ink);margin-top:2px;font-weight:500">₳'+msAda+'K</div>'
         +(signed?'<div style="font-size:8px;color:var(--muted);margin-top:1px">'+m.signoff.substring(2,7).replace('-','/')+'</div>':'<div style="font-size:8px;color:var(--muted);opacity:0.5;margin-top:1px">未署名</div>');
-      expanded.appendChild(tile);
+      msScroll.appendChild(tile);
     });
+    _attachDetailBtn(expanded);
     row.appendChild(expanded);
   });
   return row;
