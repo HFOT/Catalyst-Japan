@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Catalyst Japan — メディア & リンク カタログ</title>
+<script src="data.js"></script>
+<script src="descriptions.js"></script>
+<script src="proposal-meta.js"></script>
+<style>
+:root{
+  --bg:#0c0d10; --paper:#13151a; --dim:#1b1d23; --border:rgba(255,255,255,0.08); --border-h:rgba(255,255,255,0.16);
+  --ink:#e8e6e1; --muted:#8a8a83;
+  --mono:'JetBrains Mono', ui-monospace, monospace;
+  --serif:'Source Serif Pro', 'Hiragino Mincho Pro', serif;
+  --accent:#5b8af0;
+  --status-complete:#3d8b6e; --status-progress:#c49b2a; --status-dnf:#b85450;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,'Inter','Hiragino Sans','Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;font-size:13px;line-height:1.55}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* === Page header === */
+.page-hdr{padding:18px 24px 12px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(91,138,240,0.04),transparent)}
+.page-title{font-family:var(--serif);font-size:24px;font-weight:500;letter-spacing:-0.01em}
+.page-title em{font-style:italic;color:var(--accent)}
+.page-sub{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.06em;margin-top:4px}
+
+/* === Filter bar === */
+.fbar{padding:10px 24px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border);background:var(--paper);position:sticky;top:0;z-index:10}
+.fgrp{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10px}
+.fgrp .lbl{color:var(--muted);letter-spacing:0.06em;margin-right:4px}
+.fchip{padding:3px 8px;background:var(--dim);border:1px solid transparent;border-radius:5px;color:var(--muted);cursor:pointer;font-family:var(--mono);font-size:10px;letter-spacing:0.04em;transition:all 0.12s}
+.fchip:hover{color:var(--ink);border-color:var(--border)}
+.fchip.on{background:rgba(91,138,240,0.18);color:var(--ink);border-color:rgba(91,138,240,0.4)}
+.fbar input.search{flex:1;min-width:160px;max-width:280px;padding:5px 10px;background:var(--dim);border:1px solid var(--border);border-radius:5px;color:var(--ink);font-family:inherit;font-size:11px;outline:none}
+.fbar input.search:focus{border-color:rgba(91,138,240,0.5)}
+.fbar .count{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.06em;margin-left:auto}
+
+/* === Card grid === */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;padding:16px 24px 60px}
+.card{background:var(--paper);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;transition:border-color 0.15s, transform 0.15s}
+.card:hover{border-color:var(--border-h);transform:translateY(-1px)}
+
+/* Thumb / hero */
+.thumb{position:relative;width:100%;aspect-ratio:16/9;background:#000;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb-empty{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;background:linear-gradient(135deg,var(--dim),var(--paper))}
+.thumb-play{position:absolute;width:42px;height:42px;background:rgba(0,0,0,0.65);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+.thumb-badge{position:absolute;top:6px;left:6px;font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:3px;letter-spacing:0.06em;font-weight:600;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.thumb-badge.complete{background:rgba(61,139,110,0.92);color:#fff}
+.thumb-badge.progress{background:rgba(196,155,42,0.92);color:#1a1715}
+.thumb-badge.dnf{background:rgba(184,84,80,0.92);color:#fff}
+.thumb-fund{position:absolute;top:6px;right:6px;font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:3px;background:rgba(0,0,0,0.6);color:#fff;letter-spacing:0.04em;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+
+/* Body */
+.card-body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:7px;flex:1}
+.card-title{font-family:var(--serif);font-size:15px;line-height:1.3;font-weight:500;letter-spacing:-0.005em;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-subtitle{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.04em;line-height:1.4;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.card-meta{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);font-size:10px;color:var(--muted);gap:8px}
+.card-meta .by{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.card-meta .amt{color:var(--accent);font-weight:600;flex-shrink:0;letter-spacing:0.02em}
+
+/* Team avatars */
+.card-team{display:flex;gap:-4px;margin-top:2px}
+.avatar{width:22px;height:22px;border-radius:50%;background:var(--dim);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:11px;font-weight:600;color:var(--muted);border:2px solid var(--paper);margin-left:-6px;flex-shrink:0}
+.avatar:first-child{margin-left:0}
+.avatar.more{background:var(--dim);font-family:var(--mono);font-size:8px;letter-spacing:0.04em;color:var(--muted)}
+
+/* Link icons bar */
+.card-links{display:flex;gap:5px;flex-wrap:wrap;margin-top:auto;padding-top:8px;border-top:1px dashed var(--border)}
+.lnk{display:inline-flex;align-items:center;gap:3px;padding:3px 7px;background:var(--dim);border:1px solid var(--border);border-radius:4px;font-family:var(--mono);font-size:9px;color:var(--ink);letter-spacing:0.04em;text-decoration:none;transition:background 0.12s}
+.lnk:hover{background:var(--border-h);text-decoration:none}
+.lnk .ic{font-size:10px;line-height:1}
+.lnk .n{color:var(--muted);font-size:8px;margin-left:1px}
+
+.empty{padding:60px 24px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:11px;letter-spacing:0.06em}
+
+@media (max-width:520px){
+  .grid{padding:12px;grid-template-columns:1fr}
+  .fbar{padding:10px 12px}
+  .page-hdr{padding:14px 12px 10px}
+}
+</style>
+</head>
+<body>
+
+<header class="page-hdr">
+  <div class="page-title">Catalyst <em>Japan</em> Catalog</div>
+  <div class="page-sub">MEDIA &amp; LINKS · 130 PROPOSALS · F2–F14</div>
+</header>
+
+<div class="fbar" id="fbar"></div>
+<div id="grid" class="grid"></div>
+
+<script>
+var D = window.CJ_DATA;
+var PDESC = window.PDESC || {};
+var PMETA = window.PMETA || {};
+
+/* Sector display labels */
+var SEC_LABEL = {
+  'co':'COMMUNITY','dt':'DEV TECH','em':'EMERGING','is':'IDENTITY',
+  'df':'DEFI','ed':'EDUCATION','gv':'GOV','rw':'REAL WORLD',
+  'io':'IO','gf':'GAMES','nf':'NFT','su':'SUSTAIN','sc':'SMART CONTRACTS'
+};
+
+/* Flatten all proposals to a single list with computed fields */
+var ALL = [];
+D.INDUSTRIES.forEach(function(ind){
+  ind.children.forEach(function(p){
+    var prefix = (p.id||'').split('-')[0];
+    ALL.push({
+      id: p.id,
+      label: p.label || '',
+      labelJa: p.labelJa || '',
+      by: p.by || '',
+      fund: p.fund || null,
+      st: p.st || 'progress',
+      amt: p.amt || 0,
+      u: p.u || 'usd',
+      adaPrice: p.adaPrice || 0.5,
+      sector: prefix,
+      sectorLabel: SEC_LABEL[prefix] || prefix.toUpperCase(),
+      meta: PMETA[p.id] || null
+    });
+  });
+});
+
+/* Filter state */
+var FLT = { fund:null, sec:null, st:null, mediaOnly:false, q:'' };
+
+/* Sort: by fund desc, then by status (complete first), then by amount desc */
+function sortFn(a,b){
+  if((b.fund||0) !== (a.fund||0)) return (b.fund||0) - (a.fund||0);
+  var stOrder = {complete:0, progress:1, dnf:2};
+  if (stOrder[a.st] !== stOrder[b.st]) return (stOrder[a.st]||3) - (stOrder[b.st]||3);
+  return (b.amt||0) - (a.amt||0);
+}
+
+/* Per-proposal "has media" check */
+function hasMedia(p){
+  var m = p.meta; if (!m) return false;
+  return !!(m.videos && m.videos.length) || !!(m.pdf && m.pdf.length) || !!(m.site)
+    || !!(m.github && m.github.length) || !!(m.linkedin && m.linkedin.length)
+    || !!(m.x && m.x.length) || !!(m.slides && m.slides.length);
+}
+
+/* Pick best thumbnail for a card */
+function bestThumb(p){
+  var m = p.meta;
+  if (m && m.videos && m.videos.length) {
+    return { type:'youtube', url:m.videos[0].url, thumb:m.videos[0].thumb };
+  }
+  return null;
+}
+
+/* Format ADA/USD/JPY */
+function fmtK(usdK){
+  if (!usdK) return '—';
+  if (usdK >= 1000) return '$' + (usdK/1000).toFixed(1) + 'M';
+  return '$' + Math.round(usdK) + 'K';
+}
+function fmtAda(p){
+  var adaK = p.u === 'ada' ? p.amt : p.amt / (p.adaPrice||0.5);
+  if (adaK >= 1000) return (adaK/1000).toFixed(1) + 'M ₳';
+  return Math.round(adaK) + 'K ₳';
+}
+
+/* Status label */
+function stLbl(st){
+  if (st==='complete') return '完了';
+  if (st==='progress') return '進行中';
+  return 'DNF';
+}
+
+/* Build filter bar */
+function buildFbar(){
+  var fbar = document.getElementById('fbar');
+  fbar.innerHTML = '';
+  /* Status filter */
+  var stGrp = document.createElement('div');
+  stGrp.className = 'fgrp';
+  stGrp.innerHTML = '<span class="lbl">STATUS</span>';
+  [['', 'すべて'],['complete','完了'],['progress','進行中'],['dnf','DNF']].forEach(function(o){
+    var b = document.createElement('button');
+    b.className = 'fchip' + ((FLT.st||'')===o[0] ? ' on' : '');
+    b.textContent = o[1];
+    b.onclick = function(){ FLT.st = o[0]||null; render(); };
+    stGrp.appendChild(b);
+  });
+  fbar.appendChild(stGrp);
+
+  /* Fund filter */
+  var funds = [...new Set(ALL.map(function(p){return p.fund}).filter(Boolean))].sort(function(a,b){return b-a});
+  var fundGrp = document.createElement('div');
+  fundGrp.className = 'fgrp';
+  fundGrp.innerHTML = '<span class="lbl">FUND</span>';
+  var allF = document.createElement('button'); allF.className='fchip'+(FLT.fund===null?' on':''); allF.textContent='ALL';
+  allF.onclick=function(){FLT.fund=null; render()};
+  fundGrp.appendChild(allF);
+  funds.forEach(function(f){
+    var b=document.createElement('button'); b.className='fchip'+(FLT.fund===f?' on':''); b.textContent='F'+f;
+    b.onclick=function(){FLT.fund=(FLT.fund===f?null:f); render()};
+    fundGrp.appendChild(b);
+  });
+  fbar.appendChild(fundGrp);
+
+  /* Media-only */
+  var medGrp = document.createElement('div');
+  medGrp.className = 'fgrp';
+  medGrp.innerHTML = '<span class="lbl">MEDIA</span>';
+  var mb = document.createElement('button');
+  mb.className = 'fchip' + (FLT.mediaOnly ? ' on' : '');
+  mb.textContent = '有のみ';
+  mb.onclick = function(){ FLT.mediaOnly = !FLT.mediaOnly; render(); };
+  medGrp.appendChild(mb);
+  fbar.appendChild(medGrp);
+
+  /* Search */
+  var inp = document.createElement('input');
+  inp.className = 'search';
+  inp.placeholder = 'タイトル・提案者で検索…';
+  inp.value = FLT.q;
+  inp.oninput = function(){ FLT.q = this.value.trim().toLowerCase(); renderGrid(); };
+  fbar.appendChild(inp);
+
+  /* Count display */
+  var cnt = document.createElement('div');
+  cnt.className = 'count';
+  cnt.id = 'fcount';
+  fbar.appendChild(cnt);
+}
+
+/* Build per-card link buttons */
+function linkButtons(meta){
+  if (!meta) return '';
+  var bits = [];
+  if (meta.site) bits.push('<a class="lnk" href="'+meta.site+'" target="_blank" rel="noopener" title="公式サイト"><span class="ic">🌐</span>SITE</a>');
+  if (meta.pdf && meta.pdf.length) bits.push('<a class="lnk" href="'+meta.pdf[0]+'" target="_blank" rel="noopener" title="PDF"><span class="ic">📄</span>PDF'+(meta.pdf.length>1?'<span class="n">×'+meta.pdf.length+'</span>':'')+'</a>');
+  if (meta.slides && meta.slides.length) bits.push('<a class="lnk" href="'+meta.slides[0]+'" target="_blank" rel="noopener" title="スライド"><span class="ic">📊</span>SLIDES'+(meta.slides.length>1?'<span class="n">×'+meta.slides.length+'</span>':'')+'</a>');
+  if (meta.github && meta.github.length) bits.push('<a class="lnk" href="'+meta.github[0]+'" target="_blank" rel="noopener" title="GitHub"><span class="ic">⌥</span>GH'+(meta.github.length>1?'<span class="n">×'+meta.github.length+'</span>':'')+'</a>');
+  if (meta.x && meta.x.length) bits.push('<a class="lnk" href="'+meta.x[0]+'" target="_blank" rel="noopener" title="X"><span class="ic">𝕏</span>'+(meta.x.length>1?'<span class="n">×'+meta.x.length+'</span>':'')+'</a>');
+  if (meta.linkedin && meta.linkedin.length) bits.push('<a class="lnk" href="'+meta.linkedin[0]+'" target="_blank" rel="noopener" title="LinkedIn"><span class="ic">in</span>'+(meta.linkedin.length>1?'<span class="n">×'+meta.linkedin.length+'</span>':'')+'</a>');
+  if (meta.medium && meta.medium.length) bits.push('<a class="lnk" href="'+meta.medium[0]+'" target="_blank" rel="noopener" title="Medium"><span class="ic">M</span></a>');
+  /* Always show "Explorer" deep link */
+  var catLink = meta.catalyst && meta.catalyst[0] || (meta.explorer && meta.explorer[0]);
+  if (catLink) bits.push('<a class="lnk" href="'+catLink+'" target="_blank" rel="noopener" title="Catalyst Explorer"><span class="ic">↗</span>EXPLORER</a>');
+  return bits.join('');
+}
+
+/* Render team avatars row */
+function teamAvatars(meta){
+  if (!meta || !meta.team || !meta.team.length) return '';
+  var max = 4;
+  var html = '';
+  meta.team.slice(0,max).forEach(function(t){
+    var hue = 0;
+    for (var i=0;i<t.name.length;i++) hue = (hue*31 + t.name.charCodeAt(i)) | 0;
+    hue = Math.abs(hue) % 360;
+    if (t.hero_img_url) {
+      html += '<div class="avatar" style="background-image:url('+t.hero_img_url+');background-size:cover" title="'+esc(t.name)+'"></div>';
+    } else {
+      html += '<div class="avatar" style="background:hsl('+hue+' 30% 28%);color:hsl('+hue+' 50% 78%)" title="'+esc(t.name)+'">'+t.name.charAt(0).toUpperCase()+'</div>';
+    }
+  });
+  if (meta.team.length > max) html += '<div class="avatar more">+'+(meta.team.length-max)+'</div>';
+  return '<div class="card-team">'+html+'</div>';
+}
+
+function esc(s){ return s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
+
+/* Render one card */
+function renderCard(p){
+  var th = bestThumb(p);
+  var thumbHtml;
+  if (th) {
+    thumbHtml = '<a class="thumb" href="'+th.url+'" target="_blank" rel="noopener">'
+      +'<img src="'+th.thumb+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
+      +'<div class="thumb-play">▶</div>'
+      +'<div class="thumb-badge '+p.st+'">'+stLbl(p.st)+'</div>'
+      +(p.fund?'<div class="thumb-fund">F'+p.fund+'</div>':'')
+      +'</a>';
+  } else {
+    thumbHtml = '<div class="thumb thumb-empty">'+p.sectorLabel
+      +'<div class="thumb-badge '+p.st+'">'+stLbl(p.st)+'</div>'
+      +(p.fund?'<div class="thumb-fund">F'+p.fund+'</div>':'')
+      +'</div>';
+  }
+  var usdK = p.u==='ada' ? p.amt*(p.adaPrice||0.5) : p.amt;
+  return '<article class="card" data-id="'+p.id+'">'
+    + thumbHtml
+    + '<div class="card-body">'
+    + '<div class="card-subtitle">'+p.sectorLabel+'</div>'
+    + '<div class="card-title">'+esc(p.labelJa || p.label)+'</div>'
+    + '<div class="card-meta">'
+    +   '<span class="by">'+esc(p.by||'—')+'</span>'
+    +   '<span class="amt">'+fmtAda(p)+'</span>'
+    + '</div>'
+    + teamAvatars(p.meta)
+    + '<div class="card-links">'+linkButtons(p.meta)+'</div>'
+    + '</div></article>';
+}
+
+function applyFilters(){
+  return ALL.filter(function(p){
+    if (FLT.st && p.st !== FLT.st) return false;
+    if (FLT.fund && p.fund !== FLT.fund) return false;
+    if (FLT.sec && p.sector !== FLT.sec) return false;
+    if (FLT.mediaOnly && !hasMedia(p)) return false;
+    if (FLT.q) {
+      var hay = ((p.label||'') + ' ' + (p.labelJa||'') + ' ' + (p.by||'') + ' ' + p.sectorLabel).toLowerCase();
+      if (hay.indexOf(FLT.q) < 0) return false;
+    }
+    return true;
+  }).sort(sortFn);
+}
+
+function renderGrid(){
+  var list = applyFilters();
+  var grid = document.getElementById('grid');
+  if (!list.length) {
+    grid.innerHTML = '<div class="empty">該当する提案はありません</div>';
+  } else {
+    grid.innerHTML = list.map(renderCard).join('');
+  }
+  var fc = document.getElementById('fcount');
+  if (fc) fc.textContent = list.length + ' / ' + ALL.length;
+}
+
+function render(){
+  buildFbar();
+  renderGrid();
+}
+
+render();
+</script>
+</body>
+</html>
