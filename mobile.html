@@ -1038,7 +1038,7 @@ function _mobileMakeProposalRow(p){
   head.innerHTML='<span style="display:inline-block;width:18px;height:18px;border-radius:3px;background:'+stCol+';color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+stLbl+'</span>'
     +'<div style="flex:1;min-width:0">'
     +'<div style="font-size:12px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.labelJa||p.label)+_mobileFlagChips(p)+'</div>'
-    +'<div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">F'+(p.fund||'?')+' · '+esc(p.by||'未確認')+' · '+p.amt+(p.u==='ada'?'K ₳':'K $')+'</div>'
+    +'<div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">F'+(p.fund||'?')+' · '+esc(p.by||'未確認')+' · '+fmtAmt(pUsdK(p))+'</div>'
     +'</div>';
   row.appendChild(head);
   var expanded=null;
@@ -1138,8 +1138,8 @@ function renderMobileChart(scroll){
   statsCard.innerHTML=
     '<div style="text-align:center;display:flex;align-items:baseline;justify-content:center;gap:4px"><span style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.04em">提案</span><span style="font-family:var(--serif);font-size:14px;color:var(--ink);font-weight:600">'+statsCnt.total+'</span></div>'
     +'<div style="text-align:center;display:flex;align-items:baseline;justify-content:center;gap:4px"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">完了</span><span style="font-family:var(--serif);font-size:14px;color:#3d8b6e;font-weight:600">'+compRate+'%</span><span style="font-size:8px;color:var(--muted)">'+statsCnt.complete+'/'+statsCnt.total+'</span></div>'
-    +'<div style="text-align:center;display:flex;align-items:baseline;justify-content:center;gap:4px"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">採択</span><span style="font-family:var(--serif);font-size:14px;color:var(--ink);font-weight:600">'+(statsCnt.sumAda/1000).toFixed(1)+'M</span></div>'
-    +'<div style="text-align:center;display:flex;align-items:baseline;justify-content:center;gap:4px"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">支払</span><span style="font-family:var(--serif);font-size:14px;color:rgba(232,160,72,1);font-weight:600">'+(statsCnt.sumDistributed/1000).toFixed(1)+'M</span></div>';
+    +'<div style="text-align:center;display:flex;align-items:baseline;justify-content:center;gap:4px"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">採択</span><span style="font-family:var(--serif);font-size:14px;color:var(--ink);font-weight:600">'+fmtAmt(statsCnt.sumAda*(ADA_USD||0.5))+'</span></div>'
+    +'<div style="text-align:center;display:flex;align-items:baseline;justify-content:center;gap:4px"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">支払</span><span style="font-family:var(--serif);font-size:14px;color:rgba(232,160,72,1);font-weight:600">'+fmtAmt(statsCnt.sumDistributed*(ADA_USD||0.5))+'</span></div>';
   stickyTop.appendChild(statsCard);
 
   /* === 2. Chart container with selection chip overlay === */
@@ -1195,7 +1195,7 @@ function renderMobileChart(scroll){
       +'<div style="width:'+rate+'%;background:#3d8b6e"></div>'
       +'<div style="width:'+(fs.total>0?Math.round((fs.progress/fs.total)*100):0)+'%;background:#c49b2a"></div>'
       +'<div style="width:'+(fs.total>0?Math.round((fs.dnf/fs.total)*100):0)+'%;background:#b85450"></div></div>'
-      +'<div style="font-family:var(--mono);font-size:8px;color:var(--muted)">'+(fs.ada/1000).toFixed(1)+'M</div>';
+      +'<div style="font-family:var(--mono);font-size:8px;color:var(--muted)">'+fmtAmt(fs.ada*(ADA_USD||0.5))+'</div>';
     cell.addEventListener('click',function(){
       _mobileChartFilter={type:'fund',fund:fs.f,label:'F'+fs.f+' ('+fs.total+'件 / '+(fs.ada/1000).toFixed(1)+'M ₳)'};
       _mobileSubTab='fund';
@@ -1328,7 +1328,7 @@ function _renderMobileAcctList(scroll){
       '<div style="display:flex;align-items:center;gap:8px">'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(a.name)+'</div>'
-      +'<div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px">'+a.total+'件 · '+Math.round(a.ada)+'K ₳</div>'
+      +'<div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px">'+a.total+'件 · '+fmtAmt(a.ada*(ADA_USD||0.5))+'</div>'
       +'</div>'
       +'<div style="flex-shrink:0;text-align:right">'+flags+'</div>'
       +'</div>';
@@ -1362,13 +1362,25 @@ function _renderMobileFundList(scroll){
   D.INDUSTRIES.forEach(function(ind){
     ind.children.forEach(function(p){
       var f=p.fund||0;if(!f) return;
-      if(!byFund[f]) byFund[f]={f:f,total:0,complete:0,progress:0,dnf:0,ada:0,props:[]};
+      if(!byFund[f]) byFund[f]={f:f,total:0,complete:0,progress:0,dnf:0,ada:0,distributed:0,usdK:0,props:[]};
       var bf=byFund[f];
       bf.total++;
       if(p.st==='complete') bf.complete++;
       else if(p.st==='progress') bf.progress++;
       else bf.dnf++;
-      bf.ada+=(p.u==='ada'?p.amt:p.amt/(p.adaPrice||0.5));
+      var ada=(p.u==='ada'?p.amt:p.amt/(p.adaPrice||0.5));
+      bf.ada+=ada;
+      bf.usdK+=(p.u==='ada'?p.amt*(p.adaPrice||ADA_USD):p.amt);
+      /* Distributed approximation */
+      var MS=window.CJ_MILESTONES||{};
+      var ms=MS[p.id];
+      if(ms&&ms.length){
+        var sg=0,tot=0;
+        ms[0].milestones.forEach(function(m){tot+=m.cost;if(m.signoff)sg+=m.cost;});
+        bf.distributed+=tot>0?(sg/tot)*ada:0;
+      } else if(p.st==='complete'||p.st==='dnf'){
+        bf.distributed+=ada;
+      }
       bf.props.push(p);
     });
   });
@@ -1388,9 +1400,11 @@ function _renderMobileFundList(scroll){
     row.setAttribute('data-row-search','F'+fs.f+' '+fs.props.map(function(p){return (p.label||'')+(p.labelJa||'')+(p.by||'');}).join(' '));
     var head=document.createElement('div');
     head.style.cssText='display:flex;align-items:center;gap:8px;padding:10px 8px';
+    var totalUsd=fs.usdK;
+    var distUsd=(fs.distributed*(ADA_USD||0.5));
     head.innerHTML='<div style="flex-shrink:0;font-family:var(--mono);font-size:14px;font-weight:600;color:var(--ink);min-width:30px">F'+fs.f+'</div>'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="font-family:var(--mono);font-size:11px;color:var(--ink)"><span style="font-weight:600">'+fs.total+'</span>件 · '+(fs.ada/1000).toFixed(1)+'M ₳</div>'
+      +'<div style="font-family:var(--mono);font-size:11px;color:var(--ink)"><span style="font-weight:600">'+fs.total+'</span>件 · '+fmtAmt(totalUsd)+'</div>'
       +'<div style="display:flex;height:3px;border-radius:2px;overflow:hidden;background:var(--border);margin-top:4px">'
       +'<div style="width:'+rate+'%;background:#3d8b6e"></div>'
       +'<div style="width:'+(fs.total>0?Math.round((fs.progress/fs.total)*100):0)+'%;background:#c49b2a"></div>'
@@ -1399,13 +1413,29 @@ function _renderMobileFundList(scroll){
       +'</div>';
     row.appendChild(head);
     var expanded=null;
+    function fundDateInfo(){
+      /* Build Fund info card with submit date, result date, distribution */
+      var submitD=(D.FUND_SUBMIT_DATES||{})[fs.f]||'—';
+      var resultD=(D.FUND_RESULT_DATES||{})[fs.f]||'—';
+      function ymd(d){if(d==='—') return d; var p=d.split('-');return p[2]+'-'+p[1]+'-'+p[0];}
+      var info=document.createElement('div');
+      info.style.cssText='padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;margin:4px;font-family:var(--mono);font-size:9px;line-height:1.5';
+      info.innerHTML=
+        '<div style="display:grid;grid-template-columns:auto 1fr;gap:4px 10px">'
+        +'<span style="color:var(--muted)">提案募集</span><span style="color:var(--ink)">'+ymd(submitD)+'</span>'
+        +'<span style="color:var(--muted)">採択決定</span><span style="color:var(--ink)">'+ymd(resultD)+'</span>'
+        +'<span style="color:var(--muted)">配布総額</span><span style="color:rgba(232,160,72,1);font-weight:600">'+fmtAmt(distUsd)+' / '+fmtAmt(totalUsd)+'</span>'
+        +'<span style="color:var(--muted)">完了率</span><span style="color:var(--ink)">'+rate+'% (完'+fs.complete+' / 進'+fs.progress+' / 止'+fs.dnf+')</span>'
+        +'</div>';
+      return info;
+    }
     function toggleExpand(forceOpen){
       if(expanded && !forceOpen){expanded.remove();expanded=null;_mobileExpandedFund=null;return;}
       if(expanded) return; /* already open and force-open */
       expanded=document.createElement('div');
-      expanded.style.cssText='padding:0 0 6px;background:var(--dim);border-radius:6px;margin:0 4px 6px';
+      expanded.style.cssText='padding:2px 0 6px;background:var(--dim);border-radius:6px;margin:0 4px 6px';
+      expanded.appendChild(fundDateInfo());
       fs.props.slice().sort(function(a,b){
-        /* progress first, then dnf, then complete */
         var ord={progress:0,dnf:1,complete:2};
         return (ord[a.st]||9)-(ord[b.st]||9);
       }).forEach(function(p){
