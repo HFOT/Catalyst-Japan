@@ -1176,9 +1176,9 @@ function renderMobileChart(scroll){
       +'<div style="font-family:var(--mono);font-size:8px;color:var(--muted)">'+(fs.ada/1000).toFixed(1)+'M</div>';
     cell.addEventListener('click',function(){
       _mobileChartFilter={type:'fund',fund:fs.f,label:'F'+fs.f+' ('+fs.total+'件 / '+(fs.ada/1000).toFixed(1)+'M ₳)'};
-      _mobileUpdateSelectionStrip();
-      var cb=document.getElementById('mobile-chart');
-      if(cb) _mobileBuildChart(cb);
+      _mobileSubTab='fund';
+      _mobileExpandedFund=fs.f;
+      render();
     });
     fundStrip.appendChild(cell);
   });
@@ -1196,7 +1196,8 @@ function renderMobileChart(scroll){
   subBar.style.cssText='display:flex;gap:0;padding:4px 8px 2px;border-bottom:1px solid var(--border);margin:0 0 4px';
   var subDefs=[
     {id:'acct',ja:'アカウント',en:'Account'},
-    {id:'prop',ja:'提案',en:'Proposal'}
+    {id:'prop',ja:'提案',en:'Proposal'},
+    {id:'fund',ja:'Fund',en:'Fund'}
   ];
   subDefs.forEach(function(sd){
     var b=document.createElement('button');
@@ -1211,6 +1212,7 @@ function renderMobileChart(scroll){
   /* Render the active sub-tab content */
   if(_mobileSubTab==='acct'){_renderMobileAcctList(scroll);}
   else if(_mobileSubTab==='prop'){_renderMobilePropList(scroll);}
+  else if(_mobileSubTab==='fund'){_renderMobileFundList(scroll);}
 
   /* Wire chart-internal search input */
   setTimeout(function(){
@@ -1296,6 +1298,78 @@ function _renderMobileAcctList(scroll){
       });
       row.appendChild(expandRow);
     });
+    listWrap.appendChild(row);
+  });
+  scroll.appendChild(listWrap);
+}
+
+/* ── Fund list (each Fund as a row, tap to expand its proposals) ── */
+var _mobileExpandedFund=null;
+function _renderMobileFundList(scroll){
+  /* Group proposals by fund */
+  var byFund={};
+  D.INDUSTRIES.forEach(function(ind){
+    ind.children.forEach(function(p){
+      var f=p.fund||0;if(!f) return;
+      if(!byFund[f]) byFund[f]={f:f,total:0,complete:0,progress:0,dnf:0,ada:0,props:[]};
+      var bf=byFund[f];
+      bf.total++;
+      if(p.st==='complete') bf.complete++;
+      else if(p.st==='progress') bf.progress++;
+      else bf.dnf++;
+      bf.ada+=(p.u==='ada'?p.amt:p.amt/(p.adaPrice||0.5));
+      bf.props.push(p);
+    });
+  });
+  var fundList=Object.keys(byFund).map(function(k){return byFund[k];}).sort(function(a,b){return a.f-b.f;});
+
+  var listWrap=document.createElement('div');
+  listWrap.style.cssText='padding:0 8px 12px';
+  fundList.forEach(function(fs){
+    var rate=fs.total>0?Math.round((fs.complete/fs.total)*100):0;
+    var row=document.createElement('div');
+    row.style.cssText='border-bottom:1px solid var(--border);cursor:pointer';
+    row.setAttribute('data-row-search','F'+fs.f+' '+fs.props.map(function(p){return (p.label||'')+(p.labelJa||'')+(p.by||'');}).join(' '));
+    var head=document.createElement('div');
+    head.style.cssText='display:flex;align-items:center;gap:8px;padding:10px 8px';
+    head.innerHTML='<div style="flex-shrink:0;font-family:var(--mono);font-size:14px;font-weight:600;color:var(--ink);min-width:30px">F'+fs.f+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-family:var(--mono);font-size:11px;color:var(--ink)"><span style="font-weight:600">'+fs.total+'</span>件 · '+(fs.ada/1000).toFixed(1)+'M ₳</div>'
+      +'<div style="display:flex;height:3px;border-radius:2px;overflow:hidden;background:var(--border);margin-top:4px">'
+      +'<div style="width:'+rate+'%;background:#3d8b6e"></div>'
+      +'<div style="width:'+(fs.total>0?Math.round((fs.progress/fs.total)*100):0)+'%;background:#c49b2a"></div>'
+      +'<div style="width:'+(fs.total>0?Math.round((fs.dnf/fs.total)*100):0)+'%;background:#b85450"></div></div>'
+      +'<div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:3px">完 '+fs.complete+' · 進 '+fs.progress+' · 止 '+fs.dnf+'</div>'
+      +'</div>';
+    row.appendChild(head);
+    var expanded=null;
+    function toggleExpand(forceOpen){
+      if(expanded && !forceOpen){expanded.remove();expanded=null;_mobileExpandedFund=null;return;}
+      if(expanded) return; /* already open and force-open */
+      expanded=document.createElement('div');
+      expanded.style.cssText='padding:0 0 6px;background:var(--dim);border-radius:6px;margin:0 4px 6px';
+      fs.props.slice().sort(function(a,b){
+        /* progress first, then dnf, then complete */
+        var ord={progress:0,dnf:1,complete:2};
+        return (ord[a.st]||9)-(ord[b.st]||9);
+      }).forEach(function(p){
+        expanded.appendChild(_mobileMakeProposalRow(p));
+      });
+      row.appendChild(expanded);
+      _mobileExpandedFund=fs.f;
+    }
+    row.addEventListener('click',function(e){
+      /* Filter chart to this fund */
+      _mobileChartFilter={type:'fund',fund:fs.f,label:'F'+fs.f+' ('+fs.total+'件 / '+(fs.ada/1000).toFixed(1)+'M ₳)'};
+      _mobileUpdateSelectionStrip();
+      var cb=document.getElementById('mobile-chart');
+      if(cb) _mobileBuildChart(cb);
+      toggleExpand(false);
+    });
+    /* Auto-expand if marked */
+    if(_mobileExpandedFund===fs.f){
+      setTimeout(function(){toggleExpand(true);},0);
+    }
     listWrap.appendChild(row);
   });
   scroll.appendChild(listWrap);
