@@ -186,6 +186,12 @@ html.night .cj-ask-btn{background:#e8e6e1;color:#0c0d10}
 .m-flag.pastovr{color:#1a1715;background:rgba(200,170,140,0.8)}
 .m-flag.old{color:#1a1715;background:rgba(180,160,200,0.8)}
 
+/* Standalone flag panel — shown when chart is hidden but user toggles flag view */
+.m-flag-standalone{background:var(--dim);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:4px;display:flex;flex-direction:column;gap:4px;font-family:var(--mono);font-size:10px;color:var(--ink);line-height:1.4}
+.m-flag-standalone .row{display:flex;align-items:center;gap:6px}
+.m-flag-standalone .row .cond{color:var(--muted);font-size:9px;flex:1;min-width:0}
+.m-flag-standalone .row .lbl{color:var(--ink);font-weight:600;font-size:10px}
+
 /* Chart flip card */
 .m-chart-flip{perspective:1200px;width:100%;height:240px;position:relative}
 .m-chart-flip-inner{position:relative;width:100%;height:100%;transition:transform 0.6s cubic-bezier(0.2,0.8,0.2,1);transform-style:preserve-3d}
@@ -1058,6 +1064,7 @@ var _mobileChart=null, _mobileAdaLine=null, _mobileWdSeries=null;
 var _mobileSubTab='acct';
 var _chartDockHidden=false; /* chart tab only: toggle bottom dock visibility */
 var _chartHidden=false;     /* chart tab only: hide the chart flip card so Fund strip rises */
+var _flagStandaloneShown=false; /* chart tab only: standalone flag legend block when chart is hidden */
 var _mobileSearchQ='';
 /* Sort modes per sub-tab: 'count' / 'amount' / 'flag' */
 var _mobileAcctSort='count', _mobilePropSort='fund';
@@ -1297,7 +1304,7 @@ function renderMobileChart(scroll){
 
   /* Flag legend / flip button (chart title) */
   var flipBtn=document.createElement('div');
-  flipBtn.className='m-flip-btn';
+  flipBtn.className='m-flip-btn'+((_chartHidden && _flagStandaloneShown)?' flipped':'');
   flipBtn.id='mobile-chart-flip-btn';
   var _flagDefs=[
     {cls:'dnf',     emoji:'END',label:LANG==='ja'?'停止':'Stopped',          cond:LANG==='ja'?'dnf + 資金受領済 (納品せず終了)':'dnf + funds received'},
@@ -1359,16 +1366,29 @@ function renderMobileChart(scroll){
   flipCard.appendChild(flipInner);
   wrap.appendChild(flipCard);
 
-  /* Flip click handler */
+  /* Standalone flag panel (only shown when chart is hidden AND user toggled flag view) */
+  var flagPanel=document.createElement('div');
+  flagPanel.className='m-flag-standalone';
+  flagPanel.innerHTML=backHtml; /* same rows as flip back */
+  if(!(_chartHidden && _flagStandaloneShown)) flagPanel.style.display='none';
+  wrap.appendChild(flagPanel);
+
+  /* Flip click handler — chart visible: flip; chart hidden: toggle standalone flag panel */
   flipBtn.addEventListener('click',function(){
-    if(_chartHidden) return; /* nothing to flip when hidden */
+    if(_chartHidden){
+      _flagStandaloneShown=!_flagStandaloneShown;
+      flagPanel.style.display=_flagStandaloneShown?'':'none';
+      flipBtn.classList.toggle('flipped',_flagStandaloneShown);
+      return;
+    }
     flipCard.classList.toggle('flipped');
     flipBtn.classList.toggle('flipped');
   });
 
-  /* Hide-chart click handler */
+  /* Hide-chart click handler — reset standalone flag when re-showing the chart */
   hideBtn.addEventListener('click',function(){
     _chartHidden=!_chartHidden;
+    if(!_chartHidden) _flagStandaloneShown=false;
     render();
   });
 
