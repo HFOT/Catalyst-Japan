@@ -1641,12 +1641,12 @@ function _mobileBuildChart(el){
     timeScale:{borderColor:isNight?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.1)',timeVisible:false,secondsVisible:false,fixLeftEdge:true,fixRightEdge:true,rightOffset:5}
   });
 
-  /* Withdrawal histogram FIRST (renders behind), uses 'wd' scale spanning full height */
+  /* Withdrawal histogram FIRST (renders behind), uses 'wd' scale spanning bottom ~40% */
   _mobileWdSeries=_mobileChart.addHistogramSeries({
     color:'rgba(232,160,72,0.55)',priceLineVisible:false,lastValueVisible:false,
     priceScaleId:'wd'
   });
-  _mobileChart.priceScale('wd').applyOptions({scaleMargins:{top:0.1,bottom:0}});
+  _mobileChart.priceScale('wd').applyOptions({scaleMargins:{top:0.6,bottom:0}});
 
   /* ADA price line on TOP (rendered after bars, so it's in front) */
   _mobileAdaLine=_mobileChart.addLineSeries({color:'#5b8af0',lineWidth:2,lastValueVisible:true,priceLineVisible:false,
@@ -1812,6 +1812,33 @@ function _mobileBuildWdData(filter){
     /* Slightly different orange tone for pre-MS to distinguish from MS bars */
     bars.push({time:tryDt,value:ada,color:'rgba(232,160,72,0.55)'});
   });});
+
+  /* Blue Fund-adoption bars at each fund result date showing total Fund commitment */
+  var fundTotals={};
+  D.INDUSTRIES.forEach(function(ind){ind.children.forEach(function(p){
+    var f=p.fund||0;if(!f) return;
+    /* Apply same filter */
+    if(filter){
+      if(filter.type==='prop' && p.id!==filter.id) return;
+      if(filter.type==='acct'){
+        var inv=(p.by===filter.name)||(p.team&&p.team.some(function(t){return t.name===filter.name;}));
+        if(!inv) return;
+      }
+      if(filter.type==='fund' && p.fund!==filter.fund) return;
+    }
+    var ada=(p.u==='ada'?p.amt:p.amt/(p.adaPrice||0.5));
+    fundTotals[f]=(fundTotals[f]||0)+ada;
+  });});
+  for(var ff in fundTotals){
+    if(!FRD[ff]) continue;
+    var fparts=FRD[ff].split('-');
+    var fdt=fparts[2]+'-'+fparts[1]+'-'+fparts[0];
+    var fattempt=0,fTryDt=fdt;
+    while(used[fTryDt]){fattempt++;var fdd=new Date(fdt);fdd.setDate(fdd.getDate()-fattempt-1);fTryDt=fdd.toISOString().substring(0,10);}
+    used[fTryDt]=true;
+    bars.push({time:fTryDt,value:fundTotals[ff],color:'rgba(91,138,240,0.75)'});
+  }
+
   bars.sort(function(a,b){return a.time<b.time?-1:1;});
   return bars;
 }
