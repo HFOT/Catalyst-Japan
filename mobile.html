@@ -1149,8 +1149,13 @@ function renderMobileChart(scroll){
   scroll.appendChild(stickyTop);
 
   var compRate=Math.round((statsCnt.complete/statsCnt.total)*100);
+  /* CatalystJapan title — small label above stats card */
+  var titleRow=document.createElement('div');
+  titleRow.style.cssText='margin:4px 10px 0;font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.08em;font-weight:500';
+  titleRow.textContent='CatalystJapan';
+  stickyTop.appendChild(titleRow);
   var statsCard=document.createElement('div');
-  statsCard.style.cssText='margin:6px 8px 4px;padding:5px 8px;background:var(--dim);border-radius:8px;display:flex;align-items:center;justify-content:space-around';
+  statsCard.style.cssText='margin:2px 8px 4px;padding:5px 8px;background:var(--dim);border-radius:8px;display:flex;align-items:center;justify-content:space-around';
   var cellCss='display:flex;align-items:baseline;gap:3px;white-space:nowrap';
   statsCard.innerHTML=
     '<div style="'+cellCss+'"><span style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.04em">提案</span><span style="font-family:var(--serif);font-size:13px;color:var(--ink);font-weight:600">'+statsCnt.total+'</span></div>'
@@ -1213,9 +1218,8 @@ function renderMobileChart(scroll){
   /* ALL button — sticky on the left edge */
   var allBtn=document.createElement('div');
   var allActive=!_mobileChartFilter;
-  allBtn.style.cssText='flex:0 0 auto;margin:0 4px 0 6px;padding:3px 8px;background:'+(allActive?'var(--ink)':'var(--dim)')+';color:'+(allActive?'var(--bg)':'var(--ink)')+';border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;min-width:36px';
-  allBtn.innerHTML='<div style="font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.06em">ALL</div>'
-    +'<div style="font-family:var(--serif);font-size:11px;font-weight:600">'+statsCnt.total+'</div>';
+  allBtn.style.cssText='flex:0 0 auto;margin:0 4px 0 6px;padding:3px 8px;background:'+(allActive?'rgba(91,138,240,0.25)':'var(--dim)')+';border:1px solid '+(allActive?'rgba(91,138,240,0.6)':'transparent')+';color:var(--ink);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;min-width:36px';
+  allBtn.innerHTML='<div style="display:flex;align-items:baseline;gap:3px"><span style="font-family:var(--mono);font-size:12px;color:var(--ink);font-weight:700;letter-spacing:0.04em">ALL</span><span style="font-family:var(--serif);font-size:9px;color:var(--muted);font-weight:500">'+statsCnt.total+'</span></div>';
   allBtn.addEventListener('click',function(){
     _mobileChartFilter=null;
     _mobileUpdateSelectionStrip();
