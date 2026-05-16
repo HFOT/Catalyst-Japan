@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script>if(screen.width<768&&!location.pathname.includes('mobile'))location.replace('mobile.html'+location.search);</script>
+<script>if(screen.width>0&&screen.width<768&&!location.pathname.includes('mobile'))location.replace('mobile.html'+location.search);</script>
 <meta name="description" content="Catalyst Japan — Project Catalyst funded proposals visualization for the Japanese ecosystem">
 <meta property="og:title" content="Catalyst Japan">
 <meta property="og:description" content="Interactive visualization of Project Catalyst funded proposals in the Japanese ecosystem">
@@ -15,6 +15,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1a1715">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@300;400;500&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+<script src="milestones.js"></script>
+<script src="completions.js"></script>
 <style>
 :root{
   --bg:#fafaf7;--ink:#1a1715;--paper:#ffffff;--muted:#8a8a83;
@@ -56,6 +59,10 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(
 ::-webkit-scrollbar-track{background:var(--bg)}
 ::-webkit-scrollbar-thumb{background:var(--border-h);border-radius:4px}
 ::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+/* MS matrix panes: more visible scrollbar so users notice horizontal overflow */
+#ms-split-left::-webkit-scrollbar,#ms-split-right::-webkit-scrollbar{height:10px;width:10px}
+#ms-split-left::-webkit-scrollbar-thumb,#ms-split-right::-webkit-scrollbar-thumb{background:var(--muted);border-radius:5px}
+#ms-split-left::-webkit-scrollbar-thumb:hover,#ms-split-right::-webkit-scrollbar-thumb:hover{background:var(--ink)}
 
 
 .stage{
@@ -193,6 +200,18 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(
   transition:transform .25s ease,opacity .25s ease;
 }
 .ct-detail.open{display:flex;transform:translateX(0);opacity:1}
+.ct-detail.in-chart{
+  position:static;top:auto;right:auto;bottom:auto;width:100%;height:100%;
+  border:none;border-radius:0;box-shadow:none;
+  transform:none;opacity:1;display:flex;z-index:auto;
+}
+.ct-detail.in-chart .ct-detail-close{display:none}
+.ct-detail.in-chart .ct-detail-head{padding:12px 14px 10px}
+.ct-detail.in-chart .ct-d-title{font-size:13px}
+.ct-detail.in-chart .ct-d-amt{font-size:16px}
+.ct-detail.in-chart .ct-detail-body{padding:10px 14px 12px}
+.ct-detail.in-chart .ct-d-section{margin-bottom:10px}
+.ct-detail.in-chart .ct-lens-row{border-top:1px solid var(--border)}
 .ct-detail-close{
   position:absolute;top:12px;right:12px;width:26px;height:26px;
   border:none;background:var(--dim);border-radius:4px;cursor:pointer;
@@ -624,6 +643,353 @@ html.night .cls-bridge{background:hsl(30 35% 22%);color:hsl(30 55% 75%);border:n
 .tl-pip-meta{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
 .tl-pip-amt{font-family:'Inter',sans-serif;font-size:10px;font-weight:500;color:var(--ink);white-space:nowrap;font-feature-settings:"tnum"}
 
+/* ═══════ Chart View ═══════ */
+.ch-wrap{
+  position:absolute;top:0;left:180px;right:0;bottom:0;overflow:hidden;background:var(--bg);z-index:40;
+  display:none;
+}
+.ch-wrap.open{
+  display:grid;
+  grid-template-columns:220px 1fr 280px;
+  grid-template-rows:auto 1fr auto;
+  grid-template-areas:
+    "hdr   hdr     hdr"
+    "left  chart   right"
+    "left  flow    right";
+}
+.ch-wrap.open.person-open{
+  grid-template-rows:auto 1fr minmax(100px,220px) auto;
+  grid-template-areas:
+    "hdr   hdr     hdr"
+    "left  chart   right"
+    "left  pchart  right"
+    "left  flow    right";
+}
+/* ── Header ── */
+.ch-header{
+  grid-area:hdr;
+  display:flex;align-items:center;gap:12px;padding:16px 16px 10px;flex-shrink:0;
+  border-bottom:1px solid var(--border);
+}
+.ch-title{font-family:'Fraunces',serif;font-size:18px;font-weight:500;font-variation-settings:"opsz" 96}
+.ch-price{
+  font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:500;letter-spacing:-0.02em;
+  color:var(--ink);
+}
+.ch-price-sub{
+  font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:0.02em;
+}
+.ch-price-chg{font-size:11px;font-family:'JetBrains Mono',monospace;letter-spacing:0.02em}
+.ch-price-chg.up{color:var(--st-ok)}.ch-price-chg.down{color:var(--st-dnf)}
+.ch-controls{
+  display:flex;align-items:center;gap:6px;margin-left:auto;
+}
+.ch-range-btn{
+  padding:5px 10px;border:none;border-radius:6px;cursor:pointer;
+  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.06em;
+  color:var(--bar-text);background:none;transition:all .15s;
+}
+.ch-range-btn:hover{color:var(--bar-text-h);background:var(--bar-pill)}
+.ch-range-btn.active{color:var(--bar-text-a);background:var(--bar-pill-a);font-weight:600}
+/* ── Left sidebar: proposer/proposal selector ── */
+.ch-left{
+  grid-area:left;
+  display:flex;flex-direction:column;
+  border-right:1px solid var(--border);overflow:hidden;
+}
+.ch-search{
+  padding:10px;flex-shrink:0;
+}
+.ch-search input{
+  width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;
+  background:var(--dim);color:var(--ink);font-family:'Inter',sans-serif;font-size:12px;
+  outline:none;transition:border-color .15s;
+}
+.ch-search input::placeholder{color:var(--muted)}
+.ch-search input:focus{border-color:var(--border-h)}
+.ch-list{
+  flex:1;overflow-y:auto;padding:0 6px 6px;
+}
+.ch-list-item{
+  padding:7px 10px;border-radius:6px;cursor:pointer;
+  font-family:'Inter',sans-serif;font-size:11px;color:var(--ink);
+  transition:background .12s;display:flex;align-items:center;gap:8px;
+}
+.ch-list-item:hover{background:var(--dim)}
+.ch-list-item.active{background:var(--bar-pill-a);font-weight:500}
+.ch-list-ava{
+  width:22px;height:22px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;
+  color:#fff;background:var(--muted);
+}
+.ch-list-info{min-width:0;flex:1}
+.ch-list-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px}
+.ch-list-sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);margin-top:1px}
+/* ── Left toggle ── */
+.ch-left-toggle{
+  display:flex;gap:0;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.ch-tog-btn{
+  flex:1;padding:7px 0;border:none;cursor:pointer;
+  font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.06em;
+  color:var(--muted);background:none;transition:all .15s;
+  border-bottom:2px solid transparent;
+}
+.ch-tog-btn:hover{color:var(--ink)}
+.ch-tog-btn.active{color:var(--ink);border-bottom-color:var(--ink);font-weight:600}
+.ch-list-card{flex-direction:row;align-items:flex-start;padding:8px 10px}
+.ch-list-bar{
+  display:flex;height:3px;border-radius:1px;overflow:hidden;margin-top:3px;
+  background:var(--dim);
+}
+.ch-list-bar>div{height:100%;min-width:0}
+.ch-back{
+  padding:6px 10px;cursor:pointer;display:flex;align-items:center;gap:5px;
+  font-family:'Inter',sans-serif;font-size:10px;color:var(--muted);transition:color .12s;
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.ch-back:hover{color:var(--ink)}
+/* ── Center: chart area ── */
+.ch-center{
+  grid-area:chart;position:relative;min-height:0;overflow:hidden;
+}
+.ch-chart{width:100%;height:100%;min-height:200px;overflow:hidden}
+/* Unified legend wrapper — single frame holding flag legend (LEFT) + bar legend (RIGHT).
+   Offset right:70px to clear the ADA price scale labels on the right axis. */
+.ch-legend-wrap{
+  position:absolute;top:6px;right:70px;z-index:5;
+  display:flex;align-items:stretch;gap:0;
+  background:var(--bar-bg);border:1px solid var(--bar-border);padding:6px 0;border-radius:5px;backdrop-filter:blur(4px);
+}
+.ch-legend-wrap > .ch-flag-legend,
+.ch-legend-wrap > .ch-legend{
+  position:static;background:transparent;border:none;padding:0 12px;backdrop-filter:none;
+}
+.ch-legend-wrap > .ch-flag-legend{border-right:1px solid var(--bar-border)}
+.ch-flag-legend{
+  display:flex;flex-direction:column;justify-content:space-between;
+  font-family:'Noto Sans JP','JetBrains Mono',monospace;font-size:9px;color:var(--ink);letter-spacing:0.04em;
+}
+.ch-flag-legend-title{color:var(--ink);font-weight:600;font-size:9px;margin-bottom:1px;letter-spacing:0.04em}
+.ch-flag-legend-item{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.ch-flag-legend-label{color:var(--ink);font-weight:500;margin-right:6px}
+.ch-flag-legend-cond{color:var(--muted);opacity:0.7;font-size:9px}
+.ch-legend{justify-content:space-between;font-size:9px}
+.ch-legend-title{font-size:9px;margin-bottom:1px}
+.ch-legend-item{padding:1px 0;cursor:pointer}
+.ch-legend-desc{color:var(--muted);opacity:0.6;font-size:9px;margin-left:3px;white-space:nowrap}
+.ch-legend{
+  display:flex;flex-direction:column;gap:1px;
+  font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink);letter-spacing:0.04em;
+}
+.ch-legend-title{color:var(--ink);font-weight:600;font-size:10px;margin-bottom:3px;letter-spacing:0.04em}
+.ch-legend-item{
+  display:flex;align-items:center;gap:6px;
+  cursor:pointer;padding:2px 0;border-radius:3px;
+  transition:opacity .15s;user-select:none;
+}
+.ch-legend-item:hover{background:var(--bar-pill)}
+.ch-legend-item.off{opacity:0.3}
+.ch-legend-item.off .ch-legend-dot{opacity:0.25}
+.ch-legend-dot{width:14px;height:4px;border-radius:2px;flex-shrink:0}
+.ch-legend-label{white-space:nowrap;color:var(--ink);font-weight:500;margin-right:8px}
+.ch-legend-desc{color:var(--muted);opacity:0.6;font-size:9px;white-space:nowrap}
+.ch-legend-sep{height:1px;background:var(--border);margin:2px 4px;opacity:0.3}
+/* ── Right sidebar: LENS detail ── */
+.ch-right{
+  grid-area:right;
+  display:flex;flex-direction:column;
+  border-left:1px solid var(--border);overflow:hidden;
+}
+.ch-lens-empty{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);
+  text-align:center;padding:20px;letter-spacing:0.04em;line-height:1.6;
+}
+/* ── Chart proposer detail ── */
+.ch-proposer{display:flex;flex-direction:column;height:100%;overflow:hidden}
+.ch-proposer-head{
+  padding:14px;border-bottom:1px solid var(--border);flex-shrink:0;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 3%,var(--bg)),var(--bg) 100%);
+}
+.ch-proposer-row{display:flex;align-items:center;gap:10px}
+.ch-proposer-av{
+  width:36px;height:36px;border-radius:50%;display:grid;place-items:center;
+  background:color-mix(in srgb,var(--accent) 8%,var(--paper));
+  border:2px solid var(--accent);font-weight:600;font-size:14px;color:var(--ink);
+  font-family:'JetBrains Mono',monospace;
+}
+.ch-proposer-name{font-size:14px;font-weight:600;color:var(--ink);letter-spacing:-0.02em}
+/* Status flags: 🚫 dnf (funded), 💧 dnf (unfunded — rare), ⚠️ overdue, ⏳ active gap, ↔️ historical gap, 2️⃣/3️⃣/4️⃣ years */
+.dnf-flag,.unfunded-flag,.stale-flag,.gap-flag,.long-gap-flag,.old-flag{display:inline-block;margin-left:5px;padding:1px 5px;font-size:10px;
+  font-weight:600;border-radius:3px;vertical-align:middle;cursor:help;white-space:nowrap;letter-spacing:0.02em}
+.dnf-flag{color:#fff;background:rgba(220,110,55,0.9)}
+.dnf-flag:hover{background:rgba(240,130,70,1)}
+.unfunded-flag{color:#fff;background:rgba(80,140,200,0.85)}
+.unfunded-flag:hover{background:rgba(100,160,220,1)}
+.stale-flag{color:#1a1715;background:rgba(232,180,72,0.85)}
+.stale-flag:hover{background:rgba(255,200,80,1)}
+.gap-flag{color:#1a1715;background:rgba(150,180,220,0.85)}
+.gap-flag:hover{background:rgba(170,200,240,1)}
+.long-gap-flag{color:#1a1715;background:rgba(180,180,180,0.7)}
+.long-gap-flag:hover{background:rgba(200,200,200,1)}
+.past-overdue-flag{display:inline-block;margin-left:5px;padding:1px 5px;font-size:10px;font-weight:600;border-radius:3px;vertical-align:middle;cursor:help;white-space:nowrap;letter-spacing:0.02em;color:#1a1715;background:rgba(200,170,140,0.8)}
+.past-overdue-flag:hover{background:rgba(220,190,160,1)}
+.old-flag{color:#1a1715;background:rgba(180,160,200,0.8)}
+.old-flag:hover{background:rgba(200,180,220,1)}
+.ch-proposer-sub{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px}
+.ch-proposer-amt{
+  margin-top:8px;padding:6px 10px;border-radius:6px;
+  background:color-mix(in srgb,var(--accent) 5%,var(--paper));
+  border:1px solid color-mix(in srgb,var(--accent) 15%,var(--border));
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+}
+.ch-proposer-tabs{
+  display:flex;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.ch-proposer-tab{
+  flex:1;padding:6px 0;border:none;cursor:pointer;
+  font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.04em;
+  color:var(--muted);background:none;transition:all .15s;
+  border-bottom:2px solid transparent;
+}
+.ch-proposer-tab:hover{color:var(--ink)}
+.ch-proposer-tab.active{color:var(--ink);border-bottom-color:var(--ink);font-weight:600}
+.ch-proposer-tab .tab-cnt{
+  display:inline-block;min-width:14px;height:14px;line-height:14px;text-align:center;
+  border-radius:7px;background:var(--dim);font-size:8px;margin-left:3px;
+}
+.ch-proposer-list{flex:1;overflow-y:auto;padding:6px}
+.ch-proposer-list::-webkit-scrollbar{width:4px}
+.ch-proposer-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.ch-prop-row{
+  padding:8px 10px;border-radius:6px;cursor:pointer;transition:background .12s;
+}
+.ch-prop-row:hover{background:var(--dim)}
+.ch-prop-title{font-size:11px;color:var(--ink);line-height:1.3;margin-bottom:4px}
+.ch-prop-meta{
+  display:flex;flex-wrap:wrap;gap:4px;align-items:center;
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+}
+/* ── Fund detail panel (right sidebar) ── */
+.ch-fund-panel{display:flex;flex-direction:column;height:100%;overflow:hidden}
+.ch-fund-head{
+  padding:14px;border-bottom:1px solid var(--border);flex-shrink:0;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 3%,var(--bg)),var(--bg) 100%);
+}
+.ch-fund-title{font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-0.02em;margin-bottom:2px}
+.ch-fund-date{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.ch-fund-stats{
+  margin-top:10px;padding:8px 10px;border-radius:6px;
+  background:color-mix(in srgb,var(--accent) 5%,var(--paper));
+  border:1px solid color-mix(in srgb,var(--accent) 15%,var(--border));
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+}
+.ch-fund-stat-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.ch-fund-stat-row:last-child{margin-bottom:0}
+.ch-fund-stat-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.ch-fund-stat-label{color:var(--muted);min-width:32px}
+.ch-fund-stat-val{font-weight:600;color:var(--ink)}
+.ch-fund-stat-pct{color:var(--muted);margin-left:auto}
+.ch-fund-bar{height:4px;border-radius:2px;background:var(--dim);margin-top:6px;overflow:hidden;display:flex}
+.ch-fund-bar>div{height:100%;transition:width .3s}
+/* ── Flow summary strip (below chart) ── */
+.ch-flow{
+  grid-area:flow;
+  display:flex;align-items:center;gap:20px;
+  padding:10px 16px;
+  border-top:1px solid var(--border);
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  background:color-mix(in srgb,var(--accent) 2%,var(--bg));
+  overflow-x:auto;min-height:40px;
+}
+.ch-flow-item{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.ch-flow-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.ch-flow-label{color:var(--muted);min-width:24px}
+.ch-flow-val{color:var(--ink);font-weight:600;font-size:11px}
+.ch-flow-sub{color:var(--muted);font-size:9px;margin-left:2px}
+.ch-flow-sep{width:1px;height:20px;background:var(--border);flex-shrink:0}
+/* ── Milestone chart panel (always visible below ADA chart) ── */
+.ch-mschart{
+  grid-area:mschart;
+  border-top:1px solid var(--border);
+  position:relative;
+  background:var(--bg);
+  min-height:160px;
+}
+.ch-mschart-inner{width:100%;height:100%}
+.ch-mschart-label{
+  position:absolute;top:4px;left:10px;z-index:5;
+  font:600 10px 'JetBrains Mono',monospace;color:var(--muted);
+  display:flex;align-items:center;gap:12px;
+}
+.ch-mschart-label span{display:flex;align-items:center;gap:3px}
+.ch-mschart-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+/* ── Person chart panel (bottom 1/3, shown when person selected) ── */
+.ch-person{
+  grid-area:pchart;
+  display:none;
+  border-top:1px solid var(--border);
+  position:relative;
+  background:var(--bg);
+}
+.person-open .ch-person{display:block}
+.ch-person-head{
+  position:absolute;top:6px;left:12px;z-index:5;
+  display:flex;align-items:center;gap:8px;
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+}
+.ch-person-name{color:var(--ink);font-weight:600;font-size:11px}
+.ch-person-close{
+  width:18px;height:18px;border-radius:50%;border:1px solid var(--border);
+  background:var(--paper);cursor:pointer;display:grid;place-items:center;
+  font-size:10px;color:var(--muted);transition:all .12s;
+}
+.ch-person-close:hover{background:var(--dim);color:var(--ink)}
+/* ── Compact fund hover tooltip ── */
+.ch-fund-tip{
+  position:absolute;padding:8px 12px;
+  background:var(--paper);border:1px solid var(--border);border-radius:6px;
+  box-shadow:0 2px 10px var(--card-shadow);
+  font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink);
+  pointer-events:none;z-index:60;
+  opacity:0;transition:opacity .1s;white-space:nowrap;
+}
+.ch-fund-tip.show{opacity:1}
+.ch-fund-tip b{font-size:11px}
+.ch-fund-tip-hd{font-weight:700;font-size:11px;margin-bottom:5px;font-family:'Inter',sans-serif}
+.ch-fund-tip-r{display:flex;align-items:center;gap:5px;margin-bottom:2px}
+.ch-fund-tip-r:last-child{margin-bottom:0}
+.ch-fund-tip-d{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.ch-fund-tip-st{display:flex;gap:8px;margin-top:5px;padding-top:5px;border-top:1px solid var(--border);font-size:9px;color:var(--muted)}
+.ch-fund-tabs{
+  display:flex;flex-wrap:wrap;gap:3px;padding:8px 10px;
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.ch-fund-tab{
+  padding:3px 8px;border:1px solid var(--border);border-radius:4px;cursor:pointer;
+  font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.03em;
+  color:var(--muted);background:none;transition:all .15s;
+}
+.ch-fund-tab:hover{color:var(--ink);border-color:var(--ink)}
+.ch-fund-tab.active{color:var(--bg);background:var(--ink);border-color:var(--ink);font-weight:600}
+.ch-fund-list{flex:1;overflow-y:auto;padding:6px}
+.ch-fund-list::-webkit-scrollbar{width:4px}
+.ch-fund-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.ch-fund-row{
+  padding:7px 10px;border-radius:6px;cursor:pointer;transition:background .12s;
+  display:flex;align-items:flex-start;gap:6px;
+}
+.ch-fund-row:hover{background:var(--dim)}
+.ch-fund-row-st{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.ch-fund-row-info{min-width:0;flex:1}
+.ch-fund-row-name{font-size:11px;color:var(--ink);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-fund-row-meta{
+  display:flex;gap:6px;align-items:center;margin-top:2px;
+  font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);
+}
+
 /* ═══════ Network View ═══════ */
 .nw-wrap{
   position:absolute;top:0;left:180px;right:0;bottom:0;overflow:hidden;z-index:40;
@@ -1034,6 +1400,12 @@ var COL=520, ROW=52, GAP=3, DUR=350;
 
 /* ---- Night mode ---- */
 var NIGHT=(function(){
+  /* User's explicit preference takes priority */
+  try{
+    var pref=localStorage.getItem('cj-theme');
+    if(pref==='light') return false;
+    if(pref==='dark') return true;
+  }catch(e){}
   if(window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches) return true;
   var cs=window.getComputedStyle(document.documentElement);
   var bg=cs.backgroundColor||'';
@@ -1044,10 +1416,11 @@ var NIGHT=(function(){
 if(NIGHT)document.documentElement.classList.add('night');
 
 /* ---- Helpers ---- */
-var ADA_USD=0.75, USD_JPY=150;
+var ADA_USD=0.27, USD_JPY=150;
 var _amtMode='ada'; /* 'auto'=follow _lang | 'jpy' | 'usd' | 'ada' */
 function esc(s){return s?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):''}
 function trunc(s,m){if(!s)return'';s=s.replace(/\s+/g,' ').trim();return s.length>m?s.slice(0,m-1)+'…':s}
+function fmtK(n){if(!n&&n!==0)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return n>=1?Math.round(n).toLocaleString():n.toFixed(2);}
 function hsl(h){return 'hsl('+h+' 50% '+(NIGHT?'58':'44')+'%)'}
 function _curMode(){return _amtMode==='auto'?(_lang==='en'?'usd':'jpy'):_amtMode}
 function fmtAmt(v,u){
@@ -1459,7 +1832,7 @@ var INDUSTRIES=[
     {id:'dt-14',label:'Ouroboros over RINA',amt:10.7,u:'usd',st:'complete',ch:'Challenge'},
     {id:'dt-15',label:'Layer 3 scalability zkRollups',amt:75,u:'usd',st:'complete',ch:'Cardano scaling'},
     {id:'dt-16',label:'Fracada Addressing Audit',amt:15,u:'usd',st:'complete',ch:'Dapps & Integrations'},
-    {id:'dt-17',label:'CIP Editor time (Sebastien)',amt:20,u:'usd',st:'complete',ch:'Open Standards'},
+    {id:'dt-17',label:'CIP Editor time (Sebastien)',amt:129,u:'ada',st:'complete',ch:'Open Standards'},
     {id:'dt-18',label:'TheGraph in Milkomeda',amt:20,u:'usd',st:'complete',ch:'DApps and Integrations'},
     {id:'dt-19',label:'App store for Milkomeda',amt:20,u:'usd',st:'complete',ch:'Developer Ecosystem'},
     {id:'dt-20',label:'Cardano Rust SDK Babbage',amt:30,u:'usd',st:'complete',ch:'Open Source Dev Ecosystem'},
@@ -1549,12 +1922,12 @@ var INDUSTRIES=[
   ]},
   {id:'interop',label:'Interoperability',ja:'相互運用性',hue:220,children:[
     {id:'io-1',label:'Cotalker integration',amt:100,u:'usd',st:'complete',ch:'Business Solutions'},
-    {id:'io-2',label:'Create message signing standard',amt:0.535,u:'usd',st:'complete',ch:'Challenge'},
+    {id:'io-2',label:'Create message signing standard',amt:179,u:'ada',st:'complete',ch:'Challenge'},
     {id:'io-3',label:'Milkomeda token bridge explorer',amt:50,u:'usd',st:'complete',ch:'Developer Ecosystem'}
   ]},
   {id:'gamefi',label:'GameFi',ja:'GameFi',hue:305,children:[
     {id:'gf-1',label:'Sports Crowdfunding Funclub app',amt:380,u:'ada',st:'complete',ch:'Products & Integrations'},
-    {id:'gf-2',label:'Milkomeda Game',amt:40,u:'usd',st:'complete',ch:'DApps and Integrations'},
+    {id:'gf-2',label:'Milkomeda Game',amt:80,u:'usd',st:'complete',ch:'DApps and Integrations'},
     {id:'gf-3',label:'Milkomeda Game #2',amt:80,u:'usd',st:'complete',ch:'Dapps & Integrations'}
   ]},
   {id:'nft',label:'NFT',ja:'NFT',hue:280,children:[
@@ -1887,21 +2260,21 @@ for(var i=0;i<INDUSTRIES.length;i++){
 /* ---- Fund mapping (提案当初のADA価格で計算) ---- */
 var FUND_MAP={
   'co-1':14,'co-2':12,'co-3':12,'co-4':12,'co-5':7,'co-6':7,'co-7':7,'co-8':8,
-  'co-9':9,'co-10':14,'co-11':12,'co-12':12,'co-13':12,'co-14':7,'co-15':9,'co-16':10,
+  'co-9':9,'co-10':14,'co-11':12,'co-12':12,'co-13':12,'co-14':7,'co-15':9,'co-16':8,
   'co-17':9,'co-18':7,'co-19':9,'co-20':6,
-  'dt-1':12,'dt-2':9,'dt-3':7,'dt-4':7,'dt-5':10,'dt-6':9,'dt-7':9,'dt-8':12,
-  'dt-9':12,'dt-10':10,'dt-11':6,'dt-12':7,'dt-13':9,'dt-14':2,'dt-15':10,
-  'dt-16':9,'dt-17':10,'dt-18':7,'dt-19':10,'dt-20':9,
+  'dt-1':12,'dt-2':9,'dt-3':7,'dt-4':7,'dt-5':9,'dt-6':9,'dt-7':9,'dt-8':12,
+  'dt-9':12,'dt-10':9,'dt-11':6,'dt-12':7,'dt-13':9,'dt-14':2,'dt-15':8,
+  'dt-16':9,'dt-17':10,'dt-18':7,'dt-19':8,'dt-20':9,
   'em-1':12,'em-2':12,'em-3':12,'em-4':8,'em-5':9,'em-6':12,'em-7':7,'em-8':8,
   'em-9':7,'em-10':12,'em-11':7,'em-12':9,'em-13':9,
-  'is-1':14,'is-2':12,'is-3':8,'is-4':12,'is-5':10,'is-6':6,'is-7':12,'is-8':10,'is-9':7,
-  'df-1':8,'df-2':10,'df-3':10,'df-4':10,'df-5':8,'df-6':10,'df-7':7,'df-8':9,
+  'is-1':14,'is-2':12,'is-3':8,'is-4':12,'is-5':9,'is-6':6,'is-7':12,'is-8':9,'is-9':7,
+  'df-1':8,'df-2':10,'df-3':9,'df-4':9,'df-5':8,'df-6':9,'df-7':7,'df-8':9,
   'ed-1':12,'ed-2':10,'ed-3':9,'ed-4':9,'ed-5':8,'ed-6':10,'ed-7':9,'ed-8':9,'ed-9':7,
   'gv-1':12,'gv-2':9,'gv-3':8,'gv-4':7,'gv-5':7,
   'rw-1':13,'rw-2':14,'rw-3':13,'rw-4':13,'rw-5':9,'rw-6':10,'rw-7':14,'rw-8':12,
   'rw-9':12,'rw-10':13,'rw-11':7,'rw-12':8,
-  'io-1':10,'io-2':2,'io-3':10,
-  'gf-1':12,'gf-2':7,'gf-3':10,
+  'io-1':8,'io-2':2,'io-3':8,
+  'gf-1':12,'gf-2':7,'gf-3':8,
   'nf-1':11,'nf-2':11,'nf-3':9,'nf-4':12,'nf-5':11,
   'su-1':11,'su-2':9,'su-3':9,'su-4':8,
   'sc-1':7,
@@ -1917,21 +2290,67 @@ var FUND_MAP={
 };
 /* 提案提出時期 (提案者が予算を組んだ時点) */
 var FUND_SUBMIT_DATES={
-  2:'01-12-2020',5:'15-06-2021',6:'01-09-2021',7:'15-11-2021',
+  2:'01-12-2020',3:'11-01-2021',4:'01-04-2021',
+  5:'15-06-2021',6:'01-09-2021',7:'15-11-2021',
   8:'01-03-2022',9:'15-06-2022',10:'01-07-2023',11:'20-11-2023',
   12:'01-05-2024',13:'01-10-2024',14:'01-08-2025'
 };
 /* 採択結果発表時期 */
 var FUND_RESULT_DATES={
-  2:'15-01-2021',5:'09-08-2021',6:'15-11-2021',7:'10-02-2022',
+  2:'15-01-2021',3:'01-04-2021',4:'02-07-2021',
+  5:'09-08-2021',6:'15-11-2021',7:'10-02-2022',
   8:'01-06-2022',9:'01-10-2022',10:'01-10-2023',11:'08-02-2024',
   12:'16-07-2024',13:'15-01-2025',14:'10-10-2025'
 };
+/* 投票期間 (vs=投票開始, ve=投票終了) */
+var FUND_VOTE_DATES={
+  2:{vs:'06-01-2021',ve:'13-01-2021'},
+  3:{vs:'19-02-2021',ve:'05-03-2021'},4:{vs:'15-06-2021',ve:'28-06-2021'},
+  5:{vs:'22-07-2021',ve:'05-08-2021'},6:{vs:'07-10-2021',ve:'21-10-2021'},
+  7:{vs:'20-01-2022',ve:'03-02-2022'},8:{vs:'21-04-2022',ve:'05-05-2022'},
+  9:{vs:'05-09-2022',ve:'19-09-2022'},10:{vs:'31-08-2023',ve:'14-09-2023'},
+  11:{vs:'25-01-2024',ve:'08-02-2024'},12:{vs:'27-06-2024',ve:'11-07-2024'},
+  13:{vs:'28-11-2024',ve:'12-12-2024'},14:{vs:'22-09-2025',ve:'06-10-2025'}
+};
 /* フォールバック値 (API失敗時) */
-var FUND_SUBMIT_PRICES={2:0.17,5:1.40,6:3.10,7:2.00,8:0.85,9:0.55,10:0.29,11:0.38,12:0.45,13:0.35,14:0.75};
-var FUND_RESULT_PRICES={2:0.35,5:1.50,6:2.10,7:1.10,8:0.60,9:0.38,10:0.27,11:0.55,12:0.42,13:0.68,14:0.85};
+var FUND_SUBMIT_PRICES={2:0.17,3:0.17,4:1.30,5:1.40,6:3.10,7:2.00,8:0.85,9:0.55,10:0.29,11:0.38,12:0.45,13:0.35,14:0.75};
+var FUND_RESULT_PRICES={2:0.35,3:1.20,4:1.30,5:1.50,6:2.10,7:1.10,8:0.60,9:0.38,10:0.27,11:0.55,12:0.42,13:0.68,14:0.85};
 var FUND_PRICES={}; for(var _k in FUND_SUBMIT_PRICES) FUND_PRICES[_k]=FUND_SUBMIT_PRICES[_k];
 var _priceMode='submit'; /* 'submit' | 'result' */
+
+/* ---- Completion dates for proposals without milestone tracking ---- */
+/* From CJ_COMPLETIONS (IOG official close-out dates, format YYYY-MM-DD) */
+var PROPOSAL_COMPLETION_DATES={
+  'co-2':'2025-11-15','co-5':'2024-06-15','co-6':'2023-12-15',
+  'co-7':'2025-05-15','co-8':'2023-07-15','co-9':'2024-01-15',
+  'co-11':'2025-10-15','co-14':'2023-05-15','co-15':'2023-12-15',
+  'co-16':'2024-06-15','co-17':'2024-01-15','co-18':'2023-05-15',
+  'co-19':'2024-01-15','co-20':'2022-04-15','co-23':'2024-01-15',
+  'dt-2':'2024-06-15','dt-3':'2024-01-15','dt-4':'2023-08-15',
+  'dt-5':'2024-06-15','dt-6':'2022-11-15','dt-7':'2024-01-15',
+  'dt-10':'2024-06-15','dt-11':'2023-01-15','dt-12':'2023-05-15',
+  'dt-13':'2024-01-15','dt-14':'2021-12-15','dt-15':'2024-06-15',
+  'dt-17':'2024-06-15','dt-18':'2023-06-15','dt-19':'2022-11-15',
+  'dt-20':'2024-01-15',
+  'em-4':'2023-04-15','em-5':'2024-01-15','em-6':'2025-10-15',
+  'em-8':'2023-07-15','em-9':'2022-07-15','em-12':'2024-01-15',
+  'em-13':'2024-01-15',
+  'is-3':'2023-07-15','is-4':'2025-10-15','is-5':'2023-06-15',
+  'is-6':'2023-01-15','is-8':'2024-06-15','is-9':'2022-07-15',
+  'is-12':'2025-10-15',
+  'df-1':'2023-07-15','df-3':'2024-06-15','df-4':'2023-01-15',
+  'df-5':'2023-07-15','df-6':'2024-06-15','df-7':'2023-05-15',
+  'df-8':'2024-01-15',
+  'ed-4':'2023-07-15','ed-5':'2023-04-15','ed-9':'2023-04-15',
+  'ed-11':'2025-06-15',
+  'gv-1':'2025-10-15','gv-2':'2024-01-15','gv-3':'2023-07-15',
+  'gv-5':'2023-05-15',
+  'rw-6':'2023-08-15','rw-11':'2023-05-15','rw-12':'2023-07-15',
+  'io-1':'2024-06-15','io-2':'2021-12-15','io-3':'2022-08-15',
+  'gf-1':'2025-10-15','gf-2':'2023-05-15','gf-3':'2024-06-15',
+  'nf-3':'2023-12-15','nf-5':'2025-10-15',
+  'su-4':'2023-07-15','sc-1':'2023-05-15'
+};
 
 /* ---- 分類: メイン / 共同 / 仲介 ---- */
 var CLASSIFY={
@@ -2065,14 +2484,274 @@ var _fundSummary=_fundKeys.map(function(f){return 'F'+f+':'+(_fundCount['F'+f]||
 /* ---- Build proposer stats ---- */
 /* mainUsdK/mainAda = cls:'main' の直接提案のみ
    allUsdK/allAda   = 全関与(メイン+共同+仲介+チーム参加) */
+/* Detect proposal status patterns. Returns object with separate flags.
+   - overdue: status='progress' + unsigned MS past deadline (month + 3-month grace)
+   - gap:     status='progress' + consecutive signoffs >= 6 months apart
+   - longGap: status='complete' + consecutive signoffs >= 8 months apart (historical, softer)
+   - longYears: years since fund result date (2, 3, 4+) — flagged regardless of status */
+function _proposalStatus(p){
+  var out={overdue:false,gap:false,longGap:false,pastOverdue:false,maxGapMonths:0,years:0,plannedMonths:0,overrunRatio:0,pastOverdueDetail:null};
+  /* Compute duration: adoption date → completion (or today if not done).
+     Also compute planned duration (max milestone month) to detect overrun. */
+  var pfrd=FUND_RESULT_DATES[p.fund||0];
+  if(pfrd){
+    var pp0=pfrd.split('-');
+    var fd0=new Date(parseInt(pp0[2]),parseInt(pp0[1])-1,parseInt(pp0[0]));
+    /* End date = last signoff (if complete) or today (in-progress/dnf) */
+    var endDate=new Date();
+    var MS0=window.CJ_MILESTONES||{};
+    var ms0=MS0[p.id];
+    if(ms0&&ms0.length){
+      /* Planned: max milestone month from project start */
+      for(var ei1=0;ei1<ms0.length;ei1++){
+        for(var mi1=0;mi1<ms0[ei1].milestones.length;mi1++){
+          var mo1=parseInt(ms0[ei1].milestones[mi1].month);
+          if(!isNaN(mo1)&&mo1>out.plannedMonths) out.plannedMonths=mo1;
+        }
+      }
+      if(p.st==='complete'){
+        var lastSig=null;
+        for(var ei0=0;ei0<ms0.length;ei0++){
+          for(var mi0=0;mi0<ms0[ei0].milestones.length;mi0++){
+            var sg=ms0[ei0].milestones[mi0].signoff;
+            if(sg){var sd=new Date(sg);if(!lastSig||sd>lastSig) lastSig=sd;}
+          }
+        }
+        if(lastSig) endDate=lastSig;
+      }
+    } else if(p.st==='complete'){
+      /* Pre-MS: use COMP close-out date if available */
+      var COMP0=window.CJ_COMPLETIONS||{};
+      for(var ck0 in COMP0){
+        if(COMP0[ck0]._lid===p.id && COMP0[ck0].completed){
+          endDate=new Date(COMP0[ck0].completed);break;
+        }
+      }
+    }
+    out.years=((endDate-fd0)/(365.25*24*60*60*1000));
+    if(out.plannedMonths>0) out.overrunRatio=(out.years*12)/out.plannedMonths;
+  }
+  if(p.st==='dnf') return out; /* 🚫 stopped, not ⚠️/⏳ */
+  var MS=window.CJ_MILESTONES||{};
+  var msData=MS[p.id];
+  if(!msData||!msData.length) return out;
+  /* Check 1: unsigned MS past deadline. Capture worst-case overdue details. */
+  if(p.st==='progress'){
+    var frd=FUND_RESULT_DATES[p.fund||0];
+    if(frd){
+      var pp=frd.split('-');
+      var fundDate=new Date(parseInt(pp[2]),parseInt(pp[1])-1,parseInt(pp[0]));
+      var now=new Date();
+      for(var ei=0;ei<msData.length;ei++){
+        var ms=msData[ei].milestones;
+        for(var mi=0;mi<ms.length;mi++){
+          var m=ms[mi];
+          if(m.signoff) continue;
+          var mo=parseInt(m.month);if(isNaN(mo)) continue;
+          var ed=new Date(fundDate);ed.setMonth(ed.getMonth()+mo+3);
+          if(now>ed){
+            out.overdue=true;
+            var planDate=new Date(fundDate);planDate.setMonth(planDate.getMonth()+mo);
+            var monthsLate=(now-planDate)/(30.44*24*60*60*1000);
+            /* Keep the FIRST (earliest) overdue MS — that's where progress stalled */
+            if(!out.overdueDetail||m.ms<out.overdueDetail.msNum){
+              out.overdueDetail={
+                msNum:m.ms, plannedMonth:mo,
+                plannedDate:planDate.toISOString().substring(0,10),
+                monthsLate:monthsLate
+              };
+            }
+          }
+        }
+      }
+    }
+  }
+  /* Check 2: max gap between consecutive signoffs.
+     Progress: >=6mo gap → ⏳ active stall
+     Complete: >=8mo gap → ↔️ historical pause (allows for annual events like EXPO) */
+  for(var ei2=0;ei2<msData.length;ei2++){
+    var ms2=msData[ei2].milestones.slice().sort(function(a,b){return a.ms-b.ms;});
+    var prevDate=null;
+    for(var mi2=0;mi2<ms2.length;mi2++){
+      var m2=ms2[mi2];
+      if(!m2.signoff){prevDate=null;continue;}
+      var curDate=new Date(m2.signoff);
+      if(prevDate){
+        var monthDiff=(curDate-prevDate)/(30*24*60*60*1000);
+        if(monthDiff>out.maxGapMonths) out.maxGapMonths=monthDiff;
+      }
+      prevDate=curDate;
+    }
+  }
+  if(p.st==='progress' && out.maxGapMonths>=6) out.gap=true;
+  else if(p.st==='complete' && out.maxGapMonths>=8) out.longGap=true;
+  /* Check 3: completed proposals where some MS was signed >=6 months past planned month.
+     "Completed but late" — different from longGap (which is about pauses between MS). */
+  if(p.st==='complete'){
+    var frd3=FUND_RESULT_DATES[p.fund||0];
+    if(frd3){
+      var pp3=frd3.split('-');
+      var fundDate3=new Date(parseInt(pp3[2]),parseInt(pp3[1])-1,parseInt(pp3[0]));
+      var worstLate=0,worstMs=null;
+      for(var ei3=0;ei3<msData.length;ei3++){
+        var ms3=msData[ei3].milestones;
+        for(var mi3=0;mi3<ms3.length;mi3++){
+          var m3=ms3[mi3];
+          if(!m3.signoff) continue;
+          var mo3=parseInt(m3.month);if(isNaN(mo3)) continue;
+          var planned=new Date(fundDate3);planned.setMonth(planned.getMonth()+mo3);
+          var actual=new Date(m3.signoff);
+          var monthsLate3=(actual-planned)/(30.44*24*60*60*1000);
+          if(monthsLate3>worstLate){
+            worstLate=monthsLate3;
+            worstMs={msNum:m3.ms,plannedMonth:mo3,plannedDate:planned.toISOString().substring(0,10),actualDate:m3.signoff.substring(0,10),monthsLate:monthsLate3};
+          }
+        }
+      }
+      if(worstLate>=6){
+        out.pastOverdue=true;
+        out.pastOverdueDetail=worstMs;
+      }
+    }
+  }
+  return out;
+}
+/* Legacy alias kept for any callers — true if EITHER pattern triggers */
+function _isStaleProposal(p){var s=_proposalStatus(p);return s.overdue||s.gap;}
+/* Find the original INDUSTRIES proposal object by id (for flag rendering helpers) */
+function _findIndustryProposal(id){
+  for(var i=0;i<INDUSTRIES.length;i++){
+    if(!INDUSTRIES[i].children) continue;
+    for(var j=0;j<INDUSTRIES[i].children.length;j++){
+      if(INDUSTRIES[i].children[j].id===id) return INDUSTRIES[i].children[j];
+    }
+  }
+  return null;
+}
+/* Compact inline flags for matrix/timeline rows. Returns minimal HTML. */
+function _renderMiniFlags(p){
+  if(!p) return '';
+  var out='';
+  var pst=_proposalStatus(p);
+  if(p.st==='dnf'){
+    if(_dnfReceivedFunds(p)) out+='<span class="dnf-flag" style="font-size:8px;padding:0 3px;margin-left:3px" title="'+esc((_lang!=='en'?'終了 (資金受領後)':'Ended'))+'">END</span>';
+    else out+='<span class="unfunded-flag" style="font-size:8px;padding:0 3px;margin-left:3px" title="'+esc((_lang!=='en'?'不発 (資金未受領)':'Unfunded'))+'">💧</span>';
+  }
+  if(pst.overdue){
+    var d=pst.overdueDetail;
+    var tip=d?(_lang!=='en'?'期限超過: MS'+d.msNum+' 計画 '+d.plannedDate+' → '+Math.round(d.monthsLate)+'ヶ月遅延':'Overdue: MS'+d.msNum):'期限超過';
+    out+='<span class="stale-flag" style="font-size:8px;padding:0 3px;margin-left:3px" title="'+esc(tip)+'">⚠️</span>';
+  }
+  if(pst.gap){
+    out+='<span class="gap-flag" style="font-size:8px;padding:0 3px;margin-left:3px" title="'+esc('進行中ギャップ '+Math.round(pst.maxGapMonths)+'ヶ月')+'">⏳</span>';
+  }
+  if(pst.longGap){
+    out+='<span class="long-gap-flag" style="font-size:8px;padding:0 3px;margin-left:3px" title="'+esc('過去長期空白 '+Math.round(pst.maxGapMonths)+'ヶ月')+'">↔️</span>';
+  }
+  if(pst.pastOverdue){
+    var poT=pst.pastOverdueDetail?('MS'+pst.pastOverdueDetail.msNum+' '+Math.round(pst.pastOverdueDetail.monthsLate)+'ヶ月遅延で完了'):'期限超過で完了';
+    out+='<span class="past-overdue-flag" style="font-size:8px;padding:0 3px;margin-left:3px" title="'+esc(poT)+'">⌚</span>';
+  }
+  if(pst.years>=2 && (window.CJ_MILESTONES||{})[p.id]){
+    var ye=Math.floor(pst.years);var yEm=ye>=4?'4️⃣':ye>=3?'3️⃣':'2️⃣';
+    var yT=pst.plannedMonths>0?'計画 '+pst.plannedMonths+'ヶ月 → '+pst.overrunRatio.toFixed(1)+'倍':pst.years.toFixed(1)+'年';
+    out+='<span class="old-flag" style="font-size:8px;padding:0 3px;margin-left:3px" title="'+esc(yT)+'">'+yEm+'</span>';
+  }
+  return out;
+}
+/* Render aggregate status flags for an account (PROPOSER_STATS entry).
+   ps fields used: dnfList, overdueList, gapList, longGapList, oldList */
+function _renderStatusFlags(ps){
+  var out='';
+  if(ps.dnfList && ps.dnfList.length){
+    var t=(_lang!=='en'?'停止 '+ps.dnfList.length+'件 (資金受領後)\n':'Stopped '+ps.dnfList.length+' (funded)\n')
+      +ps.dnfList.map(function(d){return '・F'+d.fund+' '+d.label;}).join('\n');
+    out+='<span class="dnf-flag" title="'+esc(t)+'">END'+ps.dnfList.length+'</span>';
+  }
+  if(ps.unfundedDnfList && ps.unfundedDnfList.length){
+    var t2=(_lang!=='en'?'不発 '+ps.unfundedDnfList.length+'件 (資金未受領で停止)\n':'Unfunded stop '+ps.unfundedDnfList.length+'\n')
+      +ps.unfundedDnfList.map(function(d){return '・F'+d.fund+' '+d.label;}).join('\n');
+    out+='<span class="unfunded-flag" title="'+esc(t2)+'">💧'+ps.unfundedDnfList.length+'</span>';
+  }
+  if(ps.overdueList && ps.overdueList.length){
+    var t=(_lang!=='en'?'期限超過 '+ps.overdueList.length+'件 (未署名MS)\n':'Overdue '+ps.overdueList.length+'\n')
+      +ps.overdueList.map(function(d){
+        var det='';
+        if(d.detail){
+          det=' [MS'+d.detail.msNum+' 計画 month '+d.detail.plannedMonth+' ('+d.detail.plannedDate+') → '+Math.round(d.detail.monthsLate)+'ヶ月遅延]';
+        }
+        return '・F'+d.fund+' '+d.label+det;
+      }).join('\n');
+    out+='<span class="stale-flag" title="'+esc(t)+'">⚠️'+ps.overdueList.length+'</span>';
+  }
+  if(ps.gapList && ps.gapList.length){
+    var t=(_lang!=='en'?'請求間隔大 '+ps.gapList.length+'件 (進行中、MS間6ヶ月以上)\n':'Active gaps '+ps.gapList.length+'\n')
+      +ps.gapList.map(function(d){return '・F'+d.fund+' '+d.label+' ('+d.gapMonths+'ヶ月)';}).join('\n');
+    out+='<span class="gap-flag" title="'+esc(t)+'">⏳'+ps.gapList.length+'</span>';
+  }
+  if(ps.longGapList && ps.longGapList.length){
+    var t=(_lang!=='en'?'過去長期空白 '+ps.longGapList.length+'件 (完了済、MS間8ヶ月以上)\n':'Historical gaps '+ps.longGapList.length+'\n')
+      +ps.longGapList.map(function(d){return '・F'+d.fund+' '+d.label+' ('+d.gapMonths+'ヶ月)';}).join('\n');
+    out+='<span class="long-gap-flag" title="'+esc(t)+'">↔️'+ps.longGapList.length+'</span>';
+  }
+  if(ps.pastOverdueList && ps.pastOverdueList.length){
+    var t=(_lang!=='en'?'期限超過で完了 '+ps.pastOverdueList.length+'件 (MS が予定月から6ヶ月+遅延)\n':'Late completion '+ps.pastOverdueList.length+'\n')
+      +ps.pastOverdueList.map(function(d){
+        var det=d.detail?' [MS'+d.detail.msNum+' 計画 '+d.detail.plannedDate+' → 実際 '+d.detail.actualDate+' ('+Math.round(d.detail.monthsLate)+'ヶ月遅延)]':'';
+        return '・F'+d.fund+' '+d.label+det;
+      }).join('\n');
+    out+='<span class="past-overdue-flag" title="'+esc(t)+'">⌚'+ps.pastOverdueList.length+'</span>';
+  }
+  if(ps.oldList && ps.oldList.length){
+    /* Aggregate by year bucket — show highest year emoji per account */
+    var maxY=0;
+    for(var i=0;i<ps.oldList.length;i++) if(ps.oldList[i].years>maxY) maxY=ps.oldList[i].years;
+    var yrEmoji=maxY>=4?'4️⃣':maxY>=3?'3️⃣':'2️⃣';
+    var t=(_lang!=='en'?'長期案件 '+ps.oldList.length+'件 (採択から '+maxY+'年以上)\n':'Long-running '+ps.oldList.length+'\n')
+      +ps.oldList.map(function(d){
+        var stT=d.st==='complete'?'完了':d.st==='progress'?'進行中':'停止';
+        var overrun=d.planned>0?' [計画 '+d.planned+'ヶ月 → '+d.ratio.toFixed(1)+'倍]':'';
+        return '・F'+d.fund+' '+d.label+' ('+d.years+'年, '+stT+')'+overrun;
+      }).join('\n');
+    out+='<span class="old-flag" title="'+esc(t)+'">'+yrEmoji+ps.oldList.length+'</span>';
+  }
+  return out;
+}
+/* Did this dnf proposal actually receive funds?
+   Pre-MS (F2-F9): lump-sum at adoption → assume funded
+   F10+: check distributed from MS data → only count as funded if dist > 0 */
+function _dnfReceivedFunds(p){
+  if(p.fund<10) return true; /* pre-MS: paid at adoption */
+  var MS=window.CJ_MILESTONES||{};
+  var ms=MS[p.id];
+  if(ms&&ms.length) return (ms[0].distributed||0)>0;
+  return false; /* no data — assume not funded */
+}
 var PROPOSER_STATS=(function(){
-  function init(){return{mainCount:0,mainUsdK:0,mainAda:0,coCount:0,coUsdK:0,coAda:0,teamCount:0,teamUsdK:0,teamAda:0,namedFor:{}};}
+  function init(){return{mainCount:0,mainUsdK:0,mainAda:0,coCount:0,coUsdK:0,coAda:0,teamCount:0,teamUsdK:0,teamAda:0,namedFor:{},dnfList:[],unfundedDnfList:[],overdueList:[],gapList:[],longGapList:[],pastOverdueList:[],oldList:[]};}
   var map={},unkCount=0,unkUsd=0;
+  function addFlags(entry,p,ps){
+    if(p.st==='dnf'){
+      if(_dnfReceivedFunds(p)) entry.dnfList.push({label:p.label,fund:p.fund||0,id:p.id});
+      else entry.unfundedDnfList.push({label:p.label,fund:p.fund||0,id:p.id});
+    }
+    if(ps.overdue) entry.overdueList.push({label:p.label,fund:p.fund||0,id:p.id,detail:ps.overdueDetail||null});
+    if(ps.gap) entry.gapList.push({label:p.label,fund:p.fund||0,id:p.id,gapMonths:Math.round(ps.maxGapMonths)});
+    if(ps.longGap) entry.longGapList.push({label:p.label,fund:p.fund||0,id:p.id,gapMonths:Math.round(ps.maxGapMonths)});
+    if(ps.pastOverdue) entry.pastOverdueList.push({label:p.label,fund:p.fund||0,id:p.id,detail:ps.pastOverdueDetail});
+    /* Duration flag: 2/3/4+ years from adoption to completion (or to today if pending).
+       Requires MS data (planned timeline) to be meaningful — skip pre-MS proposals
+       without milestone tracking, since their "duration" is admin paperwork, not real progress. */
+    var hasMs=(window.CJ_MILESTONES||{})[p.id];
+    var skipDuration=!hasMs; /* skip if no MS data */
+    if(ps.years>=2 && !skipDuration) entry.oldList.push({label:p.label,fund:p.fund||0,id:p.id,years:Math.floor(ps.years),st:p.st,planned:ps.plannedMonths,ratio:ps.overrunRatio});
+  }
   for(var i=0;i<INDUSTRIES.length;i++){
     for(var j=0;j<INDUSTRIES[i].children.length;j++){
       var p=INDUSTRIES[i].children[j];
       var uK=p.u==='ada'?p.amt*p.adaPrice:p.amt;
       var ada=p.u==='ada'?p.amt:p.amt/p.adaPrice;
+      var ps=_proposalStatus(p);
       if(p.by){
         if(!map[p.by])map[p.by]=init();
         if(p.cls==='main'){
@@ -2080,6 +2759,7 @@ var PROPOSER_STATS=(function(){
         }else{
           map[p.by].coCount++;map[p.by].coUsdK+=uK;map[p.by].coAda+=ada;
         }
+        addFlags(map[p.by],p,ps);
       } else {
         unkCount++;unkUsd+=uK;
       }
@@ -2096,6 +2776,7 @@ var PROPOSER_STATS=(function(){
             if(!map[tn].namedFor[owner]) map[tn].namedFor[owner]=0;
             map[tn].namedFor[owner]++;
           }
+          addFlags(map[tn],p,ps);
         }
       }
     }
@@ -2110,7 +2791,8 @@ var PROPOSER_STATS=(function(){
       mainCount:m.mainCount,mainUsdK:m.mainUsdK,mainAda:m.mainAda,
       coCount:m.coCount,coUsdK:m.coUsdK,coAda:m.coAda,
       teamCount:m.teamCount,teamUsdK:m.teamUsdK,teamAda:m.teamAda,
-      namedFor:m.namedFor,
+      namedFor:m.namedFor,dnfList:m.dnfList,unfundedDnfList:m.unfundedDnfList,
+      overdueList:m.overdueList,gapList:m.gapList,longGapList:m.longGapList,pastOverdueList:m.pastOverdueList,oldList:m.oldList,
       count:m.mainCount+m.coCount,usdK:m.mainUsdK+m.coUsdK,
       allCount:allCount,allUsdK:allUsdK,allAda:allAda});
   }
@@ -2558,6 +3240,8 @@ function buildShell(){
     {key:'timeline',ja:'時系列',en:'Timeline'},
     {key:'network',ja:'関係図',en:'Network'}
   ];
+  /* chart mode: hidden from public, accessible via ?dev=1 */
+  modes.push({key:'chart',ja:'チャート',en:'Chart'});
   var modesWrap=document.createElement('div');modesWrap.className='view-modes';
   for(var mi=0;mi<modes.length;mi++){
     (function(m){
@@ -2565,7 +3249,7 @@ function buildShell(){
       btn.className='view-bar-btn'+(viewMode===m.key?' active':'');
       btn.textContent=_lang!=='en'?m.ja:m.en;
       btn.onclick=function(){viewMode=m.key;filterSec=null;filterBy=null;vis.clear();vis.add('root');buildShell();
-        if(m.key==='network')renderNetwork();else if(m.key==='timeline')renderTimeline();else{render();centerView();}};
+        if(m.key==='network')renderNetwork();else if(m.key==='timeline')renderTimeline();else if(m.key==='chart')renderChart();else{render();centerView();}};
       modesWrap.appendChild(btn);
     })(modes[mi]);
   }
@@ -2584,7 +3268,7 @@ function buildShell(){
       cl.onclick=function(e){
         e.stopPropagation();
         _amtMode=mode;
-        buildShell();if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else render();
+        buildShell();if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else if(viewMode==='chart')renderChart();else render();
       };
       curTog.appendChild(cl);
     })(_curModes[ci],_curLabels[ci]);
@@ -2621,7 +3305,7 @@ function buildShell(){
       lbl.textContent=_langLabels[_langModes.indexOf(mode)];
       lbl.onclick=function(e){
         e.stopPropagation();
-        _lang=mode;buildShell();if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else render();
+        _lang=mode;buildShell();if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else if(viewMode==='chart')renderChart();else render();
       };
       toggle.appendChild(lbl);
     })(_langModes[li]);
@@ -2637,9 +3321,11 @@ function buildShell(){
     NIGHT=!NIGHT;
     if(NIGHT)document.documentElement.classList.add('night');
     else document.documentElement.classList.remove('night');
+    try{localStorage.setItem('cj-theme', NIGHT?'dark':'light');}catch(e){}
     buildShell();
     if(viewMode==='network')renderNetwork();
     else if(viewMode==='timeline')renderTimeline();
+    else if(viewMode==='chart')renderChart();
     else render();
   };
   mainRow.appendChild(nightBtn);
@@ -2851,6 +3537,12 @@ function buildShell(){
   tlw.id='tl-wrap';
   root.appendChild(tlw);
 
+  /* chart view */
+  var chw=document.createElement('div');
+  chw.className='ch-wrap'+(viewMode==='chart'?' open':'');
+  chw.id='ch-wrap';
+  root.appendChild(chw);
+
   /* network view */
   var nww=document.createElement('div');
   nww.className='nw-wrap'+(viewMode==='network'?' open':'');
@@ -2883,8 +3575,10 @@ function buildShell(){
     if(e.key==='Enter'){document.getElementById('ct-lens-send').click();}
   });
 
-  /* hide stage when timeline/network active */
-  if(viewMode==='timeline'||viewMode==='network') stage.style.display='none';
+  /* hide stage when timeline/network/chart active */
+  if(viewMode==='timeline'||viewMode==='network'||viewMode==='chart') stage.style.display='none';
+  /* hide default sidebar in chart mode — chart has its own ch-left */
+  if(viewMode==='chart'){sb.style.display='none';chw.style.left='0';}
 
   /* pan/zoom events */
   stage.addEventListener('pointerdown',ptrDown);
@@ -3133,6 +3827,2468 @@ function renderTimeline(){
     dragX=e.clientX;dragY=e.clientY;setTfm();
   });
   wrap.addEventListener('pointerup',function(){dragging=false;wrap.classList.remove('grabbing');});
+}
+
+/* ================================================================
+   CHART VIEW — ADA Price Timeline + Fund Checkpoints
+   ================================================================ */
+var _chartInstance=null;
+var _chartPriceData=null; /* cached ADA daily prices */
+var _chartSelectedProposer=null;
+var _chartSelectedProposal=null;
+
+function renderChart(){
+  var wrap=document.getElementById('ch-wrap');
+  if(!wrap)return;
+  wrap.innerHTML='';
+
+  /* ════ HEADER ════ */
+  var hdr=document.createElement('div');
+  hdr.className='ch-header';
+  var titleEl=document.createElement('div');
+  titleEl.innerHTML='<div class="ch-title">ADA / USD</div>';
+  hdr.appendChild(titleEl);
+  var priceEl=document.createElement('div');
+  priceEl.id='ch-live-price';
+  priceEl.innerHTML='<span class="ch-price">$'+(ADA_USD||0.75).toFixed(4)+'</span>'
+    +' <span class="ch-price-sub">≈ ¥'+(ADA_USD*USD_JPY).toFixed(2)+'</span>';
+  hdr.appendChild(priceEl);
+  var ctrlsEl=document.createElement('div');
+  ctrlsEl.className='ch-controls';
+  var ranges=[{key:'1Y',days:365},{key:'2Y',days:730},{key:'3Y',days:1095},{key:'ALL',days:2000}];
+  for(var ri=0;ri<ranges.length;ri++){(function(r){
+    var btn=document.createElement('button');
+    btn.className='ch-range-btn'+(r.key==='ALL'?' active':'');btn.textContent=r.key;
+    btn.onclick=function(){
+      var btns=ctrlsEl.querySelectorAll('.ch-range-btn');
+      for(var b=0;b<btns.length;b++) btns[b].classList.remove('active');
+      btn.classList.add('active');applyChartRange(r.days);
+    };ctrlsEl.appendChild(btn);
+  })(ranges[ri]);}
+  hdr.appendChild(ctrlsEl);
+  wrap.appendChild(hdr);
+
+  /* ════ LEFT SIDEBAR: sector / account cards (same as main view) ════ */
+  var left=document.createElement('div');left.className='ch-left';
+
+  /* toggle: 業界別 / アカウント別 */
+  var togDiv=document.createElement('div');togDiv.className='ch-left-toggle';
+  var _chLeftMode='sector';
+  var togSec=document.createElement('button');togSec.className='ch-tog-btn active';togSec.textContent=_lang!=='en'?'業界別':'Sector';
+  var togAcc=document.createElement('button');togAcc.className='ch-tog-btn';togAcc.textContent=_lang!=='en'?'アカウント別':'Accounts';
+  togSec.onclick=function(){_chLeftMode='sector';togSec.classList.add('active');togAcc.classList.remove('active');renderChartSidebar('');};
+  togAcc.onclick=function(){_chLeftMode='account';togAcc.classList.add('active');togSec.classList.remove('active');renderChartSidebar('');};
+  togDiv.appendChild(togSec);togDiv.appendChild(togAcc);
+  left.appendChild(togDiv);
+
+  var searchDiv=document.createElement('div');searchDiv.className='ch-search';
+  var searchInp=document.createElement('input');
+  searchInp.type='text';searchInp.placeholder=_lang!=='en'?'検索...':'Search...';
+  searchDiv.appendChild(searchInp);left.appendChild(searchDiv);
+  var listDiv=document.createElement('div');listDiv.className='ch-list';listDiv.id='ch-list';
+  left.appendChild(listDiv);
+  wrap.appendChild(left);
+
+  /* build flat proposals list from INDUSTRIES (needed for milestone/markers) */
+  var allProps=[];
+  for(var si=0;si<INDUSTRIES.length;si++){
+    var sec=INDUSTRIES[si];
+    for(var ci=0;ci<sec.children.length;ci++){
+      var c=sec.children[ci];
+      var adaAmt=c.u==='ada'?c.amt:(c.amt*1000/(c.adaPrice||0.5));
+      allProps.push({id:c.id,title:c.label,proposer:c.by||'Unknown',fund:c.fund||0,
+        ada:adaAmt,usd:c.u==='usd'?c.amt*1000:(c.amt*(c.adaPrice||0.5)),
+        status:c.st==='complete'?'complete':c.st==='progress'?'in_progress':'dnf',
+        sector:sec.ja||sec.label,challenge:c.ch||'',adaPrice:c.adaPrice||0.5,_src:c});
+    }
+  }
+  window._chAllProps=allProps;
+
+  /* ════ Build fund flow aggregate data (initial — recalculated when price data loads) ════ */
+  var fundFlow={};
+  for(var fi=0;fi<INDUSTRIES.length;fi++){
+    for(var fj=0;fj<INDUSTRIES[fi].children.length;fj++){
+      var fc=INDUSTRIES[fi].children[fj];
+      var ff=fc.fund||0;if(!ff)continue;
+      if(!fundFlow[ff]) fundFlow[ff]={count:0,adaK:0,budgetK:0,fundedK:0,receivedK:0,recvAdaK:0,proposals:[]};
+      var adaK=fc.u==='ada'?fc.amt:(fc.amt/(fc.adaPrice||0.5));
+      var submitP=FUND_SUBMIT_PRICES[ff]||fc.adaPrice||0.5;
+      var resultP=FUND_RESULT_PRICES[ff]||fc.adaPrice||0.5;
+      var budK=adaK*submitP;
+      var funK=adaK*resultP;
+      /* receivedK: historical price at milestone signoff / completion date */
+      var recv=_calcReceivedK(fc.id,adaK,fc.st,ff);
+      var recAdaK=recv.recvAdaK;
+      var recK=recv.usd;
+      fundFlow[ff].count++;
+      fundFlow[ff].adaK+=adaK;
+      fundFlow[ff].budgetK+=budK;
+      fundFlow[ff].fundedK+=funK;
+      fundFlow[ff].receivedK+=recK;
+      fundFlow[ff].recvAdaK+=recAdaK;
+      var msProg=fc.st==='complete'?'4/4':fc.st==='progress'?'2/4':'1/4';
+      var msLabel=fc.st==='complete'?'完了':fc.st==='progress'?'途中':'中止';
+      fundFlow[ff].proposals.push({
+        label:pLabel(fc),status:fc.st,msProg:msProg,msLabel:msLabel,
+        adaK:adaK,budgetK:budK,fundedK:funK,receivedK:recK,recvAdaK:recAdaK
+      });
+    }
+  }
+  window._chFundFlow=fundFlow;
+
+  /* ---- render proposal drill-down list (shared by sector & account) ---- */
+  function renderProposalDrill(children,backLabel,backFn){
+    listDiv.innerHTML='';
+    var back=document.createElement('div');back.className='ch-back';
+    back.innerHTML='← '+esc(backLabel);
+    back.onclick=function(){backFn();_chartClearLens();};
+    listDiv.appendChild(back);
+    for(var j=0;j<children.length;j++){(function(c){
+      var pr=null;
+      for(var ai=0;ai<allProps.length;ai++){if(allProps[ai].id===c.id){pr=allProps[ai];break;}}
+      if(!pr)return;
+      var row=document.createElement('div');row.className='ch-list-item';
+      var stDot=document.createElement('div');stDot.className='ch-list-ava';
+      stDot.style.cssText='width:8px;height:8px;border-radius:50%;background:'+stColor(c.st);
+      row.appendChild(stDot);
+      var info=document.createElement('div');info.className='ch-list-info';
+      var nm=document.createElement('div');nm.className='ch-list-name';nm.textContent=pLabel(c);
+      var sub=document.createElement('div');sub.className='ch-list-sub';
+      sub.textContent='F'+(c.fund||'?')+' · '+fmtDual(c.amt,c.u,c.adaPrice);
+      info.appendChild(nm);info.appendChild(sub);row.appendChild(info);
+      row.onclick=function(){
+        _chartSelectedProposal=pr;
+        var items=listDiv.querySelectorAll('.ch-list-item');
+        for(var k=0;k<items.length;k++) items[k].classList.remove('active');
+        row.classList.add('active');
+        _updateFundFlow([c]);
+        _chartShowLens(pr);
+        addProposalMarkers(pr);
+        _showProposalDetail(c);
+      };
+      listDiv.appendChild(row);
+    })(children[j]);}
+  }
+
+  /* ---- render sidebar cards ---- */
+  function renderChartSidebar(filter){
+    listDiv.innerHTML='';
+    _chartSelectedProposer=null;_chartSelectedProposal=null;
+    _updateFundFlow(null);
+    _closePersonChart();
+    var fl=filter.toLowerCase();
+
+    if(_chLeftMode==='sector'){
+      /* sector cards — same style as main sidebar */
+      for(var i=0;i<INDUSTRIES.length;i++){(function(ind){
+        var name=secName(ind);
+        if(fl&&name.toLowerCase().indexOf(fl)<0)return;
+        var tot=ind._total;
+        var okP=tot?(ind._ok/tot*100).toFixed(0):'0';
+        var wiP=tot?(ind._wip/tot*100).toFixed(0):'0';
+        var dnP=tot?(ind._dnf/tot*100).toFixed(0):'0';
+        var row=document.createElement('div');row.className='ch-list-item ch-list-card';
+        row.innerHTML='<div class="ch-list-ava" style="background:'+hsl(ind.hue)+'">'+name.charAt(0)+'</div>'
+          +'<div class="ch-list-info">'
+          +'<div class="ch-list-name">'+esc(name)+'</div>'
+          +'<div class="ch-list-sub">'+tot+' · '+fmtJpy(ind._usdK)+'</div>'
+          +'<div class="ch-list-bar"><div style="width:'+okP+'%;background:var(--st-ok)"></div><div style="width:'+wiP+'%;background:var(--st-wip)"></div><div style="width:'+dnP+'%;background:var(--st-dnf)"></div></div>'
+          +'</div>';
+        row.onclick=function(){
+          _closePersonChart();
+          _updateFundFlow(ind.children);
+          renderProposalDrill(ind.children,name,function(){renderChartSidebar(searchInp.value);});
+        };
+        listDiv.appendChild(row);
+      })(INDUSTRIES[i]);}
+    } else {
+      /* account cards — same content as proposer sidebar */
+      var sorted=PROPOSER_STATS.slice().sort(function(a,b){return b.allCount-a.allCount;});
+      for(var pi=0;pi<sorted.length;pi++){(function(ps){
+        var dispName=ps.unknown&&_lang==='en'?'Unknown':ps.name;
+        if(fl&&dispName.toLowerCase().indexOf(fl)<0)return;
+        var soloK=ps.mainUsdK,coK=ps.coUsdK;
+        var amtStr=soloK>0?fmtJpy(soloK):(coK>0?fmtJpy(coK)+' (co)':'');
+        var row=document.createElement('div');row.className='ch-list-item ch-list-card';
+        if(ps.unknown) row.style.opacity='0.5';
+        /* 🚫 stopped + ⚠️ overdue + ⏳ active gap + ↔️ historical gap + 2/3/4 yrs old */
+        var statusFlags=_renderStatusFlags(ps);
+        row.innerHTML='<div class="ch-list-info" style="gap:1px">'
+          +'<div class="ch-list-name">'+esc(dispName)+statusFlags+'</div>'
+          +'<div class="ch-list-sub">'+ps.allCount+' proposals'+(amtStr?' · '+amtStr:'')+'</div>'
+          +'</div>';
+        row.onclick=function(){
+          /* collect this proposer's children from INDUSTRIES, sorted by fund (chronological) */
+          var kids=[];
+          for(var ii=0;ii<INDUSTRIES.length;ii++){for(var jj=0;jj<INDUSTRIES[ii].children.length;jj++){
+            var op=INDUSTRIES[ii].children[jj];
+            if(op.by===ps.name) kids.push(op);
+          }}
+          kids.sort(function(a,b){return (a.fund||0)-(b.fund||0);});
+          _updateFundFlow(kids);
+          /* highlight selected account — don't drill into proposals (right bar handles that) */
+          var items=listDiv.querySelectorAll('.ch-list-card');
+          for(var k=0;k<items.length;k++) items[k].classList.remove('active');
+          row.classList.add('active');
+          _chartShowProposer(ps.name);
+          _openPersonChart(ps.name,kids);
+        };
+        listDiv.appendChild(row);
+      })(sorted[pi]);}
+    }
+  }
+
+  searchInp.oninput=function(){renderChartSidebar(searchInp.value);};
+  renderChartSidebar('');
+
+  /* ════ CENTER: chart area ════ */
+  var center=document.createElement('div');center.className='ch-center';
+  var chartEl=document.createElement('div');chartEl.className='ch-chart';chartEl.id='ch-chart-container';
+  center.appendChild(chartEl);
+  var legend=document.createElement('div');legend.className='ch-legend';
+  var _en=_lang==='en';
+  var _lgItems=[
+    {key:'ada',   color:'#5b8af0',              label:'ADA/USD',                          desc:_en?'Market price':'市場価格'},
+    {key:'funded',color:'rgba(61,139,110,0.6)',  label:_en?'Funded':'採択額',              desc:_en?'ADA × price at adoption → USD':'ADA × 採択時価格 → USD'},
+    {key:'recv',  color:'rgba(91,138,240,0.6)',  label:_en?'Received':'受取額',            desc:_en?'ADA × price at MS signoff → USD':'ADA × MS支払日の時価 → USD'},
+    {key:'wd',    color:'rgba(232,160,72,0.55)', label:_en?'Withdrawal':'引出',            desc:_en?'Timing of completion / MS payout':'完了時・MS引出のタイミング'},
+    {key:'cum',   color:'rgba(72,200,120,0.8)',  label:_en?'Cum.Funded':'累計採択',        desc:_en?'Total funded at adoption (₳)':'採択時の提案総額の累計 (₳)'},
+    {key:'bal',   color:'rgba(232,160,72,0.9)',  label:_en?'Balance':'残高',               desc:_en?'Funded − Paid = incomplete MS (₳)':'調達 − 支払済 = 未完了MS残額 (₳)'},
+    {key:'_sep'},
+    {key:'usd',  color:'rgba(100,200,255,0.8)', label:_en?'USD(Adopt)':'USD(採択時)',     desc:_en?'If secured as stablecoin at proposal':'採択時にステーブルで担保した場合',
+     color2:'rgba(255,220,80,0.8)',              label2:_en?'USD(Live)':'USD(実勢)',       desc2:_en?'USD value when paid as ADA at MS':'ADA払い時点のUSD時価の累計'}
+  ];
+  var _lgHtml='<div class="ch-legend-title">'+(_en?'Chart elements':'グラフ解説')+'</div>';
+  for(var li=0;li<_lgItems.length;li++){
+    var it=_lgItems[li];
+    if(it.key==='_sep'){_lgHtml+='<div class="ch-legend-sep"></div>';continue;}
+    if(it.color2){
+      _lgHtml+='<div class="ch-legend-item" data-key="'+it.key+'">'
+        +'<div class="ch-legend-dot" style="background:'+it.color+';border:1px dashed rgba(100,200,255,0.4)"></div>'
+        +'<span class="ch-legend-label">'+it.label+'</span>'
+        +'<span class="ch-legend-desc">'+it.desc+'</span></div>'
+        +'<div class="ch-legend-item" data-key="'+it.key+'">'
+        +'<div class="ch-legend-dot" style="background:'+it.color2+'"></div>'
+        +'<span class="ch-legend-label">'+it.label2+'</span>'
+        +'<span class="ch-legend-desc">'+it.desc2+'</span></div>';
+    } else {
+      _lgHtml+='<div class="ch-legend-item" data-key="'+it.key+'">'
+        +'<div class="ch-legend-dot" style="background:'+it.color+'"></div>'
+        +'<span class="ch-legend-label">'+it.label+'</span>'
+        +'<span class="ch-legend-desc">'+it.desc+'</span></div>';
+    }
+  }
+  legend.innerHTML=_lgHtml;
+
+  /* ── Flag legend: explain the 7 status flag types ── */
+  var flagLegend=document.createElement('div');flagLegend.className='ch-flag-legend';
+  var _flagItems=[
+    {emoji:'END',  cls:'dnf-flag',         label:_en?'Stopped':'停止',          cond:_en?'dnf + funds received':'dnf + 資金受領済 (納品せず終了)'},
+    {emoji:'💧',   cls:'unfunded-flag',    label:_en?'Unfunded':'不発',         cond:_en?'dnf + no funds (rare)':'dnf + 資金未受領 (異例)'},
+    {emoji:'⚠️',   cls:'stale-flag',       label:_en?'Overdue':'期限超過',      cond:_en?'progress + unsigned MS >3mo late':'進行中 + 未署名MSが期限+3ヶ月超過'},
+    {emoji:'⏳',   cls:'gap-flag',         label:_en?'Active gap':'進行中ギャップ',cond:_en?'progress + ≥6mo between MS':'進行中 + MS間6ヶ月以上の空白'},
+    {emoji:'↔️',   cls:'long-gap-flag',    label:_en?'Past gap':'過去ギャップ',  cond:_en?'complete + ≥8mo between MS':'完了 + MS間8ヶ月以上の空白'},
+    {emoji:'⌚',   cls:'past-overdue-flag',label:_en?'Late completion':'期限超過で完了',cond:_en?'complete + MS ≥6mo past plan':'完了 + 個別MSが計画から6ヶ月+遅延'},
+    {emoji:'2️⃣',  cls:'old-flag',         label:_en?'Long duration':'長期化',  cond:_en?'2/3/4+ yrs adoption → completion':'採択→完了が2/3/4年以上'}
+  ];
+  var _flgHtml='<div class="ch-flag-legend-title">'+(_en?'Status flags':'状態フラグ')+'</div>';
+  for(var fli=0;fli<_flagItems.length;fli++){
+    var fi=_flagItems[fli];
+    _flgHtml+='<div class="ch-flag-legend-item">'
+      +'<span class="'+fi.cls+'" style="margin:0;flex:0 0 auto">'+fi.emoji+'</span>'
+      +'<span class="ch-flag-legend-label">'+fi.label+'</span>'
+      +'<span class="ch-flag-legend-cond">'+fi.cond+'</span></div>';
+  }
+  flagLegend.innerHTML=_flgHtml;
+
+  /* toggle visibility on click — use setData([]) / restore to avoid scale artifacts */
+  var _lgState={ada:true,funded:true,recv:true,wd:true,cum:true,bal:true,usd:true};
+  var _lgBackup={};  /* saved data per key */
+  var _lgSeriesMap={
+    ada:function(){return window._chAdaLine;},
+    funded:function(){return window._chFundedSeries;},
+    recv:function(){return window._chRecvSeries;},
+    wd:function(){return window._chWdSeries;},
+    cum:function(){return window._chCumSeries;},
+    bal:function(){return window._chBalSeries;},
+    usd:function(){return [window._chUsdAdoptSeries,window._chUsdLiveSeries];}
+  };
+  function _lgToggle(series,key,show){
+    if(!series)return;
+    var arr=Array.isArray(series)?series:[series];
+    if(show){
+      var saved=_lgBackup[key];
+      if(saved){for(var i=0;i<arr.length;i++){if(arr[i]&&saved[i])arr[i].setData(saved[i]);}}
+      delete _lgBackup[key];
+    } else {
+      var backup=[];
+      for(var i=0;i<arr.length;i++){backup.push(arr[i]?arr[i].data().slice():[]); if(arr[i])arr[i].setData([]);}
+      _lgBackup[key]=backup;
+    }
+  }
+  legend.addEventListener('click',function(e){
+    var item=e.target.closest('.ch-legend-item');
+    if(!item)return;
+    var key=item.getAttribute('data-key');
+    if(!key)return;
+    _lgState[key]=!_lgState[key];
+    var vis=_lgState[key];
+    var all=legend.querySelectorAll('[data-key="'+key+'"]');
+    for(var ai=0;ai<all.length;ai++) all[ai].classList.toggle('off',!vis);
+    var seriesFn=_lgSeriesMap[key];
+    if(!seriesFn)return;
+    _lgToggle(seriesFn(),key,vis);
+  });
+
+  /* Unified wrapper: flag legend LEFT + bar legend RIGHT, single frame */
+  var legendWrap=document.createElement('div');legendWrap.className='ch-legend-wrap';
+  legendWrap.appendChild(flagLegend);
+  legendWrap.appendChild(legend);
+  center.appendChild(legendWrap);
+  wrap.appendChild(center);
+
+  /* ════ RIGHT SIDEBAR: LENS detail ════ */
+  var right=document.createElement('div');right.className='ch-right';right.id='ch-right';
+  right.innerHTML='<div class="ch-lens-empty">'+(_lang!=='en'?'左から提案を選択':'Select a proposal\nfrom the left')+'</div>';
+  wrap.appendChild(right);
+
+  /* ════ PERSON CHART: individual funding timeline (bottom 1/3) ════ */
+  var personEl=document.createElement('div');personEl.className='ch-person';personEl.id='ch-person';
+  var personChart=document.createElement('div');personChart.id='ch-person-chart';
+  personChart.style.cssText='width:100%;height:100%';
+  personEl.appendChild(personChart);
+  wrap.appendChild(personEl);
+  wrap.classList.add('person-open');
+
+  /* ════ FLOW STRIP: financial summary below chart ════ */
+  var flowEl=document.createElement('div');flowEl.className='ch-flow';flowEl.id='ch-flow';
+  wrap.appendChild(flowEl);
+  _updateFlowStrip(fundFlow);
+
+  /* funding flow tooltip (will be appended to chart container) */
+
+  /* ════ CREATE CHART (delay for layout) ════ */
+  setTimeout(function(){
+    var container=document.getElementById('ch-chart-container');
+    if(!container)return;
+    var cw=container.clientWidth||800;var ch2=container.clientHeight||400;
+    if(cw<100)cw=800;if(ch2<100)ch2=400;
+    var isNight=document.documentElement.classList.contains('night');
+    if(_chartInstance){try{_chartInstance.remove();}catch(e){}_chartInstance=null;}
+    _chartInstance=LightweightCharts.createChart(container,{
+      width:cw,height:ch2,
+      layout:{background:{type:'solid',color:isNight?'#16171a':'#ffffff'},textColor:isNight?'#7a7a74':'#8a8a83',fontFamily:"'JetBrains Mono',monospace",fontSize:10},
+      grid:{vertLines:{color:isNight?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)'},horzLines:{color:isNight?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)'}},
+      crosshair:{mode:0,vertLine:{labelBackgroundColor:isNight?'#333':'#555'},horzLine:{labelBackgroundColor:isNight?'#333':'#555'}},
+      rightPriceScale:{borderColor:isNight?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.1)',scaleMargins:{top:0.05,bottom:0.32}},
+      timeScale:{borderColor:isNight?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.1)',timeVisible:false,fixLeftEdge:true,fixRightEdge:true},
+      handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:true},
+      handleScale:{axisPressedMouseMove:true,mouseWheel:true,pinch:true}
+    });
+    var adaLine=_chartInstance.addAreaSeries({
+      lineColor:'#5b8af0',topColor:'rgba(91,138,240,0.28)',bottomColor:'rgba(91,138,240,0.02)',
+      lineWidth:2,priceLineVisible:false,crosshairMarkerRadius:4,
+      crosshairMarkerBorderColor:'#5b8af0',crosshairMarkerBackgroundColor:'#fff'
+    });
+    var ro=new ResizeObserver(function(){if(_chartInstance&&container.clientWidth>0)_chartInstance.applyOptions({width:container.clientWidth,height:container.clientHeight});});
+    ro.observe(container);
+    window._chAdaLine=adaLine;window._chAllData=null;
+    if(_chartPriceData&&_chartPriceData.length>0){setChartData(adaLine,_chartPriceData);}
+    else{fetchAdaHistory(adaLine);}
+
+    /* ════ FUNDING FLOW — histogram bars + fund labels ════ */
+    /* Build time map for hover detection */
+    window._chFundTimeMap={};
+    for(var fk in fundFlow){
+      var frd=FUND_RESULT_DATES[fk];if(!frd)continue;
+      var fp=frd.split('-');
+      var ftk=fp[2]+'-'+fp[1]+'-'+fp[0];
+      window._chFundTimeMap[ftk]=fk;
+    }
+    for(var afk in FUND_RESULT_DATES){
+      var afrd=FUND_RESULT_DATES[afk].split('-');
+      var aftk=afrd[2]+'-'+afrd[1]+'-'+afrd[0];
+      if(!window._chFundTimeMap[aftk]) window._chFundTimeMap[aftk]=afk;
+    }
+    _expandFundTimeMap(window._chFundTimeMap);
+    /* Funded/Received histogram bars */
+    var fundedSeries=_chartInstance.addHistogramSeries({
+      color:'rgba(61,139,110,0.45)',
+      priceLineVisible:false,
+      lastValueVisible:false,
+      priceFormat:{type:'custom',formatter:function(p){return '+'+Math.round(p)+'K';}},
+      priceScaleId:'fund'
+    });
+    fundedSeries.priceScale().applyOptions({
+      scaleMargins:{top:0.45,bottom:0}
+    });
+    var recvSeries=_chartInstance.addHistogramSeries({
+      color:'rgba(91,138,240,0.5)',
+      priceLineVisible:false,
+      lastValueVisible:false,
+      priceFormat:{type:'custom',formatter:function(p){return '+'+Math.round(p)+'K';}},
+      priceScaleId:'fund'
+    });
+    window._chFundedSeries=fundedSeries;
+    window._chRecvSeries=recvSeries;
+    window._chFdOrigData=null;window._chRvOrigData=null;window._chWdOrigData=null;
+    /* Set initial data */
+    var _fdData=[],_rvData=[];
+    for(var _fk in fundFlow){
+      var _frd=FUND_RESULT_DATES[_fk];if(!_frd)continue;
+      var _fp=_frd.split('-');
+      var _ftk=_fp[2]+'-'+_fp[1]+'-'+_fp[0];
+      _fdData.push({time:_ftk,value:fundFlow[_fk].fundedK,color:'rgba(61,139,110,0.45)'});
+      _rvData.push({time:_ftk,value:fundFlow[_fk].receivedK,color:'rgba(91,138,240,0.5)'});
+    }
+    _fdData.sort(function(a,b){return a.time<b.time?-1:1;});
+    _rvData.sort(function(a,b){return a.time<b.time?-1:1;});
+    fundedSeries.setData(_fdData);
+    recvSeries.setData(_rvData);
+
+    /* ════ FUNDING FLOW OVERLAY — per-proposal IN/OUT timeline ════ */
+    (function(){
+      var COMP=window.CJ_COMPLETIONS||{};
+      var MS=window.CJ_MILESTONES||{};
+
+      /* Gather all proposals from INDUSTRIES */
+      var allProps=[];
+      for(var si=0;si<INDUSTRIES.length;si++)
+        for(var sj=0;sj<INDUSTRIES[si].children.length;sj++)
+          allProps.push(INDUSTRIES[si].children[sj]);
+
+      /* ── Word tokenizer for fuzzy title matching ── */
+      function wds(s){return s.toLowerCase().replace(/[^a-z0-9]/g,' ').split(/\s+/).filter(function(w){return w.length>2;});}
+      function wordOverlap(a,b){var n=0;for(var i=0;i<a.length;i++)for(var j=0;j<b.length;j++)if(a[i]===b[j]){n++;break;}return n;}
+
+      /* ── Build completion-date lookup from CJ_COMPLETIONS ── */
+      var compArr=[];
+      for(var ck in COMP){
+        var c=COMP[ck];
+        compArr.push({w:wds(c.t), completed:c.completed, dist:c.dist||0, req:c.req||0});
+      }
+
+      /* ── Build last-signoff lookup from CJ_MILESTONES ── */
+      var msArr=[];
+      for(var mk in MS){
+        var entries=MS[mk];
+        for(var ei=0;ei<entries.length;ei++){
+          var e=entries[ei]; var last=null;
+          for(var mi=0;mi<e.milestones.length;mi++){
+            var m=e.milestones[mi];
+            if(m.signoff){var d=m.signoff.split('T')[0];if(!last||d>last)last=d;}
+          }
+          if(last) msArr.push({w:wds(e.title), date:last});
+        }
+      }
+
+      /* Find completion date for a proposal */
+      function findCompDate(label,fund){
+        var pw=wds(label||'');
+        /* Try CJ_COMPLETIONS (word overlap ≥ 2) */
+        for(var j=0;j<compArr.length;j++){
+          if(wordOverlap(pw,compArr[j].w)>=2) return compArr[j].completed;
+        }
+        /* Try CJ_MILESTONES last signoff */
+        for(var j=0;j<msArr.length;j++){
+          if(wordOverlap(pw,msArr[j].w)>=2) return msArr[j].date;
+        }
+        /* Estimate: fund result date + 18 months */
+        var frd=FUND_RESULT_DATES[fund];
+        if(!frd) return null;
+        var fp=frd.split('-');
+        var dt=new Date(parseInt(fp[2]),parseInt(fp[1])-1,parseInt(fp[0]));
+        dt.setMonth(dt.getMonth()+18);
+        return dt.toISOString().split('T')[0];
+      }
+
+      /* ── Build timeline: per-proposal IN and OUT events ── */
+      var timeline=[];
+      for(var i=0;i<allProps.length;i++){
+        var p=allProps[i];
+        var frd=FUND_RESULT_DATES[p.fund];
+        if(!frd) continue;
+        var fp=frd.split('-');
+        var fundDate=fp[2]+'-'+fp[1]+'-'+fp[0];
+        /* ADA amount (amt is in K for currency unit) */
+        var ada=p.u==='ada'?p.amt*1000:(p.amt/(p.adaPrice||0.5))*1000;
+        if(ada<=0) continue;
+
+        /* IN event: fund result date — full approved amount */
+        timeline.push({time:fundDate, ada:ada, type:'in', fund:p.fund, label:(p.label||'').substring(0,25), pid:p.id});
+
+        /* OUT events: milestone-based if available */
+        var msData=MS[p.id];
+        var isComplete=(p.st==='complete'||p.st==='dnf');
+        if(msData && msData.length>0){
+          /* ── Milestone signoff-based OUT ── */
+          var msOutTotal=0;
+          for(var ei=0;ei<msData.length;ei++){
+            var entry=msData[ei];
+            /* Convert MS cost to ADA if budget is in USD */
+            var eBudget=entry.budget||0;
+            var eIsUsd=(entry.currency==='usd'&&eBudget>0);
+            for(var mi=0;mi<entry.milestones.length;mi++){
+              var m=entry.milestones[mi];
+              if(m.signoff && m.cost>0){
+                var sDate=m.signoff.split('T')[0];
+                /* Clamp: signoff can't predate fund result */
+                if(sDate<fundDate) sDate=fundDate;
+                /* Proportional ADA conversion: ms share of budget × total ADA */
+                var msCostAda=eIsUsd?(m.cost/eBudget)*ada:m.cost;
+                timeline.push({time:sDate, ada:msCostAda, type:'out',
+                  label:(p.label||'').substring(0,20)+' MS'+m.ms, pid:p.id, fund:p.fund});
+                msOutTotal+=msCostAda;
+              }
+            }
+          }
+          /* Complete: add remainder at completion date (budget fully distributed) */
+          if(isComplete && msOutTotal<ada){
+            var cd=findCompDate(p.label, p.fund);
+            if(cd) timeline.push({time:cd, ada:ada-msOutTotal, type:'out',
+              label:(p.label||'').substring(0,20)+' (残額)', pid:p.id, fund:p.fund});
+          }
+        } else if(isComplete){
+          /* ── No MS data: complete = full budget OUT at completion date ── */
+          /* DNF with known zero distribution: no OUT (money never distributed) */
+          var outAda=ada;
+          if(p.st==='dnf'){
+            /* Check CJ_COMPLETIONS for actual distribution (DNF may be 0) */
+            var pw=wds(p.label||'');
+            var bestMatch=null, bestN=0;
+            for(var cj=0;cj<compArr.length;cj++){
+              var n=wordOverlap(pw,compArr[cj].w);
+              if(n>bestN){bestN=n;bestMatch=compArr[cj];}
+            }
+            if(bestMatch && bestN>=3 && bestMatch.req>0 && bestMatch.dist===0) outAda=0;
+            else if(bestMatch && bestN>=3 && bestMatch.dist>0) outAda=bestMatch.dist;
+          }
+          if(outAda>0){
+            var cd=findCompDate(p.label, p.fund);
+            if(cd) timeline.push({time:cd, ada:outAda, type:'out',
+              label:(p.label||'').substring(0,25)+(p.st==='dnf'?' (中止)':''), pid:p.id, fund:p.fund});
+          }
+        }
+        /* In-progress without MS data: no OUT events */
+      }
+
+      if(!timeline.length) return;
+      timeline.sort(function(a,b){return a.time<b.time?-1:a.time>b.time?1:0;});
+
+      /* ── Build wdBars BEFORE unified dedup ──
+         OUT events are deduped only against other OUT events,
+         so IN events (F13 etc.) don't steal their dates */
+      var wdBars=[];
+      var wdUsed={};
+      for(var wi2=0;wi2<timeline.length;wi2++){
+        var we2=timeline[wi2];
+        if(we2.type!=='out') continue;
+        var tryWd=we2.time;
+        var wAttempt=0;
+        while(wdUsed[tryWd]){
+          wAttempt++;
+          var wdd=new Date(we2.time);
+          wdd.setDate(wdd.getDate()+wAttempt);
+          tryWd=wdd.toISOString().split('T')[0];
+        }
+        wdUsed[tryWd]=true;
+        wdBars.push({time:tryWd,value:we2.ada/1000,color:'rgba(232,160,72,0.7)',_pid:we2.pid,_label:we2.label,_fund:we2.fund,_ada:we2.ada});
+      }
+
+      /* Unified dedup for cum/bal line series (need unique timestamps) */
+      var usedDates={};
+      for(var i=0;i<timeline.length;i++){
+        var ev=timeline[i];
+        var tryDate=ev.time;
+        var attempt=0;
+        while(usedDates[tryDate]){
+          attempt++;
+          var dd=new Date(ev.time);
+          dd.setDate(dd.getDate()+attempt);
+          tryDate=dd.toISOString().split('T')[0];
+        }
+        usedDates[tryDate]=true;
+        ev.time=tryDate;
+      }
+      timeline.sort(function(a,b){return a.time<b.time?-1:a.time>b.time?1:0;});
+
+      /* ── Build cum/bal series data ── */
+      var cumData=[];   /* green line: cumulative funded (monotonic up) */
+      var balData=[];   /* orange line: balance = funded - completed */
+      var cumIn=0, cumOut=0;
+
+      for(var k=0;k<timeline.length;k++){
+        var e=timeline[k];
+        if(e.type==='in'){
+          cumIn+=e.ada;
+        } else {
+          cumOut+=e.ada;
+        }
+        cumData.push({time:e.time,value:cumIn/1000});
+        balData.push({time:e.time,value:(cumIn-cumOut)/1000});
+      }
+
+      /* Orange withdrawal bars — separate scale, higher opacity to ensure visibility */
+      var wdSeries=_chartInstance.addHistogramSeries({
+        color:'rgba(232,160,72,0.8)',
+        priceLineVisible:false,lastValueVisible:false,
+        priceFormat:{type:'custom',formatter:function(p){return Math.round(p)+'K ₳';}},
+        priceScaleId:'wd'
+      });
+      _chartInstance.priceScale('wd').applyOptions({
+        scaleMargins:{top:0.35,bottom:0}
+      });
+      wdSeries.setData(wdBars);
+      window._chWdOrigData=wdBars.slice();
+
+      /* Green line: cumulative funded (starts from F2, only goes up) */
+      var cumSeries=_chartInstance.addLineSeries({
+        color:'rgba(72,200,120,0.8)',
+        lineWidth:2,
+        priceLineVisible:false,lastValueVisible:true,
+        priceFormat:{type:'custom',formatter:function(p){return Math.round(p)+'K ₳';}},
+        priceScaleId:'ms'
+      });
+      _chartInstance.priceScale('ms').applyOptions({
+        scaleMargins:{top:0.45,bottom:0.15}
+      });
+      cumSeries.setData(cumData);
+
+      /* Orange line: balance = funded - completed (approaches 0) */
+      /* Separate scale from cum so toggling one doesn't rescale the other */
+      var balSeries=_chartInstance.addLineSeries({
+        color:'rgba(232,160,72,0.9)',
+        lineWidth:2,
+        priceLineVisible:false,lastValueVisible:true,
+        priceFormat:{type:'custom',formatter:function(p){return Math.round(p)+'K ₳';}},
+        priceScaleId:'ms2'
+      });
+      _chartInstance.priceScale('ms2').applyOptions({
+        scaleMargins:{top:0.45,bottom:0.15}, visible:false
+      });
+      balSeries.setData(balData);
+
+      /* ════ ADA vs Stablecoin comparison (both in USD) ════ */
+      /* Two lines on dedicated USD scale:
+         1. Stablecoin equiv: cumulative USD at adoption ADA price (step function)
+         2. ADA live value: cumulative ADA × ADA price at each date (fluctuates)
+         When yellow > blue → ADA payment was better
+         When yellow < blue → stablecoins would have been better */
+
+      /* Store timeline/cumData for rebuild when price data arrives async */
+      window._chTimeline=timeline;
+      window._chCumData=cumData;
+
+      /* Build withdrawal time map from wdBars (correct dates, not shifted by IN dedup) */
+      window._chWdTimeMap={};
+      for(var wmi=0;wmi<wdBars.length;wmi++){
+        var wb=wdBars[wmi];
+        if(!window._chWdTimeMap[wb.time]) window._chWdTimeMap[wb.time]=[];
+        window._chWdTimeMap[wb.time].push({time:wb.time,ada:wb._ada,label:wb._label,pid:wb._pid,fund:wb._fund,type:'out'});
+      }
+
+      /* Stablecoin line (cyan dashed) */
+      var usdAdoptSeries=_chartInstance.addLineSeries({
+        color:'rgba(100,200,255,0.8)',
+        lineWidth:2, lineStyle:2,
+        priceLineVisible:false,lastValueVisible:true,
+        priceFormat:{type:'custom',formatter:function(p){return '$'+Math.round(p)+'K';}},
+        priceScaleId:'usd'
+      });
+      _chartInstance.priceScale('usd').applyOptions({
+        scaleMargins:{top:0.45,bottom:0.15}, borderVisible:false
+      });
+
+      /* ADA live value line (yellow) */
+      var usdLiveSeries=_chartInstance.addLineSeries({
+        color:'rgba(255,220,80,0.8)',
+        lineWidth:2,
+        priceLineVisible:false,lastValueVisible:true,
+        priceFormat:{type:'custom',formatter:function(p){return '$'+Math.round(p)+'K';}},
+        priceScaleId:'usd'
+      });
+
+      window._chWdSeries=wdSeries;
+      window._chCumSeries=cumSeries;
+      window._chBalSeries=balSeries;
+      window._chUsdAdoptSeries=usdAdoptSeries;
+      window._chUsdLiveSeries=usdLiveSeries;
+
+      /* Build USD line data (called here + again when price data loads async) */
+      _rebuildUsdLines();
+    })();
+
+    /* ── compact fund hover tooltip ── */
+    var tip=document.createElement('div');tip.className='ch-fund-tip';
+    container.style.position='relative';
+    container.appendChild(tip);
+
+    /* ── crosshair: price display + compact fund tooltip ── */
+    _chartInstance.subscribeCrosshairMove(function(param){
+      var liveEl=document.getElementById('ch-live-price');
+      if(liveEl){
+        if(!param||!param.time||!param.seriesData||!param.seriesData.size){
+          liveEl.innerHTML='<span class="ch-price">$'+(ADA_USD||0.75).toFixed(4)+'</span> <span class="ch-price-sub">≈ ¥'+((ADA_USD||0.75)*USD_JPY).toFixed(2)+'</span>';
+        } else {
+          var val=param.seriesData.get(adaLine);
+          if(val){var v=val.value||val.close||0;
+            liveEl.innerHTML='<span class="ch-price">$'+v.toFixed(4)+'</span> <span class="ch-price-sub">≈ ¥'+(v*USD_JPY).toFixed(2)+'</span> <span class="ch-price-sub" style="margin-left:6px">'+param.time+'</span>';
+          }
+        }
+      }
+      /* compact fund tooltip at bar position */
+      if(!param||!param.time||!param.point){tip.classList.remove('show');return;}
+      var tk=typeof param.time==='object'?(param.time.year+'-'+String(param.time.month).padStart(2,'0')+'-'+String(param.time.day).padStart(2,'0')):param.time;
+      var mf=window._chFundTimeMap[tk];
+      if(!mf){tip.classList.remove('show');return;}
+      var _ff=window._chFundFlow||{};
+      var fd=_ff[mf]||null;
+      /* format DD-MM-YYYY → readable */
+      function fmtD(dmy){if(!dmy)return'—';var p=dmy.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+      /* timeline dates */
+      var vd=(typeof FUND_VOTE_DATES!=='undefined')?FUND_VOTE_DATES[mf]:null;
+      var sd=FUND_SUBMIT_DATES[mf];
+      var rd=FUND_RESULT_DATES[mf];
+      var h='<div class="ch-fund-tip-hd">Fund '+mf;
+      if(fd) h+=' <span style="font-weight:400;opacity:.5">'+fd.count+(_lang!=='en'?'件':'p')+'</span>';
+      else h+=' <span style="font-weight:400;opacity:.5">'+(_lang!=='en'?'日本提案なし':'No JP proposals')+'</span>';
+      h+='</div>';
+      /* timeline rows */
+      var dlbl=_lang!=='en';
+      h+='<div style="font-size:9px;opacity:.7;margin-bottom:4px;line-height:1.5">';
+      if(sd) h+=(dlbl?'提出':'Submit')+': <b>'+fmtD(sd)+'</b><br>';
+      if(vd) h+=(dlbl?'投票':'Vote')+': <b>'+fmtD(vd.vs)+'</b> → <b>'+fmtD(vd.ve)+'</b><br>';
+      if(rd) h+=(dlbl?'結果':'Result')+': <b>'+fmtD(rd)+'</b>';
+      h+='</div>';
+      if(fd){
+        var pct=fd.fundedK>0?Math.round(fd.receivedK/fd.fundedK*100):0;
+        var ok=0,wip=0,dnf=0;
+        for(var si=0;si<fd.proposals.length;si++){
+          if(fd.proposals[si].status==='complete')ok++;
+          else if(fd.proposals[si].status==='progress')wip++;
+          else dnf++;
+        }
+        h+='<div class="ch-fund-tip-r"><div class="ch-fund-tip-d" style="background:rgba(138,138,131,0.6)"></div>'+(_lang!=='en'?'予算':'Bud')+' <b>$'+Math.round(fd.budgetK)+'K</b></div>';
+        h+='<div class="ch-fund-tip-r"><div class="ch-fund-tip-d" style="background:rgba(61,139,110,0.8)"></div>'+(_lang!=='en'?'採択':'Fund')+' <b>$'+Math.round(fd.fundedK)+'K</b></div>';
+        h+='<div class="ch-fund-tip-r"><div class="ch-fund-tip-d" style="background:rgba(91,138,240,0.8)"></div>'+(_lang!=='en'?'受取':'Recv')+' <b>$'+Math.round(fd.receivedK)+'K</b> ('+pct+'%)</div>';
+        h+='<div class="ch-fund-tip-st">';
+        if(ok) h+='<span style="color:var(--st-ok)">'+(_lang!=='en'?'完了':'OK')+' '+ok+'</span>';
+        if(wip) h+='<span style="color:var(--st-wip)">'+(_lang!=='en'?'途中':'WIP')+' '+wip+'</span>';
+        if(dnf) h+='<span style="color:var(--st-dnf)">'+(_lang!=='en'?'中止':'DNF')+' '+dnf+'</span>';
+        h+='</div>';
+      }
+      tip.innerHTML=h;
+      var px=param.point.x;
+      var tw=tip.offsetWidth||120;
+      var left=px-tw/2;
+      if(left<4)left=4;
+      if(left+tw>container.clientWidth-4)left=container.clientWidth-tw-4;
+      tip.style.left=left+'px';
+      tip.style.bottom='34%';
+      tip.classList.add('show');
+    });
+
+    /* ── click on chart: wd bar → bottom detail + right project, else fund detail ── */
+    _chartInstance.subscribeClick(function(param){
+      if(!param||!param.time)return;
+      var tk=typeof param.time==='object'?(param.time.year+'-'+String(param.time.month).padStart(2,'0')+'-'+String(param.time.day).padStart(2,'0')):param.time;
+      /* Check withdrawal bar first */
+      var wdEvts=window._chWdTimeMap?window._chWdTimeMap[tk]:null;
+      if(wdEvts&&wdEvts.length>0){
+        _showWdDetail(wdEvts);
+        return;
+      }
+      /* Fallback: fund detail */
+      var mf=window._chFundTimeMap[tk];
+      if(mf) _chartShowFund(Number(mf));
+    });
+
+    /* ── reposition fund labels on zoom/scroll ── */
+    /* zoom/scroll handled natively by chart markers */
+
+    /* ── live ADA price update hook ── */
+    window._cjPriceCallback=function(){
+      if(!window._chAdaLine||typeof ADA_USD!=='number'||!ADA_USD)return;
+      var _n=new Date();
+      var _tk=_n.getFullYear()+'-'+String(_n.getMonth()+1).padStart(2,'0')+'-'+String(_n.getDate()).padStart(2,'0');
+      try{window._chAdaLine.update({time:_tk,value:ADA_USD});}catch(e){}
+      /* refresh USD comparison lines with latest price */
+      if(typeof _invalidatePriceMap==='function') _invalidatePriceMap();
+      if(typeof _rebuildUsdLines==='function') _rebuildUsdLines();
+      var liveEl=document.getElementById('ch-live-price');
+      if(liveEl){
+        liveEl.innerHTML='<span class="ch-price">$'+ADA_USD.toFixed(4)+'</span> <span class="ch-price-sub">≈ ¥'+(ADA_USD*USD_JPY).toFixed(2)+'</span>';
+      }
+    };
+
+    /* ── Init empty person chart frame ── */
+    var pCont=document.getElementById('ch-person-chart');
+    if(pCont){
+      var pw=pCont.clientWidth||600;var ph=pCont.clientHeight||200;
+      if(pw<100)pw=600;if(ph<50)ph=200;
+      if(_personChartInstance){try{_personChartInstance.remove();}catch(e){}_personChartInstance=null;}
+      _personChartInstance=LightweightCharts.createChart(pCont,{
+        width:pw,height:ph,
+        layout:{background:{type:'solid',color:isNight?'#16171a':'#ffffff'},textColor:isNight?'#7a7a74':'#8a8a83',fontFamily:"'JetBrains Mono',monospace",fontSize:10},
+        grid:{vertLines:{color:isNight?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)'},horzLines:{color:isNight?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)'}},
+        crosshair:{mode:0},
+        rightPriceScale:{visible:false},
+        timeScale:{visible:false},
+        handleScroll:false,handleScale:false
+      });
+      _personChartRO=new ResizeObserver(function(){if(_personChartInstance&&pCont.clientWidth>0)_personChartInstance.applyOptions({width:pCont.clientWidth,height:pCont.clientHeight});});
+      _personChartRO.observe(pCont);
+    }
+  },200);
+}
+
+/* ---- Chart LENS: reuse the full ct-detail panel ---- */
+function _chartClearLens(){
+  var right=document.getElementById('ch-right');if(!right)return;
+  var panel=document.getElementById('ct-detail');
+  if(panel&&panel.parentNode===right){
+    panel.classList.remove('in-chart','open');
+    var root=document.getElementById('root');
+    if(root)root.appendChild(panel);
+  }
+  right.innerHTML='<div class="ch-lens-empty">'+(_lang!=='en'?'左から提案を選択':'Select a proposal\nfrom the left')+'</div>';
+  if(window._chAdaLine)try{window._chAdaLine.setMarkers([]);}catch(e){}
+}
+
+/* ---- Chart FUND detail (right sidebar) ---- */
+function _chartShowFund(fundNum){
+  var right=document.getElementById('ch-right');if(!right)return;
+  var ctPanel=document.getElementById('ct-detail');
+  if(ctPanel&&ctPanel.parentNode===right){
+    ctPanel.classList.remove('in-chart','open');
+    var root=document.getElementById('root');
+    if(root)root.appendChild(ctPanel);
+  }
+  right.innerHTML='';
+
+  var ff=window._chFundFlow||{};
+  var fd=ff[fundNum];
+  if(!fd){right.innerHTML='<div class="ch-lens-empty">No data</div>';return;}
+
+  var curAda=ADA_USD||0.27;
+  var jpy=USD_JPY||150;
+  function fmtM(k){return k>=1000?(k/1000).toFixed(1)+'M':Math.round(k)+'K';}
+  function fmtAda(k){return k>=1000?'₳'+(k/1000).toFixed(1)+'M':'₳'+Math.round(k)+'K';}
+  function fmtY(k){var y=k*jpy;return y>=1000?'¥'+(y/1000).toFixed(1)+'M':'¥'+Math.round(y)+'K';}
+  function triLine(adaK,usdK){return fmtAda(adaK)+' <span style="opacity:.5">·</span> $'+fmtM(usdK)+' <span style="opacity:.5">·</span> '+fmtY(usdK);}
+
+  var wrap=document.createElement('div');wrap.className='ch-fund-panel';
+
+  /* header */
+  var head=document.createElement('div');head.className='ch-fund-head';
+  var dateStr=FUND_RESULT_DATES[fundNum]||'';
+  head.innerHTML='<div class="ch-fund-title">Fund '+fundNum+'</div>'
+    +'<div class="ch-fund-date">'+dateStr+' · '+fd.count+(_lang!=='en'?'件の提案':' proposals')+'</div>';
+
+  /* 3 financial metrics */
+  var recvPct=fd.fundedK>0?Math.round(fd.receivedK/fd.fundedK*100):0;
+  var stats=document.createElement('div');stats.className='ch-fund-stats';
+  stats.innerHTML=
+    '<div class="ch-fund-stat-row" style="margin-bottom:6px">'
+    +'<div class="ch-fund-stat-dot" style="background:rgba(138,138,131,0.6)"></div>'
+    +'<span class="ch-fund-stat-label">'+(_lang!=='en'?'予算':'Budget')+'</span>'
+    +'</div>'
+    +'<div style="margin-left:13px;margin-bottom:8px;font-size:10px;color:var(--ink)">'+triLine(fd.adaK,fd.budgetK)+'</div>'
+
+    +'<div class="ch-fund-stat-row" style="margin-bottom:6px">'
+    +'<div class="ch-fund-stat-dot" style="background:rgba(61,139,110,0.8)"></div>'
+    +'<span class="ch-fund-stat-label">'+(_lang!=='en'?'採択':'Funded')+'</span>'
+    +'</div>'
+    +'<div style="margin-left:13px;margin-bottom:8px;font-size:10px;color:var(--ink)">'+triLine(fd.adaK,fd.fundedK)+'</div>'
+
+    +'<div class="ch-fund-stat-row" style="margin-bottom:6px">'
+    +'<div class="ch-fund-stat-dot" style="background:rgba(91,138,240,0.8)"></div>'
+    +'<span class="ch-fund-stat-label">'+(_lang!=='en'?'受取':'Recv')+'</span>'
+    +'<span class="ch-fund-stat-pct">'+recvPct+'%</span>'
+    +'</div>'
+    +'<div style="margin-left:13px;margin-bottom:4px;font-size:10px;color:var(--ink)">'+triLine(fd.recvAdaK,fd.receivedK)+'</div>'
+
+    +'<div class="ch-fund-bar">'
+    +'<div style="width:'+recvPct+'%;background:rgba(91,138,240,0.6)"></div>'
+    +'<div style="width:'+(100-recvPct)+'%;background:rgba(61,139,110,0.25)"></div>'
+    +'</div>';
+  head.appendChild(stats);
+  wrap.appendChild(head);
+
+  /* fund selector tabs */
+  var tabsWrap=document.createElement('div');tabsWrap.className='ch-fund-tabs';
+  var fundNums=[];
+  for(var fk in ff){if(ff[fk].count>0) fundNums.push(Number(fk));}
+  fundNums.sort(function(a,b){return a-b;});
+  for(var fi=0;fi<fundNums.length;fi++){(function(fn){
+    var btn=document.createElement('button');btn.className='ch-fund-tab'+(fn===fundNum?' active':'');
+    btn.textContent='F'+fn;
+    btn.onclick=function(){_chartShowFund(fn);};
+    tabsWrap.appendChild(btn);
+  })(fundNums[fi]);}
+  wrap.appendChild(tabsWrap);
+
+  /* proposal list with per-proposal financials */
+  var listEl=document.createElement('div');listEl.className='ch-fund-list';
+  for(var pi=0;pi<fd.proposals.length;pi++){(function(pp){
+    var sc=pp.status==='complete'?'var(--st-ok)':pp.status==='progress'?'var(--st-wip)':'var(--st-dnf)';
+    var row=document.createElement('div');row.className='ch-fund-row';
+    row.innerHTML='<div class="ch-fund-row-st" style="background:'+sc+'"></div>'
+      +'<div class="ch-fund-row-info">'
+      +'<div class="ch-fund-row-name">'+esc(pp.label)+'</div>'
+      +'<div class="ch-fund-row-meta">'
+      +'<span>'+pp.msLabel+'</span>'
+      +'<span>'+fmtAda(pp.adaK)+'</span>'
+      +'<span>$'+fmtM(pp.fundedK)+'</span>'
+      +'<span style="color:rgba(91,138,240,0.9)">→$'+fmtM(pp.receivedK)+'</span>'
+      +'</div></div>';
+    row.onclick=function(){
+      var allP=window._chAllProps||[];
+      for(var ai=0;ai<allP.length;ai++){
+        if(pLabel(allP[ai]._src)===pp.label){
+          _chartShowLens(allP[ai]);
+          addProposalMarkers(allP[ai]);
+          return;
+        }
+      }
+    };
+    listEl.appendChild(row);
+  })(fd.proposals[pi]);}
+  wrap.appendChild(listEl);
+  right.appendChild(wrap);
+  _updateFundFlow(null);
+}
+
+function _chartShowLens(pr){
+  var right=document.getElementById('ch-right');if(!right)return;
+  var panel=document.getElementById('ct-detail');
+  if(panel){
+    if(panel.parentNode!==right){
+      right.innerHTML='';
+      right.appendChild(panel);
+    }
+    panel.classList.add('in-chart');
+    openInLens(pr._src);
+  }
+}
+
+/* ---- Chart proposer detail (same as network LENS) ---- */
+function _chartShowProposer(psName){
+  var right=document.getElementById('ch-right');if(!right)return;
+  /* move ct-detail out if present */
+  var ctPanel=document.getElementById('ct-detail');
+  if(ctPanel&&ctPanel.parentNode===right){
+    ctPanel.classList.remove('in-chart','open');
+    var root=document.getElementById('root');
+    if(root)root.appendChild(ctPanel);
+  }
+  right.innerHTML='';
+
+  /* collect proposals by role */
+  var solo=[],co=[],related=[];
+  for(var i=0;i<INDUSTRIES.length;i++){
+    for(var j=0;j<INDUSTRIES[i].children.length;j++){
+      var c=INDUSTRIES[i].children[j];
+      if(c.by===psName){
+        if(c.cls==='co') co.push(c); else solo.push(c);
+      } else if(c.team){
+        for(var t=0;t<c.team.length;t++){
+          if(c.team[t].name===psName){related.push(c);break;}
+        }
+      }
+    }
+  }
+  /* Sort each role group by fund (chronological: F2 → F14) */
+  function _fundSort(a,b){return (a.fund||0)-(b.fund||0);}
+  solo.sort(_fundSort); co.sort(_fundSort); related.sort(_fundSort);
+  var all=solo.concat(co).concat(related);
+  all.sort(_fundSort);
+
+  /* get PROPOSER_STATS */
+  var ps=null;
+  for(var pi=0;pi<PROPOSER_STATS.length;pi++){if(PROPOSER_STATS[pi].name===psName){ps=PROPOSER_STATS[pi];break;}}
+
+  var wrap=document.createElement('div');wrap.className='ch-proposer';
+
+  /* head */
+  var head=document.createElement('div');head.className='ch-proposer-head';
+  var ini=psName.charAt(0);if(/[a-zA-Z]/.test(ini))ini=ini.toUpperCase();
+  var hdrFlags=_renderStatusFlags(ps||{});
+  /* Compute avg overrun ratio across all proposals with planned milestones.
+     Flags accounts where MS deliverables consistently take longer than planned. */
+  var ovTotal=0,ovCount=0,ovWorst=0;
+  for(var oi=0;oi<all.length;oi++){
+    var ops=_proposalStatus(all[oi]);
+    if(ops.overrunRatio>0){ovTotal+=ops.overrunRatio;ovCount++;if(ops.overrunRatio>ovWorst)ovWorst=ops.overrunRatio;}
+  }
+  if(ovCount>0){
+    var avgR=ovTotal/ovCount;
+    var ratioCol=avgR>=2.5?'rgba(200,80,80,0.85)':avgR>=1.8?'rgba(232,180,72,0.85)':avgR>=1.3?'rgba(150,180,220,0.85)':'rgba(72,200,120,0.85)';
+    var ratioInk=avgR>=2.5?'#fff':'#1a1715';
+    var ratioTip=(_lang!=='en'?'平均超過率: 計画の '+avgR.toFixed(1)+'倍 (最大 '+ovWorst.toFixed(1)+'倍)\n':'Avg overrun: '+avgR.toFixed(1)+'x\n')
+      +(_lang!=='en'?ovCount+'件のMSデータ提案を集計':'across '+ovCount+' MS-tracked proposals');
+    hdrFlags+='<span class="dnf-flag" title="'+esc(ratioTip)+'" style="background:'+ratioCol+';color:'+ratioInk+'">'+avgR.toFixed(1)+'倍</span>';
+  }
+  head.innerHTML='<div class="ch-proposer-row">'
+    +'<div class="ch-proposer-av">'+ini+'</div>'
+    +'<div style="min-width:0;flex:1">'
+    +'<div class="ch-proposer-name">'+esc(psName)+hdrFlags+'</div>'
+    +'<div class="ch-proposer-sub">'+all.length+(_lang!=='en'?'件の提案':' proposals')+'</div>'
+    +'</div></div>';
+  if(ps){
+    var amtHtml='<div style="font-size:14px;font-weight:700;color:var(--ink)">'+fmtJpy(ps.allUsdK)+'</div>'
+      +'<div style="display:flex;gap:10px;margin-top:4px">';
+    if(ps.mainUsdK>0) amtHtml+='<span style="color:var(--ink);opacity:0.8">'+T('solo')+' <b>'+fmtJpy(ps.mainUsdK)+'</b></span>';
+    if(ps.coUsdK>0) amtHtml+='<span style="color:hsl(270 50% 65%)">'+T('coLabel')+' <b>'+fmtJpy(ps.coUsdK)+'</b></span>';
+    amtHtml+='</div>';
+    var amtDiv=document.createElement('div');amtDiv.className='ch-proposer-amt';amtDiv.innerHTML=amtHtml;
+    head.appendChild(amtDiv);
+  }
+  wrap.appendChild(head);
+
+  /* tabs */
+  var tabs=document.createElement('div');tabs.className='ch-proposer-tabs';
+  var listEl=document.createElement('div');listEl.className='ch-proposer-list';
+  var tabData=[
+    {key:'all',label:_lang!=='en'?'全て':'All',items:all},
+    {key:'solo',label:_lang!=='en'?'個人':'Solo',items:solo},
+    {key:'co',label:_lang!=='en'?'共同':'Co',items:co},
+    {key:'related',label:_lang!=='en'?'関連':'Related',items:related}
+  ];
+  var _activeTab='all';
+
+  function renderPropList(items){
+    listEl.innerHTML='';
+    _updateFundFlow(items);
+    /* update chart markers — aggregate by fund (F10 5件) */
+    var fCounts={};
+    for(var mi=0;mi<items.length;mi++){
+      var fn=items[mi].fund||0;if(!fn)continue;
+      fCounts[fn]=(fCounts[fn]||0)+1;
+    }
+    var markers=[];
+    /* Aggregate status flags per fund — stack as aboveBar markers at the fund result date */
+    var fFlags={}; /* fund → {end, unfunded, overdue, gap, longGap, pastOverdue, old} */
+    for(var fi3=0;fi3<items.length;fi3++){
+      var fp=items[fi3];
+      var fn3=fp.fund||0;if(!fn3) continue;
+      if(!fFlags[fn3]) fFlags[fn3]={end:0,unfunded:0,overdue:0,gap:0,longGap:0,pastOverdue:0,old:0};
+      var pst3=_proposalStatus(fp);
+      if(fp.st==='dnf'){if(_dnfReceivedFunds(fp)) fFlags[fn3].end++; else fFlags[fn3].unfunded++;}
+      if(pst3.overdue) fFlags[fn3].overdue++;
+      if(pst3.gap) fFlags[fn3].gap++;
+      if(pst3.longGap) fFlags[fn3].longGap++;
+      if(pst3.pastOverdue) fFlags[fn3].pastOverdue++;
+      if(pst3.years>=2 && (window.CJ_MILESTONES||{})[fp.id]) fFlags[fn3].old++;
+    }
+    for(var fk in fCounts){
+      var rd=FUND_RESULT_DATES[fk];if(!rd)continue;
+      var rp=rd.split('-');
+      var fundTime=rp[2]+'-'+rp[1]+'-'+rp[0];
+      /* Base marker: F-result label below the line */
+      markers.push({time:fundTime,position:'belowBar',color:'rgba(61,139,110,0.55)',shape:'arrowUp',
+        text:'F'+fk+' '+fCounts[fk]+(_lang!=='en'?'件':'p')});
+      /* Stack flag counters above the line (LW stacks multiple aboveBar markers at same time) */
+      var ff=fFlags[fk]||{};
+      var stackOrder=[
+        {key:'end',emoji:'END',col:'rgba(220,110,55,0.95)'},
+        {key:'unfunded',emoji:'💧',col:'rgba(80,140,200,0.9)'},
+        {key:'overdue',emoji:'⚠️',col:'rgba(232,180,72,0.95)'},
+        {key:'gap',emoji:'⏳',col:'rgba(150,180,220,0.9)'},
+        {key:'longGap',emoji:'↔️',col:'rgba(180,180,180,0.85)'},
+        {key:'pastOverdue',emoji:'⌚',col:'rgba(200,170,140,0.9)'},
+        {key:'old',emoji:'2️⃣',col:'rgba(180,160,200,0.9)'}
+      ];
+      for(var si=0;si<stackOrder.length;si++){
+        var so=stackOrder[si];
+        if(ff[so.key]>0){
+          markers.push({time:fundTime,position:'aboveBar',color:so.col,shape:'circle',size:0.5,
+            text:so.emoji+ff[so.key]});
+        }
+      }
+    }
+    markers.sort(function(a,b){return a.time<b.time?-1:1;});
+    if(window._chAdaLine)try{window._chAdaLine.setMarkers(markers);}catch(e){}
+
+    for(var i=0;i<items.length;i++){(function(c){
+      var row=document.createElement('div');row.className='ch-prop-row';
+      /* Per-proposal flags: 🚫 dnf / ⚠️ overdue / ⏳ active gap / ↔️ historical gap / 2/3/4 years */
+      var propFlag='';
+      var pst=_proposalStatus(c);
+      if(c.st==='dnf'){
+        if(_dnfReceivedFunds(c)){
+          var reason=(_lang!=='en'?'終了 ('+esc(pLabel(c))+')\n資金受領後にIOGがクローズ':'Ended — funded then closed');
+          propFlag+='<span class="dnf-flag" title="'+reason+'">END</span>';
+        } else {
+          var uReason=(_lang!=='en'?'不発 ('+esc(pLabel(c))+')\n採択されたが資金未受領で停止 (異例)':'Unfunded stop — approved but never drew funds');
+          propFlag+='<span class="unfunded-flag" title="'+uReason+'">💧'+(_lang!=='en'?'不発':'NoFund')+'</span>';
+        }
+      }
+      if(pst.overdue){
+        var ovR=(_lang!=='en'?'期限超過 ('+esc(pLabel(c))+')':'Overdue');
+        if(pst.overdueDetail){
+          var d=pst.overdueDetail;
+          ovR+=(_lang!=='en'
+            ?'\n計画: MS'+d.msNum+' 採択+'+d.plannedMonth+'ヶ月 ('+d.plannedDate+')\n現在: '+Math.round(d.monthsLate)+'ヶ月遅延 (未署名)'
+            :'\nPlan: MS'+d.msNum+' month '+d.plannedMonth+' ('+d.plannedDate+')\nNow: '+Math.round(d.monthsLate)+'mo late, unsigned');
+        }
+        propFlag+='<span class="stale-flag" title="'+ovR+'">⚠️'+(_lang!=='en'?'超過':'Late')+'</span>';
+      }
+      if(pst.gap){
+        var gpR=(_lang!=='en'?'進行中の請求間隔大 ('+esc(pLabel(c))+')\n最大 '+Math.round(pst.maxGapMonths)+'ヶ月の空白':'Active gap — '+Math.round(pst.maxGapMonths)+' mo');
+        propFlag+='<span class="gap-flag" title="'+gpR+'">⏳'+Math.round(pst.maxGapMonths)+'ヶ月</span>';
+      }
+      if(pst.longGap){
+        var lgR=(_lang!=='en'?'過去の長期空白 ('+esc(pLabel(c))+')\n完了済みだが最大 '+Math.round(pst.maxGapMonths)+'ヶ月の空白あり':'Historical gap — '+Math.round(pst.maxGapMonths)+' mo (completed)');
+        propFlag+='<span class="long-gap-flag" title="'+lgR+'">↔️'+Math.round(pst.maxGapMonths)+'ヶ月</span>';
+      }
+      if(pst.pastOverdue){
+        var poR=(_lang!=='en'?'期限超過で完了 ('+esc(pLabel(c))+')':'Late completion');
+        if(pst.pastOverdueDetail){
+          var pd=pst.pastOverdueDetail;
+          poR+=(_lang!=='en'
+            ?'\nMS'+pd.msNum+' 計画 '+pd.plannedDate+' → 実際 '+pd.actualDate+' ('+Math.round(pd.monthsLate)+'ヶ月遅延)'
+            :'\nMS'+pd.msNum+' planned '+pd.plannedDate+' → actual '+pd.actualDate);
+        }
+        propFlag+='<span class="past-overdue-flag" title="'+poR+'">⌚'+Math.round(pst.pastOverdueDetail.monthsLate)+'ヶ月</span>';
+      }
+      /* Skip if no MS data — duration without planned baseline isn't meaningful */
+      var _skipDur=!(window.CJ_MILESTONES||{})[c.id];
+      if(pst.years>=2 && !_skipDur){
+        var ye=Math.floor(pst.years);
+        var yEmoji=ye>=4?'4️⃣':ye>=3?'3️⃣':'2️⃣';
+        var yR=(_lang!=='en'?'長期案件 ('+esc(pLabel(c))+')':'Long duration');
+        if(pst.plannedMonths>0){
+          yR+=(_lang!=='en'?'\n計画: '+pst.plannedMonths+'ヶ月 → 実際: '+pst.years.toFixed(1)+'年 ('+pst.overrunRatio.toFixed(1)+'倍)'
+            :'\nPlan: '+pst.plannedMonths+'mo → Actual: '+pst.years.toFixed(1)+'y ('+pst.overrunRatio.toFixed(1)+'x)');
+        } else {
+          yR+=(_lang!=='en'?'\n採択から '+pst.years.toFixed(1)+'年':'\n'+pst.years.toFixed(1)+'y');
+        }
+        propFlag+='<span class="old-flag" title="'+yR+'">'+yEmoji+'</span>';
+      }
+      row.innerHTML='<div class="ch-prop-title">'+esc(pLabel(c))+propFlag+'</div>'
+        +'<div class="ch-prop-meta">'+stBadge(c.st)
+        +clsTag(c.cls)
+        +'<span class="cat-tag fund-tag">F'+(c.fund||'?')+'</span>'
+        +'<span>'+fmtDual(c.amt,c.u,c.adaPrice)+'</span>'
+        +'</div>';
+      row.onclick=function(){
+        /* find allProps entry for this child */
+        var pr=null;
+        for(var ai=0;ai<window._chAllProps.length;ai++){if(window._chAllProps[ai].id===c.id){pr=window._chAllProps[ai];break;}}
+        if(pr){_updateFundFlow([c]);_chartShowLens(pr);addProposalMarkers(pr);}
+      };
+      listEl.appendChild(row);
+    })(items[i]);}
+  }
+
+  for(var ti=0;ti<tabData.length;ti++){(function(td){
+    var btn=document.createElement('button');btn.className='ch-proposer-tab'+(td.key==='all'?' active':'');
+    btn.innerHTML=td.label+'<span class="tab-cnt">'+td.items.length+'</span>';
+    if(td.items.length===0) btn.style.opacity='0.4';
+    btn.onclick=function(){
+      if(td.items.length===0)return;
+      _activeTab=td.key;
+      var btns=tabs.querySelectorAll('.ch-proposer-tab');
+      for(var k=0;k<btns.length;k++) btns[k].classList.remove('active');
+      btn.classList.add('active');
+      renderPropList(td.items);
+    };
+    tabs.appendChild(btn);
+  })(tabData[ti]);}
+  wrap.appendChild(tabs);
+  wrap.appendChild(listEl);
+  right.appendChild(wrap);
+  renderPropList(all);
+}
+
+/* ---- Add proposal-specific markers to chart ---- */
+function addProposalMarkers(pr){
+  if(!window._chAdaLine||!_chartPriceData)return;
+  var markers=[];
+  /* fund submit/result dates as context */
+  var sd=FUND_SUBMIT_DATES[pr.fund];
+  var rd=FUND_RESULT_DATES[pr.fund];
+  if(sd){var sp=sd.split('-');var sKey=sp[2]+'-'+sp[1]+'-'+sp[0];
+    markers.push({time:sKey,position:'aboveBar',color:'rgba(138,138,131,0.6)',shape:'arrowDown',text:'F'+pr.fund+(_lang!=='en'?' 提案':' Sub')});
+  }
+  if(rd){var rp=rd.split('-');var rKey=rp[2]+'-'+rp[1]+'-'+rp[0];
+    markers.push({time:rKey,position:'belowBar',color:'rgba(61,139,110,0.6)',shape:'arrowUp',text:'F'+pr.fund+(_lang!=='en'?' 採択':' Res')});
+  }
+  markers.sort(function(a,b){return a.time<b.time?-1:1;});
+  window._chAdaLine.setMarkers(markers);
+  /* Filter the withdrawal (WD) histogram to show ONLY this proposal's bars/markers.
+     Other proposals' bars get dimmed; selected proposal's MS get number markers. */
+  _filterWdToProposal(pr);
+}
+
+/* Show only the selected proposal's WD bars + MS markers on the chart.
+   Reads from _chWdSeries (already populated with this account's colored bars).
+   Filtering removes other bars entirely to avoid the 1px gap issue caused by
+   semi-transparent fillRect at the base line. */
+function _filterWdToProposal(pr){
+  if(!window._chWdSeries||!window._chWdOrigData) return;
+  var origBars=window._chWdOrigData;
+  var FRD=window.FUND_RESULT_DATES||{};
+  var newBars=[];
+  var wdMarkers=[];
+  var matched=0;
+  for(var i=0;i<origBars.length;i++){
+    var b=origBars[i];
+    if(b._pid===pr.id){
+      newBars.push({time:b.time,value:b.value,color:b.color}); /* keep full color */
+      matched++;
+    }
+    /* Skip other proposals' bars entirely — clean focused view */
+  }
+  if(matched===0){
+    /* No match in current dataset — likely we need to compute synthetic bars for the proposal */
+    var pst=_proposalStatus(pr);
+    var MS=window.CJ_MILESTONES||{};
+    var msData=MS[pr.id];
+    if(msData&&msData.length){
+      var adaK=(pr.u==='ada'?pr.amt:(pr.amt/(pr.adaPrice||0.5)));
+      var totalMsCost=0;
+      for(var ti=0;ti<msData[0].milestones.length;ti++) totalMsCost+=msData[0].milestones[ti].cost;
+      for(var mi=0;mi<msData[0].milestones.length;mi++){
+        var m=msData[0].milestones[mi];
+        if(!m.signoff||m.cost<=0) continue;
+        var msAda=totalMsCost>0?(m.cost/totalMsCost)*adaK:m.cost/1000;
+        newBars.push({time:m.signoff.substring(0,10),value:msAda,color:'rgba(91,138,240,0.85)'});
+        var msLbl=m.ms<=10?'①②③④⑤⑥⑦⑧⑨⑩'.charAt(m.ms-1):'M'+m.ms;
+        wdMarkers.push({time:m.signoff.substring(0,10),position:'aboveBar',color:'rgba(91,138,240,0.9)',shape:'arrowDown',size:0.5,text:msLbl});
+      }
+    }
+  } else {
+    /* Add markers: F-result fund bar + MS number markers for the proposal */
+    for(var i=0;i<origBars.length;i++){
+      var b=origBars[i];
+      if(b._pid!==pr.id) continue;
+      if(b._isFund){
+        wdMarkers.push({time:b.time,position:'aboveBar',color:'rgba(91,138,240,0.95)',shape:'arrowDown',size:0.5,
+          text:'F'+b._fund+(_lang!=='en'?' 採択':' Fund')});
+      } else if(b._ms){
+        var msLbl2=b._ms<=10?'①②③④⑤⑥⑦⑧⑨⑩'.charAt(b._ms-1):'M'+b._ms;
+        wdMarkers.push({time:b.time,position:'aboveBar',color:'rgba(91,138,240,0.9)',shape:'arrowDown',size:0.5,text:msLbl2});
+      }
+    }
+  }
+  newBars.sort(function(a,b){return a.time<b.time?-1:1;});
+  window._chWdSeries.setData(newBars);
+  /* Clear any markers directly on wdSeries (those shift the scale + cause floating) */
+  window._chWdSeries.setMarkers([]);
+  /* Place markers on a separate invisible line series so the 'wd' scale isn't affected
+     and bars stay touching the bottom axis. */
+  wdMarkers.sort(function(a,b){return a.time<b.time?-1:1;});
+  if(window._chMarkerSeries){try{_chartInstance.removeSeries(window._chMarkerSeries);}catch(e){}window._chMarkerSeries=null;}
+  if(wdMarkers.length){
+    var mkS=_chartInstance.addLineSeries({
+      color:'rgba(0,0,0,0)',lineWidth:0,
+      lastValueVisible:false,priceLineVisible:false,
+      priceScaleId:'mk'
+    });
+    _chartInstance.priceScale('mk').applyOptions({visible:false,scaleMargins:{top:0,bottom:0}});
+    var mkDat=[];var mkSeen={};
+    for(var mi=0;mi<wdMarkers.length;mi++){
+      if(!mkSeen[wdMarkers[mi].time]){mkDat.push({time:wdMarkers[mi].time,value:0});mkSeen[wdMarkers[mi].time]=true;}
+    }
+    mkDat.sort(function(a,b){return a.time<b.time?-1:1;});
+    mkS.setData(mkDat);
+    mkS.setMarkers(wdMarkers);
+    window._chMarkerSeries=mkS;
+  }
+}
+
+/* Restore the full account-level WD bars (called when proposal selection cleared) */
+function _restoreAccountWdBars(){
+  if(!window._chWdSeries||!window._chWdOrigData) return;
+  window._chWdSeries.setData(window._chWdOrigData.slice());
+  window._chWdSeries.setMarkers([]);
+}
+
+/* ---- Fetch ADA historical prices from CoinGecko ---- */
+var _chartFetchId=0; /* guard against concurrent fetches */
+function fetchAdaHistory(adaLine){
+  var myId=++_chartFetchId;
+  /* quick probe: try one small request first; if fetch itself fails, skip to fallback */
+  var probeEnd=Math.floor(Date.now()/1000);
+  var probeStart=probeEnd-30*86400;
+  var probeUrl='https://api.coingecko.com/api/v3/coins/cardano/market_chart/range?vs_currency=usd&from='+probeStart+'&to='+probeEnd;
+  fetch(probeUrl,{signal:AbortSignal.timeout?AbortSignal.timeout(8000):undefined})
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(myId!==_chartFetchId)return; /* stale */
+    if(!data.prices||data.prices.length===0){
+      console.warn('[CJ-Chart] Probe returned no prices, using fallback');
+      buildFallbackPriceData(adaLine);return;
+    }
+    /* probe succeeded — fetch full history in chunks */
+    var chunks=[];
+    var cursor=new Date(2020,8,1).getTime();
+    var now=Date.now();
+    while(cursor<now){
+      var end=Math.min(cursor+364*86400000,now);
+      chunks.push({from:Math.floor(cursor/1000),to:Math.floor(end/1000)});
+      cursor=end+86400000;
+    }
+    var allPts=[];var seen={};var idx=0;
+    function nextChunk(){
+      if(myId!==_chartFetchId)return;
+      if(idx>=chunks.length){
+        allPts.sort(function(a,b){return a.time<b.time?-1:1;});
+        _chartPriceData=allPts;window._chAllData=allPts;
+        setChartData(adaLine,allPts);
+        console.log('[CJ-Chart] Loaded '+allPts.length+' daily prices');return;
+      }
+      var c=chunks[idx++];
+      var url='https://api.coingecko.com/api/v3/coins/cardano/market_chart/range?vs_currency=usd&from='+c.from+'&to='+c.to;
+      fetch(url).then(function(r){return r.json();}).then(function(d){
+        if(myId!==_chartFetchId)return;
+        if(d.prices){for(var i=0;i<d.prices.length;i++){
+          var dt=new Date(d.prices[i][0]);
+          var key=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+          if(!seen[key]){seen[key]=true;allPts.push({time:key,value:d.prices[i][1]});}
+        }}
+        if(allPts.length>30){
+          var tmp=allPts.slice().sort(function(a,b){return a.time<b.time?-1:1;});
+          adaLine.setData(tmp);if(_chartInstance)_chartInstance.timeScale().fitContent();
+        }
+        setTimeout(nextChunk,600);
+      }).catch(function(){if(myId===_chartFetchId)setTimeout(nextChunk,1000);});
+    }
+    nextChunk();
+  })
+  .catch(function(e){
+    if(myId!==_chartFetchId)return;
+    console.warn('[CJ-Chart] Fetch unavailable, using fallback',e.message||e);
+    buildFallbackPriceData(adaLine);
+  });
+}
+
+/* ---- Fallback: interpolate between known fund prices ---- */
+function buildFallbackPriceData(adaLine){
+  /* collect known price points from both submit and result dates */
+  var raw=[];
+  function addPts(dates,prices){
+    for(var f in dates){
+      var p=dates[f].split('-');
+      var ms=new Date(Number(p[2]),Number(p[1])-1,Number(p[0])).getTime();
+      raw.push({t:ms,v:prices[f]||0.3});
+    }
+  }
+  addPts(FUND_SUBMIT_DATES,FUND_SUBMIT_PRICES);
+  addPts(FUND_RESULT_DATES,FUND_RESULT_PRICES);
+  /* add known ATH/ATL points for more realistic shape */
+  raw.push({t:new Date(2021,4,16).getTime(),v:2.46});  /* May 2021 ATH */
+  raw.push({t:new Date(2021,8,2).getTime(),v:3.10});   /* Sep 2021 ATH */
+  raw.push({t:new Date(2022,5,18).getTime(),v:0.44});  /* Jun 2022 crash */
+  raw.push({t:new Date(2022,11,30).getTime(),v:0.25}); /* Dec 2022 bottom */
+  raw.push({t:new Date(2024,2,14).getTime(),v:0.76});  /* Mar 2024 */
+  raw.push({t:new Date(2024,10,22).getTime(),v:1.15}); /* Nov 2024 rally */
+  /* extend to today using live ADA price if available */
+  if(typeof ADA_USD==='number'&&ADA_USD>0){
+    raw.push({t:Date.now(),v:ADA_USD});
+  }
+  raw.sort(function(a,b){return a.t-b.t;});
+
+  /* linear interpolate weekly points between known values */
+  var pts=[];
+  var seen={};
+  for(var i=0;i<raw.length-1;i++){
+    var a=raw[i],b=raw[i+1];
+    var step=7*86400000; /* weekly */
+    for(var t=a.t;t<=b.t;t+=step){
+      var ratio=(t-a.t)/(b.t-a.t);
+      var v=a.v+(b.v-a.v)*ratio;
+      var d=new Date(t);
+      var key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      if(!seen[key]){seen[key]=true;pts.push({time:key,value:v});}
+    }
+  }
+  pts.sort(function(a,b){return a.time<b.time?-1:1;});
+  _chartPriceData=pts;
+  window._chAllData=pts;
+  setChartData(adaLine,pts);
+}
+
+/* ---- Offset a YYYY-MM-DD date string by N days ---- */
+function _offsetDate(dateStr,days){
+  var d=new Date(dateStr);d.setDate(d.getDate()+days);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+/* ---- Expand fund time map: ±14 days around each fund date for wider hover ---- */
+function _expandFundTimeMap(map){
+  var fundDates=[];
+  for(var d in map) fundDates.push({date:d,fund:map[d]});
+  fundDates.sort(function(a,b){return a.date<b.date?-1:1;});
+  for(var i=0;i<fundDates.length;i++){
+    var base=new Date(fundDates[i].date);
+    var fnum=fundDates[i].fund;
+    for(var offset=-14;offset<=14;offset++){
+      var nd=new Date(base.getTime()+offset*86400000);
+      var nk=nd.getFullYear()+'-'+String(nd.getMonth()+1).padStart(2,'0')+'-'+String(nd.getDate()).padStart(2,'0');
+      if(!map[nk]) map[nk]=fnum;
+    }
+  }
+}
+
+/* ---- Set chart data + simplified fund markers ---- */
+function setChartData(adaLine,pts){
+  adaLine.setData(pts);
+
+  /* fund markers: show ALL fund dates (F2-F14) */
+  var markers=[];
+  var resultDates=FUND_RESULT_DATES;
+  var ff=window._chFundFlow||{};
+
+  for(var fr in resultDates){
+    var cnt=ff[fr]?ff[fr].count:0;
+    var rp=resultDates[fr].split('-');
+    var rKey=rp[2]+'-'+rp[1]+'-'+rp[0];
+    if(cnt>0){
+      markers.push({time:rKey,position:'aboveBar',color:'rgba(255,255,255,0.9)',shape:'arrowDown',size:0.5,text:'F'+fr});
+    } else {
+      markers.push({time:rKey,position:'aboveBar',color:'rgba(255,255,255,0.3)',shape:'arrowDown',size:0.5,text:'F'+fr});
+    }
+  }
+
+  markers.sort(function(a,b){return a.time<b.time?-1:1;});
+  adaLine.setMarkers(markers);
+
+  /* fill gap between last data point and today's live price with weekly interpolation */
+  if(typeof ADA_USD==='number'&&ADA_USD>0){
+    var _now=new Date();
+    var _todayKey=_now.getFullYear()+'-'+String(_now.getMonth()+1).padStart(2,'0')+'-'+String(_now.getDate()).padStart(2,'0');
+    /* find last existing point */
+    var _lastPt=pts.length>0?pts[pts.length-1]:null;
+    if(_lastPt&&_lastPt.time<_todayKey){
+      var _lastT=new Date(_lastPt.time).getTime();
+      var _nowT=_now.getTime();
+      var _gapDays=(_nowT-_lastT)/86400000;
+      /* if gap > 14 days, fill with weekly interpolated points */
+      if(_gapDays>14){
+        var _seen={};for(var gi=0;gi<pts.length;gi++)_seen[pts[gi].time]=true;
+        for(var _t=_lastT+7*86400000;_t<_nowT;_t+=7*86400000){
+          var _d=new Date(_t);
+          var _k=_d.getFullYear()+'-'+String(_d.getMonth()+1).padStart(2,'0')+'-'+String(_d.getDate()).padStart(2,'0');
+          if(!_seen[_k]){
+            var _ratio=(_t-_lastT)/(_nowT-_lastT);
+            pts.push({time:_k,value:_lastPt.value+(ADA_USD-_lastPt.value)*_ratio});
+            _seen[_k]=true;
+          }
+        }
+      }
+      /* add/update today */
+      var _foundToday=false;
+      for(var ti=0;ti<pts.length;ti++){if(pts[ti].time===_todayKey){pts[ti].value=ADA_USD;_foundToday=true;break;}}
+      if(!_foundToday) pts.push({time:_todayKey,value:ADA_USD});
+    }
+    pts.sort(function(a,b){return a.time<b.time?-1:1;});
+    adaLine.setData(pts);
+  }
+
+  /* fit content */
+  if(_chartInstance){
+    _chartInstance.timeScale().fitContent();
+  }
+
+  /* rebuild USD comparison lines now that price data is available */
+  _invalidatePriceMap(); /* clear cached price lookup */
+  _rebuildUsdLines();
+
+  /* recalculate fundFlow with historical prices (initial load) */
+  if(typeof _updateFundFlow==='function') _updateFundFlow(null);
+}
+
+/* ---- Rebuild USD comparison lines (called after price data loads) ---- */
+function _rebuildUsdLines(){
+  if(!window._chUsdAdoptSeries||!window._chUsdLiveSeries||!window._chAdaLine)return;
+  var timeline=window._chTimeline, cumData=window._chCumData;
+  if(!timeline||!cumData)return;
+
+  /* Build price lookup from current ADA line data */
+  var priceData=_chAdaLine.data();
+  var priceLookup={};
+  for(var pi=0;pi<priceData.length;pi++) priceLookup[priceData[pi].time]=priceData[pi].value;
+  function nearestPrice(date){
+    if(priceLookup[date]) return priceLookup[date];
+    var prevD='',prevV=null,nextD='9999',nextV=null;
+    for(var d in priceLookup){
+      if(d<=date&&d>prevD){prevD=d;prevV=priceLookup[d];}
+      if(d>=date&&d<nextD){nextD=d;nextV=priceLookup[d];}
+    }
+    if(prevV!==null&&nextV!==null&&prevD!==nextD){
+      var pT=new Date(prevD).getTime(),nT=new Date(nextD).getTime(),cT=new Date(date).getTime();
+      return prevV+(nextV-prevV)*((cT-pT)/(nT-pT));
+    }
+    return prevV||nextV||0.27;
+  }
+
+  /* 1. Stablecoin line: cumulative USD at adoption price */
+  var usdCum=0;
+  var usdAdoptData=[];
+  for(var ui=0;ui<timeline.length;ui++){
+    var ue=timeline[ui];
+    if(ue.type==='in'&&ue.fund){
+      usdCum+=(ue.ada/1000)*(FUND_RESULT_PRICES[ue.fund]||0.27);
+    }
+    usdAdoptData.push({time:ue.time, value:usdCum});
+  }
+
+  /* 2. ADA live value: cumulative ADA × price at each date */
+  var allDates={};
+  for(var ci=0;ci<cumData.length;ci++) allDates[cumData[ci].time]=true;
+  for(var pi=0;pi<priceData.length;pi++) allDates[priceData[pi].time]=true;
+  var sortedDates=Object.keys(allDates).sort();
+
+  var usdLiveData=[];
+  var lastCumAda=0, cumIdx=0;
+  for(var di=0;di<sortedDates.length;di++){
+    var dd=sortedDates[di];
+    while(cumIdx<cumData.length&&cumData[cumIdx].time<=dd){
+      lastCumAda=cumData[cumIdx].value; cumIdx++;
+    }
+    if(lastCumAda>0){
+      var pp=nearestPrice(dd);
+      usdLiveData.push({time:dd, value:lastCumAda*pp});
+    }
+  }
+
+  window._chUsdAdoptSeries.setData(usdAdoptData);
+  window._chUsdLiveSeries.setData(usdLiveData);
+}
+
+/* ---- Historical ADA price lookup (shared by receivedK calc) ---- */
+var _priceMap=null; /* cached {date→price} from ADA line */
+function _invalidatePriceMap(){_priceMap=null;}
+function _ensurePriceMap(){
+  if(_priceMap) return _priceMap;
+  if(!window._chAdaLine) return null;
+  var pd=_chAdaLine.data();
+  if(!pd||!pd.length) return null;
+  _priceMap={};
+  for(var i=0;i<pd.length;i++) _priceMap[pd[i].time]=pd[i].value;
+  return _priceMap;
+}
+function _nearestPriceGlobal(date){
+  var m=_ensurePriceMap();
+  if(!m) return null;
+  if(m[date]) return m[date];
+  /* Interpolate between nearest earlier and later points */
+  var prevD='',prevV=null,nextD='9999',nextV=null;
+  for(var d in m){
+    if(d<=date&&d>prevD){prevD=d;prevV=m[d];}
+    if(d>=date&&d<nextD){nextD=d;nextV=m[d];}
+  }
+  if(prevV!==null&&nextV!==null&&prevD!==nextD){
+    var pT=new Date(prevD).getTime(),nT=new Date(nextD).getTime(),cT=new Date(date).getTime();
+    return prevV+(nextV-prevV)*((cT-pT)/(nT-pT));
+  }
+  return prevV||nextV||null;
+}
+
+/* ---- Calculate received USD using historical prices ---- */
+/* Uses: milestone signoff dates → completion dates → fund result prices → current price */
+function _calcReceivedK(id, adaK, status, fundNum){
+  if(status==='dnf') return {usd:0, recvAdaK:0};
+
+  /* 1. Milestone-tracked proposals (F10+): sum signed-off milestones × price at signoff */
+  var ms=window.CJ_MILESTONES?window.CJ_MILESTONES[id]:null;
+  if(ms&&ms.length>0){
+    var tUsd=0, tAda=0, hasMilestones=false;
+    for(var i=0;i<ms.length;i++){
+      var entry=ms[i];
+      for(var j=0;j<entry.milestones.length;j++){
+        var m=entry.milestones[j];
+        hasMilestones=true;
+        if(m.signoff){
+          var sDate=m.signoff.split('T')[0]; /* YYYY-MM-DD */
+          var price=_nearestPriceGlobal(sDate);
+          if(price===null) price=FUND_RESULT_PRICES[fundNum]||ADA_USD||0.27;
+          tUsd+=(m.cost/1000)*price;   /* cost is ADA, convert to K-ADA × USD = K-USD */
+          tAda+=m.cost/1000;
+        }
+      }
+    }
+    if(tAda>0) return {usd:tUsd, recvAdaK:tAda};
+    /* Has milestones but none signed off yet — 0 received */
+    if(hasMilestones&&status==='progress') return {usd:0, recvAdaK:0};
+  }
+
+  /* 2. Completed proposals without milestones: use completion date or fund result price */
+  if(status==='complete'){
+    var compDate=PROPOSAL_COMPLETION_DATES[id];
+    if(compDate){
+      var p=_nearestPriceGlobal(compDate);
+      if(p!==null) return {usd:adaK*p, recvAdaK:adaK};
+    }
+    /* Fallback: fund result price (historical approximation) */
+    var rp=FUND_RESULT_PRICES[fundNum]||0.27;
+    return {usd:adaK*rp, recvAdaK:adaK};
+  }
+
+  /* 3. In-progress without milestones: estimate 40% at current price */
+  var recAdaK=adaK*0.4;
+  return {usd:recAdaK*(ADA_USD||0.27), recvAdaK:recAdaK};
+}
+
+/* ---- Update funding flow histogram (filter by children subset) ---- */
+/* ---- Update flow strip below chart ---- */
+function _updateFlowStrip(ff){
+  var el=document.getElementById('ch-flow');if(!el)return;
+  var curAda=ADA_USD||0.27;var jpy=USD_JPY||150;
+  /* aggregate totals across all funds in ff */
+  var tAdaK=0,tBudK=0,tFunK=0,tRecK=0,tRecAdaK=0,tCnt=0;
+  for(var fk in ff){
+    tAdaK+=ff[fk].adaK||0;tBudK+=ff[fk].budgetK||0;
+    tFunK+=ff[fk].fundedK||0;tRecK+=ff[fk].receivedK||0;
+    tRecAdaK+=ff[fk].recvAdaK||0;tCnt+=ff[fk].count||0;
+  }
+  function fK(v){return v>=1000?(v/1000).toFixed(1)+'M':Math.round(v)+'K';}
+  var pct=tFunK>0?Math.round(tRecK/tFunK*100):0;
+  el.innerHTML=
+    '<div class="ch-flow-item"><span class="ch-flow-label">'+tCnt+(_lang!=='en'?'件':'p')+'</span></div>'
+    +'<div class="ch-flow-sep"></div>'
+    +'<div class="ch-flow-item"><div class="ch-flow-dot" style="background:rgba(138,138,131,0.6)"></div>'
+    +'<span class="ch-flow-label">'+(_lang!=='en'?'予算':'Bud')+'</span>'
+    +'<span class="ch-flow-val">$'+fK(tBudK)+'</span>'
+    +'<span class="ch-flow-sub">₳'+fK(tAdaK)+' ¥'+fK(tBudK*jpy)+'</span></div>'
+    +'<div class="ch-flow-sep"></div>'
+    +'<div class="ch-flow-item"><div class="ch-flow-dot" style="background:rgba(61,139,110,0.8)"></div>'
+    +'<span class="ch-flow-label">'+(_lang!=='en'?'採択':'Fund')+'</span>'
+    +'<span class="ch-flow-val">$'+fK(tFunK)+'</span>'
+    +'<span class="ch-flow-sub">¥'+fK(tFunK*jpy)+'</span></div>'
+    +'<div class="ch-flow-sep"></div>'
+    +'<div class="ch-flow-item"><div class="ch-flow-dot" style="background:rgba(91,138,240,0.8)"></div>'
+    +'<span class="ch-flow-label">'+(_lang!=='en'?'受取':'Recv')+'</span>'
+    +'<span class="ch-flow-val">$'+fK(tRecK)+'</span>'
+    +'<span class="ch-flow-sub">₳'+fK(tRecAdaK)+' ¥'+fK(tRecK*jpy)+' ('+pct+'%)</span></div>';
+}
+
+/* ---- Person panel: milestone withdrawal table ---- */
+var _personChartInstance=null;
+var _personChartRO=null;
+var _personSyncUnsub=null;
+var _personWdSeries=null; /* colored wd overlay on main chart */
+
+var PCOLS=[
+  'rgba(232,160,72,','rgba(200,100,160,','rgba(120,180,220,','rgba(180,140,220,',
+  'rgba(220,180,80,','rgba(140,200,160,','rgba(220,120,100,','rgba(160,160,220,'
+];
+
+/* Build milestone data for proposals */
+function _buildMsData(proposals){
+  var MS=window.CJ_MILESTONES||{};
+  var COMP=window.CJ_COMPLETIONS||{};
+  /* Word-match helpers for CJ_COMPLETIONS lookup */
+  function _w(s){return s.toLowerCase().replace(/[^a-z0-9]/g,' ').split(/\s+/).filter(function(w){return w.length>2;});}
+  function _ov(a,b){var n=0;for(var i=0;i<a.length;i++)for(var j=0;j<b.length;j++)if(a[i]===b[j]){n++;break;}return n;}
+  var _ca=[];
+  var _byLid={}; /* local_id → COMP entry, for explicit binding */
+  for(var ck in COMP){
+    var cc=COMP[ck];
+    _ca.push({w:_w(cc.t),completed:cc.completed,dist:cc.dist||0,req:cc.req||0,st:cc.st,_lid:cc._lid});
+    if(cc._lid) _byLid[cc._lid]={completed:cc.completed,dist:cc.dist||0,req:cc.req||0,st:cc.st};
+  }
+
+  var results=[];
+  for(var i=0;i<proposals.length;i++){
+    var c=proposals[i];
+    var msEntries=MS[c.id];
+    var adaK=c.u==='ada'?c.amt:(c.amt/(c.adaPrice||0.5));
+    var item={id:c.id,label:pLabel(c),fund:c.fund,status:c.st,adaK:adaK,milestones:[]};
+    if(msEntries&&msEntries.length>0){
+      for(var ei=0;ei<msEntries.length;ei++){
+        var entry=msEntries[ei];
+        for(var mi=0;mi<entry.milestones.length;mi++){
+          var m=entry.milestones[mi];
+          item.milestones.push({ms:m.ms,cost:m.cost,signoff:m.signoff?m.signoff.split('T')[0]:null,title:m.title});
+        }
+      }
+      item.milestones.sort(function(a,b){return a.ms-b.ms;});
+    } else {
+      /* No CJ_MILESTONES — synthetic entry from proposal + CJ_COMPLETIONS */
+      var totalAda=adaK*1000;
+      var sDate=null;
+      var isParentFunded=false;
+      /* Prefer explicit _lid binding; fall back to fuzzy match */
+      var bm=null,bn=0;
+      if(_byLid[c.id]){bm=_byLid[c.id];bn=99;}
+      else {
+        var pw=_w(c.label||'');
+        for(var cj=0;cj<_ca.length;cj++){
+          /* Skip entries already bound to another local id */
+          if(_ca[cj]._lid && _ca[cj]._lid!==c.id) continue;
+          var n=_ov(pw,_ca[cj].w);
+          if(n>bn){bn=n;bm=_ca[cj];}
+        }
+      }
+      var preMs=(c.fund||0)<10; /* F2-F9: before milestone system */
+      /* _lid binding bypasses both fuzzy threshold AND status check —
+         an explicit _lid means official completion data exists, trust it */
+      var hasLidMatch = bn===99;
+      if(bm&&(bn>=2||hasLidMatch)){
+        /* F2-F9 with dist:0 & req:0 = genuinely parent-funded sub-project (e.g. Milkomeda) */
+        if(preMs&&bm.dist===0&&bm.req===0){ isParentFunded=true; }
+        else if(bm.dist>0) totalAda=bm.dist;
+        else if(bm.req>0) totalAda=bm.req;
+        /* F10+ CJ_COMPLETIONS always has req:0/dist:0 — keep INDUSTRIES amt */
+        if(c.st==='complete'||c.st==='dnf'||hasLidMatch) sDate=bm.completed;
+      }
+      if(isParentFunded){
+        /* Sub-project: funding via parent project, no direct withdrawal.
+           Milkomeda sub-projects (dist:0/req:0) were funded via the Milkomeda Accelerator
+           parent series. Identify parent by: same fund + req>0 + title contains "accelerator"/"batch". */
+        var parentName=null;
+        var subTitle=(c.label||'').toLowerCase();
+        var isMilkomedaSub=subTitle.indexOf('milkomeda')>=0;
+        for(var ck2 in COMP){
+          var cc2=COMP[ck2];
+          if(cc2.f!==c.fund||!(cc2.req>0)) continue;
+          var pTitleLc=cc2.t.toLowerCase();
+          if(isMilkomedaSub && pTitleLc.indexOf('milkomeda')>=0 &&
+             (pTitleLc.indexOf('accelerator')>=0||pTitleLc.indexOf('batch')>=0)){
+            parentName=cc2.t;
+            break; /* exact-pattern match wins */
+          }
+        }
+        /* Fallback: any req>0 entry in same fund with highest keyword overlap */
+        if(!parentName){
+          var bestOverlap=0;
+          var subWords=_w(c.label||'');
+          for(var ck3 in COMP){
+            var cc3=COMP[ck3];
+            if(cc3.f===c.fund && cc3.req>0){
+              var ov=_ov(subWords, _w(cc3.t));
+              if(ov>bestOverlap){bestOverlap=ov; parentName=cc3.t;}
+            }
+          }
+        }
+        item.milestones.push({ms:1,cost:0,signoff:sDate,title:'親経由',parentFunded:true,parentTitle:parentName});
+      } else if(totalAda>0){
+        var msNotFound=!preMs; /* F10+: MS system exists but not in Supabase */
+        var reason=preMs?'MS制度前':msNotFound?(c.st==='complete'?'制度外':'MS未取得'):'進行中';
+        /* Pre-MS: funds were paid LUMP-SUM at fund result date — that's the actual receipt date.
+           For dnf items: also keep the close-out date as dnfDate (when IOG marked it cancelled). */
+        var displayDate=sDate;
+        var dnfDate=null;
+        if(preMs){
+          var frd=(typeof FUND_RESULT_DATES!=='undefined')?FUND_RESULT_DATES[c.fund]:null;
+          if(frd){var fp=frd.split('-');displayDate=fp[2]+'-'+fp[1]+'-'+fp[0];} /* receipt date */
+          if(c.st==='dnf'&&sDate) dnfDate=sDate; /* close-out / cancel date */
+        }
+        item.milestones.push({ms:1,cost:totalAda,signoff:displayDate,title:reason,preMs:preMs,msNotFound:msNotFound,dnfDate:dnfDate});
+      }
+    }
+    results.push(item);
+  }
+  return results;
+}
+
+/* Add colored wd bars + blue fund bars to main chart — reuse existing _chWdSeries */
+function _addColoredWdBars(msData){
+  if(!_chartInstance||!window._chWdSeries) return;
+
+  /* ── Hide funded/recv global bars ── */
+  if(window._chFundedSeries&&window._chRecvSeries){
+    if(!window._chFdOrigData) window._chFdOrigData='saved';
+    window._chFundedSeries.setData([]);
+    window._chRecvSeries.setData([]);
+  }
+
+  /* ── Build combined bars: blue fund adoption + colored MS withdrawal ── */
+  var bars=[];
+  var markers=[];
+  var usedDates={};
+
+  /* Blue fund adoption bars */
+  for(var fi=0;fi<msData.length;fi++){
+    var fp=msData[fi];
+    var fn=fp.fund;
+    var frd=FUND_RESULT_DATES[fn];
+    if(!frd) continue;
+    var parts=frd.split('-');
+    var fKey=parts[2]+'-'+parts[1]+'-'+parts[0];
+    var adaK=fp.adaK||fp.milestones.reduce(function(s,m){return s+m.cost;},0)/1000;
+    var tryF=fKey;var fa=0;
+    while(usedDates[tryF]){fa++;var fd2=new Date(fKey);fd2.setDate(fd2.getDate()+fa);tryF=fd2.toISOString().split('T')[0];}
+    usedDates[tryF]=true;
+    bars.push({time:tryF,value:adaK,color:'rgba(91,138,240,0.7)',_pid:fp.id,_isFund:true,_fund:fn});
+    markers.push({time:tryF,position:'aboveBar',color:'rgba(91,138,240,0.9)',shape:'arrowDown',size:0.5,
+      text:'F'+fn+(_lang!=='en'?' 採択':' Fund')});
+  }
+
+  /* Colored MS withdrawal bars — convert raw cost to K-ADA proportionally */
+  for(var pi=0;pi<msData.length;pi++){
+    var p=msData[pi];
+    var col=PCOLS[pi%PCOLS.length];
+    /* Fund result date = when funds were actually disbursed (pre-MS lump-sum payment) */
+    var pFrd=FUND_RESULT_DATES[p.fund];
+    var pFundDate=null;
+    if(pFrd){var pFp=pFrd.split('-');pFundDate=pFp[2]+'-'+pFp[1]+'-'+pFp[0];}
+    /* Total raw MS cost (may be USD or ADA depending on proposal currency) */
+    var totalMsCost=0;
+    for(var ti=0;ti<p.milestones.length;ti++) totalMsCost+=p.milestones[ti].cost;
+    for(var mi=0;mi<p.milestones.length;mi++){
+      var m=p.milestones[mi];
+      if(!m.signoff||m.cost<=0) continue;
+      /* Convert to K-ADA: milestone share of total × proposal adaK */
+      var msAdaK=totalMsCost>0?(m.cost/totalMsCost)*p.adaK:m.cost/1000;
+      /* Pre-MS (F2-F9): m.signoff IS the receipt date (set in _buildMsData).
+         For F10+ MS: m.signoff is the milestone signoff date. */
+      var barCol=m.preMs?'rgba(232,160,72,0.85)':col+'0.85)';
+      var mkCol=m.preMs?'rgba(232,160,72,0.9)':col+'0.9)';
+      var mkText=m.preMs?(_lang!=='en'?'受領':'Recv')
+        :(m.ms<=10?'①②③④⑤⑥⑦⑧⑨⑩'.charAt(m.ms-1):'M'+m.ms);
+      var baseDate=m.signoff;
+      /* Clamp: signoff can't predate fund result (data anomaly) */
+      if(pFundDate&&baseDate<pFundDate) baseDate=pFundDate;
+      var tryDate=baseDate;var attempt=0;
+      while(usedDates[tryDate]){attempt++;var dd=new Date(baseDate);dd.setDate(dd.getDate()+attempt);tryDate=dd.toISOString().split('T')[0];}
+      usedDates[tryDate]=true;
+      bars.push({time:tryDate,value:msAdaK,color:barCol,_pid:p.id,_ms:m.ms,_label:p.label});
+      markers.push({time:tryDate,position:'aboveBar',color:mkCol,shape:'arrowDown',size:0.5,text:mkText});
+      /* Pre-MS dnf: add a "✕中止" flag at the IOG close-out date (separate from receipt date) */
+      if(m.preMs && m.dnfDate && m.dnfDate!==tryDate){
+        var dnfTry=m.dnfDate;var dnfAttempt=0;
+        while(usedDates[dnfTry]){dnfAttempt++;var dnd=new Date(m.dnfDate);dnd.setDate(dnd.getDate()+dnfAttempt);dnfTry=dnd.toISOString().split('T')[0];}
+        usedDates[dnfTry]=true;
+        markers.push({time:dnfTry,position:'aboveBar',color:'rgba(200,80,80,0.9)',shape:'arrowDown',size:0.5,
+          text:(_lang!=='en'?'END':'END')});
+      }
+    }
+  }
+  if(!bars.length) return;
+  bars.sort(function(a,b){return a.time<b.time?-1:1;});
+  markers.sort(function(a,b){return a.time<b.time?-1:1;});
+
+  /* Reuse existing _chWdSeries (same scale config = bars touch bottom) */
+  window._chWdSeries.setData(bars);
+  /* Save the colored bars so we can restore them after filter-to-proposal */
+  window._chWdOrigData=bars.slice();
+  window._chWdOrigMarkers=[];
+
+  /* Markers on histogram series shift coord(0) up by ~21px (LW adds padding).
+     Instead, attach markers to a separate invisible line series so the
+     'wd' scale stays unaffected and bars touch the bottom axis. */
+  if(markers.length){
+    if(window._chMarkerSeries){try{_chartInstance.removeSeries(window._chMarkerSeries);}catch(e){}}
+    var mkSeries=_chartInstance.addLineSeries({
+      color:'rgba(0,0,0,0)',lineWidth:0,
+      lastValueVisible:false,priceLineVisible:false,
+      priceScaleId:'mk'
+    });
+    _chartInstance.priceScale('mk').applyOptions({visible:false,scaleMargins:{top:0,bottom:0}});
+    /* Marker series needs data at the same timestamps; use value=0 (invisible) */
+    var mkData=[];
+    var mkUsed={};
+    for(var mi=0;mi<markers.length;mi++){
+      if(!mkUsed[markers[mi].time]){mkData.push({time:markers[mi].time,value:0});mkUsed[markers[mi].time]=true;}
+    }
+    mkData.sort(function(a,b){return a.time<b.time?-1:1;});
+    mkSeries.setData(mkData);
+    mkSeries.setMarkers(markers);
+    window._chMarkerSeries=mkSeries;
+  }
+}
+
+/* Render bottom panel table */
+function _renderPersonPanel(title,msData,proposals){
+  var pCont=document.getElementById('ch-person-chart');
+  if(!pCont) return;
+  if(_personChartInstance){try{_personChartInstance.remove();}catch(e){}_personChartInstance=null;}
+
+  var isEn=_lang==='en';
+  function fmtA(v){return v>=1000?Math.round(v/1000)+'K':''+Math.round(v);}
+
+  /* Find max MS count first to size the table */
+  var maxMs=0;
+  for(var i=0;i<msData.length;i++){
+    var msCnt=msData[i].milestones.length;
+    if(msCnt>maxMs) maxMs=msCnt;
+  }
+  if(maxMs===0) maxMs=1;
+  var _msNums='①②③④⑤⑥⑦⑧⑨⑩';
+  var _tblMinW=200+maxMs*55;
+  var html='<div style="padding:10px 16px;height:100%;overflow:auto;font:11px \'JetBrains Mono\',monospace">';
+  html+='<div style="color:var(--ink);font-size:12px;font-weight:600;margin-bottom:8px">'+esc(title)+'</div>';
+  html+='<table style="min-width:'+_tblMinW+'px;width:100%;border-collapse:collapse">';
+  html+='<thead><tr style="color:var(--muted);font-size:9px;text-align:left;border-bottom:1px solid var(--border)">'
+    +'<th style="padding:3px 4px">'+(isEn?'Proposal':'提案')+'</th>';
+  for(var m=1;m<=maxMs;m++) html+='<th style="padding:3px 4px;text-align:right;min-width:55px">'+(m<=10?_msNums.charAt(m-1):'M'+m)+'</th>';
+  html+='</tr></thead><tbody>';
+
+  for(var pi=0;pi<msData.length;pi++){
+    var p=msData[pi];
+    var col=PCOLS[pi%PCOLS.length];
+    var stC=p.status==='complete'?'var(--st-ok)':p.status==='progress'?'var(--st-wip)':'var(--st-dnf)';
+    html+='<tr style="border-bottom:1px solid var(--border)" data-prop-idx="'+pi+'">';
+    html+='<td style="padding:5px 4px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer">'
+      +'<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:'+col+'0.8);margin-right:6px;vertical-align:middle"></span>'
+      +'<span style="color:var(--ink);vertical-align:middle">'+esc(p.label)+'</span>'
+      +' <span style="opacity:.4;font-size:9px">F'+p.fund+'</span></td>';
+    for(var mi=0;mi<maxMs;mi++){
+      var ms=p.milestones[mi];
+      if(!ms){
+        html+='<td style="padding:5px 4px;text-align:right;color:var(--muted);opacity:.3">—</td>';
+      } else if(ms.parentFunded){
+        /* Sub-project funded via parent — show "親経由" + parent name */
+        var _pT=ms.parentTitle?esc(ms.parentTitle):'';
+        html+='<td style="padding:5px 4px;text-align:right;color:var(--muted);font-size:9px;opacity:.6"'
+          +(_pT?' title="親: '+_pT+'"':'')+'>'
+          +(isEn?'via parent':'親経由')
+          +(_pT?'<div style="font-size:8px;opacity:.45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px">↑'+_pT+'</div>':'')
+          +(ms.signoff?'<div style="font-size:8px;opacity:.5">'+ms.signoff.substring(5)+'</div>':'')+'</td>';
+      } else if(ms.preMs){
+        /* Pre-milestone-system (F2-F9) — show amount + reason */
+        html+='<td style="padding:5px 4px;text-align:right;color:'+col+'0.7)">'
+          +'₳'+fmtA(ms.cost)
+          +'<div style="font-size:8px;opacity:.4">'+(isEn?'pre-MS':'MS制度前')+'</div></td>';
+      } else if(ms.msNotFound){
+        /* F10+: milestone system exists but data not in our DB */
+        var msLabel=ms.title==='制度外'?(isEn?'outside MS':'制度外'):(isEn?'MS n/a':'MS未取得');
+        html+='<td style="padding:5px 4px;text-align:right;color:'+col+'0.6)">'
+          +'₳'+fmtA(ms.cost)
+          +'<div style="font-size:8px;opacity:.4">'+msLabel+'</div></td>';
+      } else if(ms.signoff){
+        html+='<td style="padding:5px 4px;text-align:right;color:'+col+'0.9)">'
+          +'₳'+fmtA(ms.cost)
+          +'<div style="font-size:8px;opacity:.5">'+ms.signoff.substring(5)+'</div></td>';
+      } else {
+        html+='<td style="padding:5px 4px;text-align:right;color:var(--muted)">'
+          +'₳'+fmtA(ms.cost)
+          +'<div style="font-size:8px;opacity:.4">'+(isEn?'pending':'未請求')+'</div></td>';
+      }
+    }
+    html+='</tr>';
+  }
+  html+='</tbody></table></div>';
+  pCont.innerHTML=html;
+
+  /* Row click → show project in right panel */
+  var allProps=window._chAllProps||[];
+  pCont.addEventListener('click',function(e){
+    var row=e.target.closest('[data-prop-idx]');
+    if(!row) return;
+    var idx=parseInt(row.getAttribute('data-prop-idx'));
+    var p=msData[idx];if(!p) return;
+    var rows=pCont.querySelectorAll('[data-prop-idx]');
+    for(var r=0;r<rows.length;r++) rows[r].style.background=r==idx?'rgba(255,255,255,0.03)':'';
+    for(var ai=0;ai<allProps.length;ai++){
+      if(allProps[ai].id===p.id){_chartShowLens(allProps[ai]);addProposalMarkers(allProps[ai]);return;}
+    }
+  });
+}
+
+/* Account name click → all proposals — split view: proposals left, timeline right */
+function _openPersonChart(psName,proposals){
+  var msData=_buildMsData(proposals);
+  _addColoredWdBars(msData);
+  _renderMsSplitView(psName,msData,proposals);
+}
+
+/* Tab view: proposals matrix ↔ chronological timeline (toggle) */
+function _renderMsSplitView(title,msData,proposals){
+  var pCont=document.getElementById('ch-person-chart');
+  if(!pCont) return;
+  if(_personChartInstance){try{_personChartInstance.remove();}catch(e){}_personChartInstance=null;}
+
+  var isEn=_lang==='en';
+  function fmtA(v){return v>=1000?Math.round(v/1000)+'K':''+Math.round(v);}
+  var _msNums='①②③④⑤⑥⑦⑧⑨⑩';
+  var allProps=window._chAllProps||[];
+
+  function handleRowClick(pid){
+    for(var ai=0;ai<allProps.length;ai++){
+      if(allProps[ai].id===pid){_chartShowLens(allProps[ai]);addProposalMarkers(allProps[ai]);return;}
+    }
+  }
+
+  /* === TAB A: Proposal x Milestone matrix === */
+  var maxMs=0;
+  for(var i=0;i<msData.length;i++){
+    var msCnt=msData[i].milestones.length;
+    if(msCnt>maxMs) maxMs=msCnt;
+  }
+  if(maxMs===0) maxMs=1;
+  /* Table min-width = proposal col (220) + each MS col (55) so it overflows panel
+     and triggers horizontal scrollbar on parent (overflow:auto) */
+  var _tblMinW=220+maxMs*55;
+  var aHtml='<table style="min-width:'+_tblMinW+'px;width:100%;border-collapse:collapse">';
+  aHtml+='<thead><tr style="color:var(--muted);font-size:9px;text-align:left;border-bottom:1px solid var(--border)">'
+    +'<th style="padding:3px 6px">'+(isEn?'Proposal':'提案')+'</th>';
+  for(var m=1;m<=maxMs;m++) aHtml+='<th style="padding:3px 4px;text-align:right;min-width:55px">'+(m<=10?_msNums.charAt(m-1):'M'+m)+'</th>';
+  aHtml+='</tr></thead><tbody>';
+
+  for(var pi=0;pi<msData.length;pi++){
+    var p=msData[pi];
+    var col=PCOLS[pi%PCOLS.length];
+    var miniF=_renderMiniFlags(_findIndustryProposal(p.id));
+    aHtml+='<tr style="border-bottom:1px solid var(--border);cursor:pointer" data-tab-id="'+p.id+'">';
+    aHtml+='<td style="padding:5px 6px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
+      +'<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:'+col+'0.8);margin-right:6px;vertical-align:middle"></span>'
+      +'<span style="color:var(--ink);vertical-align:middle">'+esc(p.label)+'</span>'
+      +' <span style="opacity:.4;font-size:9px">F'+p.fund+'</span>'+miniF+'</td>';
+    for(var mi=0;mi<maxMs;mi++){
+      var ms=p.milestones[mi];
+      if(!ms){
+        aHtml+='<td style="padding:5px 4px;text-align:right;color:var(--muted);opacity:.3">—</td>';
+      } else if(ms.parentFunded){
+        var _pT2=ms.parentTitle?esc(ms.parentTitle):'';
+        aHtml+='<td style="padding:5px 4px;text-align:right;color:var(--muted);font-size:9px;opacity:.6"'
+          +(_pT2?' title="親: '+_pT2+'"':'')+'>'
+          +(isEn?'via parent':'親経由')
+          +(_pT2?'<div style="font-size:8px;opacity:.45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px">↑'+_pT2+'</div>':'')
+          +(ms.signoff?'<div style="font-size:8px;opacity:.5">'+ms.signoff.substring(5)+'</div>':'')+'</td>';
+      } else if(ms.preMs){
+        aHtml+='<td style="padding:5px 4px;text-align:right;color:'+col+'0.7)">'
+          +'₳'+fmtA(ms.cost)
+          +'<div style="font-size:8px;opacity:.4">'+(isEn?'pre-MS':'MS制度前')+'</div></td>';
+      } else if(ms.msNotFound){
+        var msLabel=ms.title==='制度外'?(isEn?'outside MS':'制度外'):(isEn?'MS n/a':'MS未取得');
+        aHtml+='<td style="padding:5px 4px;text-align:right;color:'+col+'0.6)">'
+          +'₳'+fmtA(ms.cost)
+          +'<div style="font-size:8px;opacity:.4">'+msLabel+'</div></td>';
+      } else if(ms.signoff){
+        aHtml+='<td style="padding:5px 4px;text-align:right;color:'+col+'0.9)">'
+          +'₳'+fmtA(ms.cost)
+          +'<div style="font-size:8px;opacity:.5">'+ms.signoff.substring(5)+'</div></td>';
+      } else {
+        aHtml+='<td style="padding:5px 4px;text-align:right;color:var(--muted)">'
+          +'₳'+fmtA(ms.cost)
+          +'<div style="font-size:8px;opacity:.4">'+(isEn?'pending':'未請求')+'</div></td>';
+      }
+    }
+    aHtml+='</tr>';
+  }
+  aHtml+='</tbody></table>';
+
+  /* === TAB B: Chronological timeline === */
+  var flat=[];
+  for(var pi2=0;pi2<msData.length;pi2++){
+    var p2=msData[pi2];
+    var col2=PCOLS[pi2%PCOLS.length];
+    for(var mi2=0;mi2<p2.milestones.length;mi2++){
+      var mm=p2.milestones[mi2];
+      flat.push({
+        date:mm.signoff||'9999-99-99',signoff:mm.signoff,ms:mm.ms,cost:mm.cost,
+        title:mm.title||'',pLabel:p2.label,pFund:p2.fund,pIdx:pi2,pId:p2.id,col:col2,pStatus:p2.status,
+        parentFunded:mm.parentFunded,parentTitle:mm.parentTitle,preMs:mm.preMs,msNotFound:mm.msNotFound,dnfDate:mm.dnfDate
+      });
+    }
+  }
+  flat.sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:a.pIdx-b.pIdx;});
+
+  var bHtml='<table style="width:100%;border-collapse:collapse">';
+  bHtml+='<thead><tr style="color:var(--muted);font-size:9px;text-align:left;border-bottom:1px solid var(--border)">'
+    +'<th style="padding:3px 6px">'+(isEn?'Date':'日付')+'</th>'
+    +'<th style="padding:3px 6px">'+(isEn?'Proposal':'提案')+'</th>'
+    +'<th style="padding:3px 4px;text-align:center">MS</th>'
+    +'<th style="padding:3px 6px;text-align:right">'+(isEn?'Amount':'金額')+'</th>'
+    +'<th style="padding:3px 6px">'+(isEn?'Note':'備考')+'</th>'
+    +'</tr></thead><tbody>';
+
+  for(var fi=0;fi<flat.length;fi++){
+    var f=flat[fi];
+    var dateStr=f.signoff?f.signoff.substring(0,10):'—';
+    var msLbl=f.ms<=10?_msNums.charAt(f.ms-1):'M'+f.ms;
+    var amtH='';
+    if(f.parentFunded){
+      amtH='<span style="color:var(--muted);font-size:9px;opacity:.6">'+(isEn?'via parent':'親経由')+'</span>';
+    } else if(f.cost>0){
+      amtH='<span style="color:'+f.col+'0.9)">₳'+fmtA(f.cost)+'</span>';
+    } else {
+      amtH='<span style="color:var(--muted);opacity:.3">—</span>';
+    }
+    var note='';
+    if(f.preMs){
+      note=isEn?'pre-MS':'MS制度前';
+      if(f.dnfDate) note+=(isEn?' / ✕Cancel ':' / ✕中止 ')+f.dnfDate.substring(0,10);
+    }
+    else if(f.msNotFound) note=f.title==='制度外'?(isEn?'outside MS':'制度外'):(isEn?'MS n/a':'MS未取得');
+    else if(f.parentFunded) note=f.parentTitle?('↑'+f.parentTitle):'';
+    else if(!f.signoff) note=isEn?'pending':'未請求';
+
+    var dCol=f.signoff?f.col+'0.7)':'var(--muted)';
+    var tlMiniF=_renderMiniFlags(_findIndustryProposal(f.pId));
+    bHtml+='<tr style="border-bottom:1px solid var(--border);cursor:pointer" data-tab-id="'+f.pId+'">';
+    bHtml+='<td style="padding:4px 6px;color:'+dCol+';white-space:nowrap">'+dateStr+'</td>';
+    bHtml+='<td style="padding:4px 6px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
+      +'<span style="display:inline-block;width:6px;height:6px;border-radius:1px;background:'+f.col+'0.8);margin-right:5px;vertical-align:middle"></span>'
+      +'<span style="color:var(--ink);vertical-align:middle;opacity:.8">'+esc(f.pLabel)+'</span>'
+      +' <span style="opacity:.3;font-size:9px">F'+f.pFund+'</span>'+tlMiniF+'</td>';
+    bHtml+='<td style="padding:4px 4px;text-align:center;color:'+f.col+'0.8)">'+msLbl+'</td>';
+    bHtml+='<td style="padding:4px 6px;text-align:right">'+amtH+'</td>';
+    bHtml+='<td style="padding:4px 6px;color:var(--muted);font-size:9px;opacity:.5">'+note+'</td>';
+    bHtml+='</tr>';
+  }
+  bHtml+='</tbody></table>';
+
+  /* === Assemble split layout: proposals LEFT, timeline RIGHT === */
+  var html='<div style="display:flex;height:100%;gap:0;font:11px \'JetBrains Mono\',monospace">'
+    +'<div style="flex:1;min-width:0;overflow:auto;padding:8px 12px;border-right:1px solid var(--border)" id="ms-split-left">'
+    +'<div style="color:var(--ink);font-size:11px;font-weight:600;margin-bottom:6px">'+esc(title)+'</div>'
+    +aHtml+'</div>'
+    +'<div style="flex:1;min-width:0;overflow:auto;padding:8px 12px" id="ms-split-right">'
+    +'<div style="color:var(--muted);font-size:10px;margin-bottom:6px">'+(isEn?'Timeline':'時系列')
+    +' <span style="opacity:.5">'+flat.length+'</span></div>'
+    +bHtml+'</div>'
+    +'</div>';
+  pCont.innerHTML=html;
+
+  /* Row click → show project (both panes) */
+  pCont.addEventListener('click',function(e){
+    var row=e.target.closest('[data-tab-id]');
+    if(!row) return;
+    var pid=row.getAttribute('data-tab-id');
+    var pane=row.closest('#ms-split-left,#ms-split-right');
+    if(pane){
+      var rows=pane.querySelectorAll('[data-tab-id]');
+      for(var r=0;r<rows.length;r++) rows[r].style.background=rows[r]===row?'rgba(255,255,255,0.03)':'';
+    }
+    handleRowClick(pid);
+  });
+}
+
+/* Render milestones as chronological timeline (account view) */
+function _renderMsTimeline(title,msData){
+  var pCont=document.getElementById('ch-person-chart');
+  if(!pCont) return;
+  if(_personChartInstance){try{_personChartInstance.remove();}catch(e){}_personChartInstance=null;}
+
+  var isEn=_lang==='en';
+  function fmtA(v){return v>=1000?Math.round(v/1000)+'K':''+Math.round(v);}
+  var _msNums='①②③④⑤⑥⑦⑧⑨⑩';
+
+  /* Flatten all milestones with proposal context */
+  var flat=[];
+  for(var pi=0;pi<msData.length;pi++){
+    var p=msData[pi];
+    var col=PCOLS[pi%PCOLS.length];
+    for(var mi=0;mi<p.milestones.length;mi++){
+      var m=p.milestones[mi];
+      flat.push({
+        date:m.signoff||'9999-99-99',
+        signoff:m.signoff,
+        ms:m.ms,
+        cost:m.cost,
+        title:m.title||'',
+        pLabel:p.label,
+        pFund:p.fund,
+        pIdx:pi,
+        pId:p.id,
+        col:col,
+        pStatus:p.status,
+        parentFunded:m.parentFunded,
+        parentTitle:m.parentTitle,
+        preMs:m.preMs,
+        msNotFound:m.msNotFound,
+        dnfDate:m.dnfDate
+      });
+    }
+  }
+  /* Sort by date, then by proposal index */
+  flat.sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:a.pIdx-b.pIdx;});
+
+  var html='<div style="padding:10px 16px;height:100%;overflow-y:auto;font:11px \'JetBrains Mono\',monospace">';
+  html+='<div style="color:var(--ink);font-size:12px;font-weight:600;margin-bottom:8px">'+esc(title)
+    +' <span style="opacity:.4;font-size:10px">'+flat.length+' milestones</span></div>';
+  html+='<table style="width:100%;border-collapse:collapse">';
+  html+='<thead><tr style="color:var(--muted);font-size:9px;text-align:left;border-bottom:1px solid var(--border)">'
+    +'<th style="padding:3px 6px">'+(isEn?'Date':'日付')+'</th>'
+    +'<th style="padding:3px 6px">'+(isEn?'Proposal':'提案')+'</th>'
+    +'<th style="padding:3px 4px;text-align:center">MS</th>'
+    +'<th style="padding:3px 6px;text-align:right">'+(isEn?'Amount':'金額')+'</th>'
+    +'<th style="padding:3px 6px">'+(isEn?'Note':'備考')+'</th>'
+    +'</tr></thead><tbody>';
+
+  for(var i=0;i<flat.length;i++){
+    var f=flat[i];
+    var dateStr=f.signoff?f.signoff.substring(0,10):'—';
+    var msLabel=f.ms<=10?_msNums.charAt(f.ms-1):'M'+f.ms;
+
+    /* Amount cell */
+    var amtHtml='';
+    if(f.parentFunded){
+      amtHtml='<span style="color:var(--muted);font-size:9px;opacity:.6">'+(isEn?'via parent':'親経由')+'</span>';
+    } else if(f.cost>0){
+      amtHtml='<span style="color:'+f.col+'0.9)">₳'+fmtA(f.cost)+'</span>';
+    } else {
+      amtHtml='<span style="color:var(--muted);opacity:.3">—</span>';
+    }
+
+    /* Note cell */
+    var note='';
+    if(f.preMs){
+      note=isEn?'pre-MS':'MS制度前';
+      if(f.dnfDate) note+=(isEn?' / ✕Cancel ':' / ✕中止 ')+f.dnfDate.substring(0,10);
+    }
+    else if(f.msNotFound) note=f.title==='制度外'?(isEn?'outside MS':'制度外'):(isEn?'MS n/a':'MS未取得');
+    else if(f.parentFunded) note=f.parentTitle?('↑'+f.parentTitle):'';
+    else if(!f.signoff) note=isEn?'pending':'未請求';
+
+    var dateColor=f.signoff?f.col+'0.7)':'var(--muted)';
+
+    html+='<tr style="border-bottom:1px solid var(--border);cursor:pointer" data-ms-pidx="'+f.pIdx+'" data-ms-id="'+f.pId+'">';
+    html+='<td style="padding:4px 6px;color:'+dateColor+';white-space:nowrap">'+dateStr+'</td>';
+    html+='<td style="padding:4px 6px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
+      +'<span style="display:inline-block;width:6px;height:6px;border-radius:1px;background:'+f.col+'0.8);margin-right:5px;vertical-align:middle"></span>'
+      +'<span style="color:var(--ink);vertical-align:middle;opacity:.8">'+esc(f.pLabel)+'</span>'
+      +' <span style="opacity:.3;font-size:9px">F'+f.pFund+'</span></td>';
+    html+='<td style="padding:4px 4px;text-align:center;color:'+f.col+'0.8)">'+msLabel+'</td>';
+    html+='<td style="padding:4px 6px;text-align:right">'+amtHtml+'</td>';
+    html+='<td style="padding:4px 6px;color:var(--muted);font-size:9px;opacity:.5">'+note+'</td>';
+    html+='</tr>';
+  }
+  html+='</tbody></table></div>';
+  pCont.innerHTML=html;
+
+  /* Row click → show project in right panel */
+  var allProps=window._chAllProps||[];
+  pCont.addEventListener('click',function(e){
+    var row=e.target.closest('[data-ms-id]');
+    if(!row) return;
+    var pid=row.getAttribute('data-ms-id');
+    var rows=pCont.querySelectorAll('[data-ms-id]');
+    for(var r=0;r<rows.length;r++) rows[r].style.background=rows[r]===row?'rgba(255,255,255,0.03)':'';
+    for(var ai=0;ai<allProps.length;ai++){
+      if(allProps[ai].id===pid){_chartShowLens(allProps[ai]);addProposalMarkers(allProps[ai]);return;}
+    }
+  });
+}
+
+/* Single proposal click → show in bottom panel */
+function _showProposalDetail(proposal){
+  var msData=_buildMsData([proposal]);
+  _addColoredWdBars(msData);
+  _renderMsSplitView(pLabel(proposal),msData,[proposal]);
+}
+
+function _closePersonChart(){
+  /* Restore global orange wd bars + clear person markers */
+  if(window._chWdSeries&&window._chWdOrigData){
+    window._chWdSeries.setData(window._chWdOrigData);
+    window._chWdSeries.setMarkers([]);
+  }
+  /* Restore funded/recv bars */
+  if(window._chFdOrigData){
+    _updateFundFlow(null);
+    window._chFdOrigData=null;
+  }
+  /* Clear bottom panel content only — no re-layout */
+  var pCont=document.getElementById('ch-person-chart');
+  if(pCont) pCont.innerHTML='';
+}
+
+/* ---- Show withdrawal detail in bottom panel + project in right ---- */
+function _showWdDetail(wdEvents){
+  var personEl=document.getElementById('ch-person');
+  var pCont=document.getElementById('ch-person-chart');
+  if(!personEl||!pCont) return;
+
+  /* Clear chart instance and restore global bars */
+  if(_personChartInstance){try{_personChartInstance.remove();}catch(e){}_personChartInstance=null;}
+  /* Restore global orange wd bars + clear person markers */
+  if(window._chWdSeries&&window._chWdOrigData){
+    window._chWdSeries.setData(window._chWdOrigData);
+    window._chWdSeries.setMarkers([]);
+  }
+  if(window._chFdOrigData){_updateFundFlow(null);window._chFdOrigData=null;}
+
+  var isEn=_lang==='en';
+  var jpy=USD_JPY||150;
+  function fmtAda(v){return v>=1000000?'₳'+(v/1000000).toFixed(2)+'M':v>=1000?'₳'+(v/1000).toFixed(1)+'K':'₳'+Math.round(v);}
+
+  /* Find matching proposals from INDUSTRIES for right panel */
+  var allProps=window._chAllProps||[];
+  function findProp(ev){
+    /* Match by pid first */
+    if(ev.pid){
+      for(var i=0;i<allProps.length;i++){
+        if(allProps[i].id===ev.pid) return allProps[i];
+      }
+    }
+    /* Fallback: label substring */
+    var label=ev.label||'';
+    for(var i=0;i<allProps.length;i++){
+      if(allProps[i].title&&label&&allProps[i].title.indexOf(label.substring(0,15))>=0) return allProps[i];
+      if(allProps[i]._src&&pLabel(allProps[i]._src).indexOf(label.substring(0,15))>=0) return allProps[i];
+    }
+    return null;
+  }
+
+  /* Get ADA price at event date */
+  var priceData=window._chAllData||[];
+  function priceAt(dateStr){
+    for(var i=priceData.length-1;i>=0;i--){
+      if(priceData[i].time<=dateStr) return priceData[i].value;
+    }
+    return ADA_USD||0.5;
+  }
+
+  var html='<div style="padding:12px 16px;height:100%;overflow-y:auto;font:11px \'JetBrains Mono\',monospace">';
+  html+='<div style="color:var(--ink);font-size:13px;font-weight:600;margin-bottom:10px">'
+    +(isEn?'Withdrawal Detail':'引出詳細')
+    +' <span style="opacity:.5;font-weight:400;font-size:11px">'+wdEvents[0].time+'</span></div>';
+
+  var totalAda=0;
+  for(var i=0;i<wdEvents.length;i++){
+    var ev=wdEvents[i];
+    totalAda+=ev.ada;
+    var p=priceAt(ev.time);
+    var usd=ev.ada*p;
+    var stColor=ev.label&&ev.label.indexOf('中止')>=0?'var(--st-dnf)':'rgba(232,160,72,0.9)';
+    html+='<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" data-wd-idx="'+i+'">';
+    html+='<div style="width:6px;height:6px;border-radius:50%;background:'+stColor+';margin-top:5px;flex-shrink:0"></div>';
+    html+='<div style="flex:1;min-width:0">';
+    html+='<div style="color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(ev.label||'Unknown')+'</div>';
+    html+='<div style="color:var(--muted);font-size:10px;margin-top:2px">'
+      +fmtAda(ev.ada)+' <span style="opacity:.5">·</span> $'+(usd/1000).toFixed(1)+'K'
+      +' <span style="opacity:.5">·</span> ¥'+Math.round(usd*jpy/1000)+'K'
+      +(ev.fund?' <span style="opacity:.4">F'+ev.fund+'</span>':'')
+      +'</div>';
+    html+='</div></div>';
+  }
+
+  /* Total */
+  var totalP=priceAt(wdEvents[0].time);
+  var totalUsd=totalAda*totalP;
+  html+='<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);color:var(--ink);font-size:12px">'
+    +(isEn?'Total':'合計')+': '+fmtAda(totalAda)
+    +' <span style="opacity:.5">·</span> $'+(totalUsd/1000).toFixed(1)+'K'
+    +' <span style="opacity:.5">·</span> ¥'+Math.round(totalUsd*jpy/1000)+'K'
+    +'</div>';
+  html+='</div>';
+  pCont.innerHTML=html;
+
+  /* Click handler: row click → show project in right panel */
+  pCont.addEventListener('click',function(e){
+    var row=e.target.closest('[data-wd-idx]');
+    if(!row) return;
+    var idx=parseInt(row.getAttribute('data-wd-idx'));
+    var ev=wdEvents[idx];
+    if(!ev) return;
+    /* Highlight active row */
+    var rows=pCont.querySelectorAll('[data-wd-idx]');
+    for(var r=0;r<rows.length;r++) rows[r].style.background=r==idx?'rgba(232,160,72,0.08)':'';
+    /* Find and show project in right panel */
+    var pr=findProp(ev);
+    if(pr){
+      _chartShowLens(pr);
+      addProposalMarkers(pr);
+    }
+  });
+
+  /* Auto-show first project in right panel if single event */
+  if(wdEvents.length===1){
+    var pr=findProp(wdEvents[0]);
+    if(pr){
+      _chartShowLens(pr);
+      addProposalMarkers(pr);
+    }
+  }
+}
+
+function _updateFundFlow(children){
+  var ff={};
+  var src=children;
+  if(!src){
+    src=[];
+    for(var fi=0;fi<INDUSTRIES.length;fi++){
+      for(var fj=0;fj<INDUSTRIES[fi].children.length;fj++) src.push(INDUSTRIES[fi].children[fj]);
+    }
+  }
+  for(var ci=0;ci<src.length;ci++){
+    var fc=src[ci];
+    var fn=fc.fund||0;if(!fn)continue;
+    if(!ff[fn]) ff[fn]={count:0,adaK:0,budgetK:0,fundedK:0,receivedK:0,recvAdaK:0,proposals:[]};
+    /* ADA amount (in K-ADA) */
+    var adaK=fc.u==='ada'?fc.amt:(fc.amt/(fc.adaPrice||0.5));
+    /* 3 financial metrics (all in K-USD) */
+    var submitP=FUND_SUBMIT_PRICES[fn]||fc.adaPrice||0.5;
+    var resultP=FUND_RESULT_PRICES[fn]||fc.adaPrice||0.5;
+    var budK=adaK*submitP;      /* 予算額: value at submission */
+    var funK=adaK*resultP;      /* 採択額: value at result */
+    /* receivedK: historical price at milestone signoff / completion date */
+    var recv=_calcReceivedK(fc.id,adaK,fc.st,fn);
+    var recAdaK=recv.recvAdaK;
+    var recK=recv.usd;
+
+    ff[fn].count++;
+    ff[fn].adaK+=adaK;
+    ff[fn].budgetK+=budK;
+    ff[fn].fundedK+=funK;
+    ff[fn].receivedK+=recK;
+    ff[fn].recvAdaK+=recAdaK;
+    var msProg=fc.st==='complete'?'4/4':fc.st==='progress'?'2/4':'1/4';
+    var msLabel=fc.st==='complete'?'完了':fc.st==='progress'?'途中':'中止';
+    ff[fn].proposals.push({
+      label:pLabel(fc),status:fc.st,msProg:msProg,msLabel:msLabel,
+      adaK:adaK,budgetK:budK,fundedK:funK,receivedK:recK,recvAdaK:recAdaK
+    });
+  }
+  window._chFundFlow=ff;
+  _updateFlowStrip(ff);
+  /* rebuild time map + histogram data */
+  window._chFundTimeMap={};
+  for(var fk in ff){
+    var frd=FUND_RESULT_DATES[fk];if(!frd)continue;
+    var fp=frd.split('-');
+    var ftk=fp[2]+'-'+fp[1]+'-'+fp[0];
+    window._chFundTimeMap[ftk]=fk;
+  }
+  for(var afk in FUND_RESULT_DATES){
+    var afrd=FUND_RESULT_DATES[afk].split('-');
+    var aftk=afrd[2]+'-'+afrd[1]+'-'+afrd[0];
+    if(!window._chFundTimeMap[aftk]) window._chFundTimeMap[aftk]=afk;
+  }
+  _expandFundTimeMap(window._chFundTimeMap);
+  /* update markers — show ALL fund dates (F2-F14) */
+  if(window._chAdaLine){
+    var markers=[];
+    for(var fr in FUND_RESULT_DATES){
+      var cnt=ff[fr]?ff[fr].count:0;
+      var rp2=FUND_RESULT_DATES[fr].split('-');
+      var rKey=rp2[2]+'-'+rp2[1]+'-'+rp2[0];
+      if(cnt>0){
+        markers.push({time:rKey,position:'aboveBar',color:'rgba(255,255,255,0.9)',shape:'arrowDown',size:0.5,text:'F'+fr});
+      } else {
+        markers.push({time:rKey,position:'aboveBar',color:'rgba(255,255,255,0.3)',shape:'arrowDown',size:0.5,text:'F'+fr});
+      }
+    }
+    markers.sort(function(a,b){return a.time<b.time?-1:1;});
+    window._chAdaLine.setMarkers(markers);
+  }
+  /* update funded/recv histogram series */
+  if(window._chFundedSeries&&window._chRecvSeries){
+    var fdData=[],rvData=[];
+    for(var _fk in ff){
+      var _frd=FUND_RESULT_DATES[_fk];if(!_frd)continue;
+      var _fp=_frd.split('-');
+      var _ftk=_fp[2]+'-'+_fp[1]+'-'+_fp[0];
+      fdData.push({time:_ftk,value:ff[_fk].fundedK,color:'rgba(61,139,110,0.45)'});
+      rvData.push({time:_ftk,value:ff[_fk].receivedK,color:'rgba(91,138,240,0.5)'});
+    }
+    fdData.sort(function(a,b){return a.time<b.time?-1:1;});
+    rvData.sort(function(a,b){return a.time<b.time?-1:1;});
+    window._chFundedSeries.setData(fdData);
+    window._chRecvSeries.setData(rvData);
+  }
+}
+
+
+/* ---- Range control ---- */
+function applyChartRange(days){
+  if(!_chartInstance||!window._chAllData)return;
+  var all=window._chAllData;
+  if(days>=all.length){
+    _chartInstance.timeScale().fitContent();
+    return;
+  }
+  var from=all[Math.max(0,all.length-days)].time;
+  var to=all[all.length-1].time;
+  _chartInstance.timeScale().setVisibleRange({from:from,to:to});
 }
 
 /* ================================================================
@@ -4227,7 +7383,7 @@ function recalcAll(){
 /* 価格モード切替 */
 function setPriceMode(mode){
   _priceMode=mode;recalcAll();buildShell();
-  if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else render();
+  if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else if(viewMode==='chart')renderChart();else render();
 }
 
 (function(){
@@ -4271,8 +7427,20 @@ function setPriceMode(mode){
           .finally(function(){
             done++;
             if(done>=total){
-              recalcAll();buildShell();render();
-              console.log('[CJ] All fund prices updated (submit+result)');
+              recalcAll();
+              /* Chart mode: don't rebuild — user may have selection/panel open.
+                 Just update header price display. Full rebuild destroys bottom+right panels. */
+              if(viewMode==='chart'){
+                var pe=document.querySelector('.ch-price');
+                if(pe) pe.textContent='$'+ADA_USD.toFixed(4);
+                var ps=document.querySelector('.ch-price-sub');
+                if(ps) ps.textContent='≈ ¥'+(ADA_USD*USD_JPY).toFixed(2);
+                console.log('[CJ] Fund prices updated (chart data refreshed, UI preserved)');
+              } else {
+                buildShell();
+                if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else render();
+                console.log('[CJ] All fund prices updated (submit+result)');
+              }
             }
           });
       }, idx*500);
