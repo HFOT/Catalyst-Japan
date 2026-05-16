@@ -196,13 +196,24 @@ html.night .cj-ask-btn{background:#e8e6e1;color:#0c0d10}
 .m-chart-back .row .cond{color:var(--muted);font-size:9px;flex:1;min-width:0}
 .m-chart-back .row .lbl{color:var(--ink);font-weight:600;font-size:10px}
 
-/* Flip button (title bar above chart) */
-.m-flip-btn{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 8px;background:var(--dim);border:1px solid transparent;border-radius:6px;cursor:pointer;user-select:none;margin-bottom:4px;transition:background 0.15s}
+/* Chart-title row: 50/50 split → [flag legend flip] | [hide chart toggle] */
+.m-chart-titles{display:flex;gap:6px;margin-bottom:4px}
+.m-chart-titles > button{flex:1 1 0;min-width:0}
+
+/* Flip button (left half — flag legend) */
+.m-flip-btn{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 8px;background:var(--dim);border:1px solid transparent;border-radius:6px;cursor:pointer;user-select:none;transition:background 0.15s}
 .m-flip-btn:active{background:var(--border)}
 .m-flip-btn .title{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.08em;flex-shrink:0}
 .m-flip-btn .chips{display:flex;gap:2px;align-items:center;overflow:hidden;flex:1;justify-content:flex-end}
 .m-flip-btn .arrow{font-size:11px;color:var(--muted);flex-shrink:0;transition:transform 0.3s}
 .m-flip-btn.flipped .arrow{transform:rotate(180deg)}
+
+/* Hide-chart button (right half) */
+.m-hide-btn{display:flex;align-items:center;justify-content:center;gap:5px;padding:4px 8px;background:var(--dim);border:1px solid transparent;border-radius:6px;cursor:pointer;user-select:none;transition:background 0.15s;font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.08em}
+.m-hide-btn:active{background:var(--border)}
+.m-hide-btn .icon{font-size:11px;color:var(--muted);line-height:1}
+.m-hide-btn.on{background:rgba(91,138,240,0.18);color:var(--ink)}
+.m-hide-btn.on .icon{color:var(--ink)}
 
 /* Tree map */
 .da-map{overflow:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
@@ -1045,6 +1056,7 @@ function renderTimeline(scroll){
 var _mobileChart=null, _mobileAdaLine=null, _mobileWdSeries=null;
 var _mobileSubTab='acct';
 var _chartDockHidden=false; /* chart tab only: toggle bottom dock visibility */
+var _chartHidden=false;     /* chart tab only: hide the chart flip card so Fund strip rises */
 var _mobileSearchQ='';
 /* Sort modes per sub-tab: 'count' / 'amount' / 'flag' */
 var _mobileAcctSort='count', _mobilePropSort='fund';
@@ -1299,12 +1311,25 @@ function renderMobileChart(scroll){
   flipBtn.innerHTML='<span class="title">'+(LANG==='ja'?'フラグ解説':'Flag Guide')+'</span>'
     +'<span class="chips">'+_chipsHtml+'</span>'
     +'<span class="arrow">⇋</span>';
-  wrap.appendChild(flipBtn);
+
+  /* Hide-chart button (right half) — collapses the chart card so Fund strip rises */
+  var hideBtn=document.createElement('button');
+  hideBtn.className='m-hide-btn'+(_chartHidden?' on':'');
+  hideBtn.innerHTML='<span class="icon">'+(_chartHidden?'▼':'▲')+'</span>'
+    +'<span>'+(LANG==='ja'?(_chartHidden?'チャート表示':'チャートを隠す'):(_chartHidden?'Show chart':'Hide chart'))+'</span>';
+
+  /* 50/50 title row: [flag legend] | [hide chart] */
+  var titleRow=document.createElement('div');
+  titleRow.className='m-chart-titles';
+  titleRow.appendChild(flipBtn);
+  titleRow.appendChild(hideBtn);
+  wrap.appendChild(titleRow);
 
   /* Flip card: front = chart, back = flag descriptions */
   var flipCard=document.createElement('div');
   flipCard.className='m-chart-flip';
   flipCard.id='mobile-chart-flip';
+  if(_chartHidden) flipCard.style.display='none';
   var flipInner=document.createElement('div');
   flipInner.className='m-chart-flip-inner';
 
@@ -1331,8 +1356,15 @@ function renderMobileChart(scroll){
 
   /* Flip click handler */
   flipBtn.addEventListener('click',function(){
+    if(_chartHidden) return; /* nothing to flip when hidden */
     flipCard.classList.toggle('flipped');
     flipBtn.classList.toggle('flipped');
+  });
+
+  /* Hide-chart click handler */
+  hideBtn.addEventListener('click',function(){
+    _chartHidden=!_chartHidden;
+    render();
   });
 
   /* Selection chip — overlayed top-left inside chart (no longer contains input) */
@@ -1476,8 +1508,8 @@ function renderMobileChart(scroll){
     }
   },50);
 
-  /* Build the chart asynchronously to let DOM settle */
-  setTimeout(function(){_mobileBuildChart(chartBox);},50);
+  /* Build the chart asynchronously to let DOM settle (skip when hidden) */
+  if(!_chartHidden) setTimeout(function(){_mobileBuildChart(chartBox);},50);
 }
 
 /* ── Account list (tap to expand proposals) ── */
