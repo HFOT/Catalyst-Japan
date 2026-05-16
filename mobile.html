@@ -1193,7 +1193,7 @@ function renderMobileChart(scroll){
 
   /* === 4. Sub-tab: アカウント / 提案 / MS+金額 === */
   var subBar=document.createElement('div');
-  subBar.style.cssText='display:flex;gap:0;padding:14px 8px 4px;border-bottom:1px solid var(--border);margin:0 0 8px';
+  subBar.style.cssText='display:flex;gap:0;padding:4px 8px 2px;border-bottom:1px solid var(--border);margin:0 0 4px';
   var subDefs=[
     {id:'acct',ja:'アカウント',en:'Account'},
     {id:'prop',ja:'提案',en:'Proposal'}
@@ -1201,7 +1201,7 @@ function renderMobileChart(scroll){
   subDefs.forEach(function(sd){
     var b=document.createElement('button');
     var active=_mobileSubTab===sd.id;
-    b.style.cssText='flex:1;padding:8px 6px;font-family:var(--mono);font-size:10px;letter-spacing:0.04em;background:transparent;color:'+(active?'var(--ink)':'var(--muted)')+';border:none;border-bottom:2px solid '+(active?'var(--ink)':'transparent')+';cursor:pointer;font-weight:'+(active?'600':'400');
+    b.style.cssText='flex:1;padding:4px 6px;font-family:var(--mono);font-size:10px;letter-spacing:0.04em;background:transparent;color:'+(active?'var(--ink)':'var(--muted)')+';border:none;border-bottom:2px solid '+(active?'var(--ink)':'transparent')+';cursor:pointer;font-weight:'+(active?'600':'400');
     b.textContent=LANG==='ja'?sd.ja:sd.en;
     b.addEventListener('click',function(){_mobileSubTab=sd.id;render();});
     subBar.appendChild(b);
