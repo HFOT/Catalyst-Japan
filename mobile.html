@@ -1141,12 +1141,17 @@ function _mobileMakeProposalRow(p){
         note.style.cssText='font-family:var(--mono);font-size:8px;color:var(--muted);opacity:0.6;letter-spacing:0.04em;flex:1;min-width:0';
         note.textContent=LANG==='ja'?'推定 (F2-F9 MS制度前 / 採択時一括)':'Estimate (pre-MS lump-sum at result)';
         expanded.appendChild(note);
+        _attachDetailBtn(expanded);
         row.appendChild(expanded);
         return;
       }
       expanded=document.createElement('div');
-      expanded.style.cssText='padding:4px 8px 8px;font-family:var(--mono);font-size:9px;color:var(--muted)';
-      expanded.textContent='MS データなし';
+      expanded.style.cssText='display:flex;align-items:center;padding:4px 8px 8px;font-family:var(--mono);font-size:9px;color:var(--muted)';
+      var noMsLbl=document.createElement('span');
+      noMsLbl.style.cssText='flex:1;min-width:0';
+      noMsLbl.textContent='MS データなし';
+      expanded.appendChild(noMsLbl);
+      _attachDetailBtn(expanded);
       row.appendChild(expanded);
       return;
     }
