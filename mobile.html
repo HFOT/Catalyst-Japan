@@ -435,7 +435,24 @@ function render(){
   root.appendChild(scroll);
 
   /* Dock */
-  root.appendChild(buildDock());
+  var dock=buildDock();
+  if(TAB==='chart' && _chartDockHidden) dock.style.display='none';
+  root.appendChild(dock);
+
+  /* Chart-only: floating toggle to hide/show the bottom dock for more chart space */
+  if(TAB==='chart'){
+    var dockToggle=document.createElement('button');
+    dockToggle.id='mobile-dock-toggle';
+    dockToggle.style.cssText='position:fixed;left:6px;'+(_chartDockHidden?'bottom:6px':'bottom:calc(env(safe-area-inset-bottom,0) + 14px)')+';z-index:200;width:26px;height:26px;border-radius:13px;background:'+(NIGHT?'rgba(20,22,26,0.9)':'rgba(255,255,255,0.92)')+';border:1px solid var(--border);color:var(--ink);font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.18);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);padding:0';
+    dockToggle.title=_chartDockHidden?'Show controls':'Hide controls';
+    dockToggle.innerHTML=_chartDockHidden?'▲':'▼';
+    dockToggle.addEventListener('click',function(e){
+      e.stopPropagation();
+      _chartDockHidden=!_chartDockHidden;
+      render();
+    });
+    root.appendChild(dockToggle);
+  }
 
   /* Render content */
   renderContent(scroll);
@@ -1027,6 +1044,7 @@ function renderTimeline(scroll){
 /* ---- Chart view (mobile-optimized lightweight-charts) ---- */
 var _mobileChart=null, _mobileAdaLine=null, _mobileWdSeries=null;
 var _mobileSubTab='acct';
+var _chartDockHidden=false; /* chart tab only: toggle bottom dock visibility */
 var _mobileSearchQ='';
 /* Sort modes per sub-tab: 'count' / 'amount' / 'flag' */
 var _mobileAcctSort='count', _mobilePropSort='fund';
