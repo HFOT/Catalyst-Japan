@@ -1150,8 +1150,8 @@ function renderMobileChart(scroll){
 
   var compRate=Math.round((statsCnt.complete/statsCnt.total)*100);
   var statsCard=document.createElement('div');
-  statsCard.style.cssText='margin:6px 8px 4px;padding:5px 8px;background:var(--dim);border-radius:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;align-items:center';
-  var cellCss='text-align:center;display:flex;align-items:baseline;justify-content:center;gap:3px;white-space:nowrap;min-width:0';
+  statsCard.style.cssText='margin:6px 8px 4px;padding:5px 8px;background:var(--dim);border-radius:8px;display:flex;align-items:center;justify-content:space-around';
+  var cellCss='display:flex;align-items:baseline;gap:3px;white-space:nowrap';
   statsCard.innerHTML=
     '<div style="'+cellCss+'"><span style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.04em">提案</span><span style="font-family:var(--serif);font-size:13px;color:var(--ink);font-weight:600">'+statsCnt.total+'</span></div>'
     +'<div style="'+cellCss+'"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">完了</span><span style="font-family:var(--serif);font-size:13px;color:#3d8b6e;font-weight:600">'+compRate+'%</span></div>'
