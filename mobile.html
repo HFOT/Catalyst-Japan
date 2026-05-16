@@ -1114,7 +1114,7 @@ function _mobileFlagChips(p){
 }
 function renderMobileChart(scroll){
   /* === 1. Top aggregate stats === */
-  var statsCnt={complete:0,progress:0,dnf:0,total:0,sumAda:0,sumDistributed:0};
+  var statsCnt={complete:0,progress:0,dnf:0,total:0,sumAda:0,sumUsd:0,sumDistributedAda:0,sumDistributedUsd:0};
   D.INDUSTRIES.forEach(function(ind){
     ind.children.forEach(function(p){
       statsCnt.total++;
@@ -1122,7 +1122,9 @@ function renderMobileChart(scroll){
       else if(p.st==='progress') statsCnt.progress++;
       else statsCnt.dnf++;
       var ada=(p.u==='ada'?p.amt:p.amt/(p.adaPrice||0.5));
+      var usd=(p.u==='ada'?p.amt*p.adaPrice:p.amt);
       statsCnt.sumAda+=ada;
+      statsCnt.sumUsd+=usd;
       /* Distributed approximation: signed MS sum, or full amount if pre-MS complete */
       var MS=window.CJ_MILESTONES||{};
       var ms=MS[p.id];
@@ -1132,10 +1134,12 @@ function renderMobileChart(scroll){
           total+=ms[0].milestones[i].cost;
           if(ms[0].milestones[i].signoff) signed+=ms[0].milestones[i].cost;
         }
-        var portion=total>0?(signed/total)*ada:0;
-        statsCnt.sumDistributed+=portion;
+        var ratio=total>0?(signed/total):0;
+        statsCnt.sumDistributedAda+=ratio*ada;
+        statsCnt.sumDistributedUsd+=ratio*usd;
       } else if(p.st==='complete'||p.st==='dnf'){
-        statsCnt.sumDistributed+=ada;
+        statsCnt.sumDistributedAda+=ada;
+        statsCnt.sumDistributedUsd+=usd;
       }
     });
   });
@@ -1151,8 +1155,8 @@ function renderMobileChart(scroll){
   statsCard.innerHTML=
     '<div style="'+cellCss+'"><span style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.04em">提案</span><span style="font-family:var(--serif);font-size:13px;color:var(--ink);font-weight:600">'+statsCnt.total+'</span></div>'
     +'<div style="'+cellCss+'"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">完了</span><span style="font-family:var(--serif);font-size:13px;color:#3d8b6e;font-weight:600">'+compRate+'%</span></div>'
-    +'<div style="'+cellCss+'"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">採択</span><span style="font-family:var(--serif);font-size:13px;color:var(--ink);font-weight:600">'+fmtAmt(statsCnt.sumAda*(ADA_USD||0.5),statsCnt.sumAda)+'</span></div>'
-    +'<div style="'+cellCss+'"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">支払</span><span style="font-family:var(--serif);font-size:13px;color:rgba(232,160,72,1);font-weight:600">'+fmtAmt(statsCnt.sumDistributed*(ADA_USD||0.5),statsCnt.sumDistributed)+'</span></div>';
+    +'<div style="'+cellCss+'"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">採択</span><span style="font-family:var(--serif);font-size:13px;color:var(--ink);font-weight:600">'+fmtAmt(statsCnt.sumUsd,statsCnt.sumAda)+'</span></div>'
+    +'<div style="'+cellCss+'"><span style="font-family:var(--mono);font-size:8px;color:var(--muted)">支払</span><span style="font-family:var(--serif);font-size:13px;color:rgba(232,160,72,1);font-weight:600">'+fmtAmt(statsCnt.sumDistributedUsd,statsCnt.sumDistributedAda)+'</span></div>';
   stickyTop.appendChild(statsCard);
 
   /* === 2. Chart container with selection chip overlay === */
@@ -1651,7 +1655,7 @@ function _mobileBuildChart(el){
     color:'rgba(232,160,72,0.55)',priceLineVisible:false,lastValueVisible:false,
     priceScaleId:'wd'
   });
-  _mobileChart.priceScale('wd').applyOptions({scaleMargins:{top:0.6,bottom:0}});
+  _mobileChart.priceScale('wd').applyOptions({scaleMargins:{top:0.35,bottom:0}});
 
   /* ADA price line on TOP (rendered after bars, so it's in front) */
   _mobileAdaLine=_mobileChart.addLineSeries({color:'#5b8af0',lineWidth:2,lastValueVisible:true,priceLineVisible:false,
