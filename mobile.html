@@ -196,13 +196,15 @@ html.night .cj-ask-btn{background:#e8e6e1;color:#0c0d10}
 .m-chart-back .row .cond{color:var(--muted);font-size:9px;flex:1;min-width:0}
 .m-chart-back .row .lbl{color:var(--ink);font-weight:600;font-size:10px}
 
-/* Flip button (title bar) */
-.m-flip-btn{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 8px;background:var(--dim);border:1px solid transparent;border-radius:6px;cursor:pointer;user-select:none;margin-bottom:4px;transition:background 0.15s}
-.m-flip-btn:active{background:var(--border)}
-.m-flip-btn .title{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.08em;flex-shrink:0}
-.m-flip-btn .chips{display:flex;gap:2px;align-items:center;overflow:hidden;flex:1;justify-content:flex-end}
-.m-flip-btn .arrow{font-size:11px;color:var(--muted);flex-shrink:0;transition:transform 0.3s}
-.m-chart-flip.flipped + .m-flip-btn .arrow,.m-flip-btn.flipped .arrow{transform:rotate(180deg)}
+/* Flip button (chart-overlay title bar — compact, anchored top-right inside chart) */
+.m-flip-btn{position:absolute;top:6px;right:6px;z-index:6;display:inline-flex;align-items:center;gap:4px;padding:2px 5px;background:rgba(20,20,22,0.78);border:1px solid rgba(255,255,255,0.12);border-radius:5px;cursor:pointer;user-select:none;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:background 0.15s;max-width:calc(100% - 12px)}
+html:not(.night) .m-flip-btn{background:rgba(255,255,255,0.85);border-color:rgba(0,0,0,0.1)}
+.m-flip-btn:active{background:rgba(40,40,44,0.9)}
+.m-flip-btn .title{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.06em;flex-shrink:0}
+.m-flip-btn .chips{display:flex;gap:2px;align-items:center;flex-shrink:0}
+.m-flip-btn .chips .m-flag{font-size:7px;padding:0 3px}
+.m-flip-btn .arrow{font-size:10px;color:var(--muted);flex-shrink:0;transition:transform 0.3s;margin-left:1px}
+.m-flip-btn.flipped .arrow{transform:rotate(180deg)}
 
 /* Tree map */
 .da-map{overflow:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
@@ -1265,10 +1267,9 @@ function renderMobileChart(scroll){
     {cls:'old',     emoji:'2️⃣',label:LANG==='ja'?'長期化':'Long duration',  cond:LANG==='ja'?'採択→完了が2/3/4年以上':'2/3/4+ yrs adoption → completion'}
   ];
   var _chipsHtml=_flagDefs.map(function(f){return '<span class="m-flag '+f.cls+'">'+f.emoji+'</span>';}).join('');
-  flipBtn.innerHTML='<span class="title">'+(LANG==='ja'?'フラグ解説':'Flag Guide')+'</span>'
+  flipBtn.innerHTML='<span class="title">'+(LANG==='ja'?'フラグ':'Flags')+'</span>'
     +'<span class="chips">'+_chipsHtml+'</span>'
     +'<span class="arrow">⇋</span>';
-  wrap.appendChild(flipBtn);
 
   /* Flip card: front = chart, back = flag descriptions */
   var flipCard=document.createElement('div');
@@ -1298,6 +1299,9 @@ function renderMobileChart(scroll){
   flipCard.appendChild(flipInner);
   wrap.appendChild(flipCard);
 
+  /* Flip button overlays the flip card (absolute, top-right) */
+  wrap.appendChild(flipBtn);
+
   /* Flip click handler */
   flipBtn.addEventListener('click',function(){
     flipCard.classList.toggle('flipped');
@@ -1307,7 +1311,7 @@ function renderMobileChart(scroll){
   /* Selection chip — overlayed top-left inside chart (no longer contains input) */
   var selStrip=document.createElement('div');
   selStrip.id='mobile-chart-selection';
-  selStrip.style.cssText='display:none;position:absolute;top:48px;left:16px;max-width:65%;padding:3px 6px;background:var(--bar-bg,rgba(20,20,22,0.85));border:1px solid var(--bar-border,rgba(255,255,255,0.12));border-radius:5px;font-family:var(--mono);font-size:10px;color:var(--ink);align-items:center;gap:5px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:5';
+  selStrip.style.cssText='display:none;position:absolute;top:8px;left:8px;max-width:55%;padding:3px 6px;background:var(--bar-bg,rgba(20,20,22,0.85));border:1px solid var(--bar-border,rgba(255,255,255,0.12));border-radius:5px;font-family:var(--mono);font-size:10px;color:var(--ink);align-items:center;gap:5px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:5';
   selStrip.innerHTML=
     '<span id="mobile-sel-label" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>'
     +'<button id="mobile-sel-clear" style="font-size:12px;padding:0 5px;background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--muted);cursor:pointer;flex-shrink:0;line-height:1.2">×</button>';
