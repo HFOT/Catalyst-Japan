@@ -305,6 +305,7 @@ function stColor(st){
 }
 function secColor(hue){return 'hsl('+hue+' 50% '+(NIGHT?60:44)+'%)'}
 function pUsdK(p){return p.u==='ada'?p.amt*(p.adaPrice||ADA_USD):p.amt}
+function pAdaK(p){return p.u==='ada'?p.amt:p.amt/(p.adaPrice||0.5)}
 /* Format an amount. Pass usdK (USD * 1000) for currency conversion.
    Optionally pass adaK as second arg for ACCURATE ADA display
    (uses each proposal's adoption-time price, not current market rate). */
@@ -569,7 +570,7 @@ function renderSectors(scroll){
   root.className='da-map-root';
   root.style.cssText='left:'+rootX+'px;top:'+rootY+'px;width:'+rootW+'px;height:'+rootH+'px';
   root.innerHTML='<div class="da-mr-name">Catalyst Japan</div>'
-    +'<div class="da-mr-meta"><span class="da-mr-num">'+D.totalFunded+'</span><em>·</em><span class="da-mr-num">'+fmtAmt(D.totalUsdK)+'</span></div>'
+    +'<div class="da-mr-meta"><span class="da-mr-num">'+D.totalFunded+'</span><em>·</em><span class="da-mr-num">'+fmtAmt(D.totalUsdK,D.totalAdaK)+'</span></div>'
     +'<div class="da-mr-leg">'
     +'<span><i style="background:'+stColor('complete')+'"></i>'+D.totalCompleted+'</span>'
     +'<span><i style="background:'+stColor('progress')+'"></i>'+D.totalProgress+'</span>'
@@ -584,7 +585,7 @@ function renderSectors(scroll){
     var btn=document.createElement('button');
     btn.className='da-map-node'+(isOpen?' open':'');
     btn.style.cssText='left:'+cardX+'px;top:'+pos.y+'px;width:'+cardW+'px;height:'+cardH+'px;border-left-color:'+secColor(s.hue)+';transition:top 0.25s cubic-bezier(0.2,0.8,0.2,1)';
-    btn.innerHTML='<div class="da-mn-row"><span class="da-mn-name">'+esc(secName(s))+'</span><span class="da-mn-amt">'+fmtAmt(s._usdK)+'</span></div>'
+    btn.innerHTML='<div class="da-mn-row"><span class="da-mn-name">'+esc(secName(s))+'</span><span class="da-mn-amt">'+fmtAmt(s._usdK,s._adaK)+'</span></div>'
       +'<div class="da-mn-row da-mn-row-sub"><span class="da-mn-count">'+s._total+' '+t('proposals')+'</span><span class="da-mn-chev">'+(isOpen?'▾':'›')+'</span></div>'
       +'<div class="da-mn-bar">'
       +(s._ok?'<span style="background:'+stColor('complete')+';flex:'+s._ok+'"></span>':'')
@@ -612,7 +613,7 @@ function renderSectors(scroll){
       btn.style.cssText='left:'+pX+'px;top:'+py+'px;width:'+pW+'px;height:'+pCardH+'px;border-left-color:'+stColor(p.st);
       var byHtml=p.by?'<span class="da-mp-by">'+esc(p.by)+'</span>':'';
       var fundHtml=p.fund?'<span class="da-mp-fund">F'+p.fund+'</span>':'';
-      btn.innerHTML='<div class="da-mp-row"><span class="da-mp-title">'+esc(propTitle(p))+'</span><span class="da-mp-amt">'+fmtAmt(pUsdK(p))+'</span></div>'
+      btn.innerHTML='<div class="da-mp-row"><span class="da-mp-title">'+esc(propTitle(p))+'</span><span class="da-mp-amt">'+fmtAmt(pUsdK(p),pAdaK(p))+'</span></div>'
         +(byHtml||fundHtml?'<div class="da-mp-row da-mp-row-sub">'+byHtml+fundHtml+'</div>':'');
       btn.addEventListener('click',function(e){e.stopPropagation();openSheet(p)});
       canvas.appendChild(btn);
@@ -627,29 +628,33 @@ function renderSectors(scroll){
 function renderProposers(scroll){
   /* Build enriched proposer stats (like PC version) */
   var map={};
+  function initM(name){return{name:name,proposals:[],mainCount:0,mainUsdK:0,mainAdaK:0,coCount:0,coUsdK:0,coAdaK:0,teamCount:0,teamUsdK:0,teamAdaK:0};}
   D.INDUSTRIES.forEach(function(ind){
     ind.children.forEach(function(p){
       var uK=pUsdK(p);
+      var aK=pAdaK(p);
       if(p.by){
-        if(!map[p.by]) map[p.by]={name:p.by,proposals:[],mainCount:0,mainUsdK:0,coCount:0,coUsdK:0,teamCount:0,teamUsdK:0};
+        if(!map[p.by]) map[p.by]=initM(p.by);
         map[p.by].proposals.push(p);
-        if(p.cls==='main'){map[p.by].mainCount++;map[p.by].mainUsdK+=uK}
-        else{map[p.by].coCount++;map[p.by].coUsdK+=uK}
+        if(p.cls==='main'){map[p.by].mainCount++;map[p.by].mainUsdK+=uK;map[p.by].mainAdaK+=aK;}
+        else{map[p.by].coCount++;map[p.by].coUsdK+=uK;map[p.by].coAdaK+=aK;}
       }
       if(p.team) p.team.forEach(function(tm){
-        if(!map[tm.name]) map[tm.name]={name:tm.name,proposals:[],mainCount:0,mainUsdK:0,coCount:0,coUsdK:0,teamCount:0,teamUsdK:0};
+        if(!map[tm.name]) map[tm.name]=initM(tm.name);
         if(map[tm.name].proposals.indexOf(p)<0){
           map[tm.name].proposals.push(p);
-          if(tm.role==='共同提案'){map[tm.name].coCount++;map[tm.name].coUsdK+=uK}
-          else{map[tm.name].teamCount++;map[tm.name].teamUsdK+=uK}
+          if(tm.role==='共同提案'){map[tm.name].coCount++;map[tm.name].coUsdK+=uK;map[tm.name].coAdaK+=aK;}
+          else{map[tm.name].teamCount++;map[tm.name].teamUsdK+=uK;map[tm.name].teamAdaK+=aK;}
         }
       });
     });
   });
   var arr=Object.values(map).map(function(m){
     m.allUsdK=m.mainUsdK+m.coUsdK+m.teamUsdK;
+    m.allAdaK=m.mainAdaK+m.coAdaK+m.teamAdaK;
     m.allCount=m.mainCount+m.coCount+m.teamCount;
     m.usdK=m.allUsdK;
+    m.adaK=m.allAdaK;
     return m;
   });
   /* Sort based on PPL_SORT */
@@ -663,21 +668,21 @@ function renderProposers(scroll){
   if(PPL_SORT==='std'){
     var sL=LANG==='ja'?'単独':'Solo',cL=LANG==='ja'?'共同':'Co';
     amtFn=function(it){
-      var sV=it.mainUsdK>0?fmtAmt(it.mainUsdK):'—';
-      var cV=it.coUsdK>0?fmtAmt(it.coUsdK):'—';
+      var sV=it.mainUsdK>0?fmtAmt(it.mainUsdK,it.mainAdaK):'—';
+      var cV=it.coUsdK>0?fmtAmt(it.coUsdK,it.coAdaK):'—';
       return '<span class="da-mn-amt-ppl">'
         +'<span class="da-ppl-lbl">'+sL+'</span><span class="da-ppl-v '+(it.mainUsdK?'':'dim')+'">'+sV+'</span>'
         +'<span class="da-ppl-lbl"><span class="sl">/</span>'+cL+'</span><span class="da-ppl-v '+(it.coUsdK?'':'dim')+'">'+cV+'</span>'
         +'</span>';
     };
   } else if(PPL_SORT==='solo'){
-    amtFn=function(it){return it.mainUsdK>0?fmtAmt(it.mainUsdK):'—'};
+    amtFn=function(it){return it.mainUsdK>0?fmtAmt(it.mainUsdK,it.mainAdaK):'—'};
   } else if(PPL_SORT==='co'){
-    amtFn=function(it){return it.coUsdK>0?fmtAmt(it.coUsdK):'—'};
+    amtFn=function(it){return it.coUsdK>0?fmtAmt(it.coUsdK,it.coAdaK):'—'};
   } else if(PPL_SORT==='named'){
-    amtFn=function(it){return it.teamUsdK>0?fmtAmt(it.teamUsdK):'—'};
+    amtFn=function(it){return it.teamUsdK>0?fmtAmt(it.teamUsdK,it.teamAdaK):'—'};
   } else {
-    amtFn=function(it){return fmtAmt(it.allUsdK)};
+    amtFn=function(it){return fmtAmt(it.allUsdK,it.allAdaK)};
   }
   renderTreeMap(scroll,arr,'ppl',function(item){return item.name},function(item){return nameHue(item.name)},
     D.proposerCount+' '+(LANG==='ja'?'提案者':'proposers'),null,amtFn,60);
@@ -771,7 +776,7 @@ function renderTreeMap(scroll,items,prefix,labelFn,hueFn,rootSub,subFn,amtFn,opt
   root.className='da-map-root';
   root.style.cssText='left:'+rootX+'px;top:'+rootY+'px;width:'+rootW+'px;height:'+rootH+'px';
   root.innerHTML='<div class="da-mr-name">Catalyst Japan</div>'
-    +'<div class="da-mr-meta"><span class="da-mr-num">'+rootSub+'</span><em>·</em><span class="da-mr-num">'+fmtAmt(D.totalUsdK)+'</span></div>'
+    +'<div class="da-mr-meta"><span class="da-mr-num">'+rootSub+'</span><em>·</em><span class="da-mr-num">'+fmtAmt(D.totalUsdK,D.totalAdaK)+'</span></div>'
     +'<div class="da-mr-leg">'
     +'<span><i style="background:'+stColor('complete')+'"></i>'+D.totalCompleted+'</span>'
     +'<span><i style="background:'+stColor('progress')+'"></i>'+D.totalProgress+'</span>'
@@ -789,7 +794,7 @@ function renderTreeMap(scroll,items,prefix,labelFn,hueFn,rootSub,subFn,amtFn,opt
     var btn=document.createElement('button');
     btn.className='da-map-node'+(isOpen?' open':'');
     btn.style.cssText='left:'+cardX+'px;top:'+pos.y+'px;width:'+cardW+'px;height:'+cardH+'px;border-left-color:hsl('+hue+' 50% '+(NIGHT?60:44)+'%);transition:top 0.25s cubic-bezier(0.2,0.8,0.2,1)';
-    var _amt=amtFn?amtFn(it):fmtAmt(it.usdK);
+    var _amt=amtFn?amtFn(it):fmtAmt(it.usdK,it.adaK);
     var _sub=subFn?subFn(it):it.proposals.length+' '+t('proposals');
     btn.innerHTML='<div class="da-mn-row"><span class="da-mn-name">'+esc(label)+'</span><span class="da-mn-amt">'+_amt+'</span></div>'
       +'<div class="da-mn-row da-mn-row-sub"><span class="da-mn-count">'+_sub+'</span><span class="da-mn-chev">'+(isOpen?'▾':'›')+'</span></div>'
@@ -816,7 +821,7 @@ function renderTreeMap(scroll,items,prefix,labelFn,hueFn,rootSub,subFn,amtFn,opt
       var btn=document.createElement('button');
       btn.className='da-map-prop';
       btn.style.cssText='left:'+pX+'px;top:'+py+'px;width:'+pW+'px;height:'+pCardH+'px;border-left-color:'+stColor(p.st);
-      btn.innerHTML='<div class="da-mp-row"><span class="da-mp-title">'+esc(propTitle(p))+'</span><span class="da-mp-amt">'+fmtAmt(pUsdK(p))+'</span></div>'
+      btn.innerHTML='<div class="da-mp-row"><span class="da-mp-title">'+esc(propTitle(p))+'</span><span class="da-mp-amt">'+fmtAmt(pUsdK(p),pAdaK(p))+'</span></div>'
         +'<div class="da-mp-row da-mp-row-sub">'+(p.by?'<span class="da-mp-by">'+esc(p.by)+'</span>':'')+(p.fund?'<span class="da-mp-fund">F'+p.fund+'</span>':'')+'</div>';
       btn.addEventListener('click',function(e){e.stopPropagation();openSheet(p)});
       canvas.appendChild(btn);
@@ -971,7 +976,7 @@ function renderTimeline(scroll){
     var py=propsStartY+i*(pCardH+pGap);
     var btn=document.createElement('button');btn.className='da-map-prop';
     btn.style.cssText='left:'+pX+'px;top:'+py+'px;width:'+pW+'px;height:'+pCardH+'px;border-left-color:'+stColor(p.st);
-    btn.innerHTML='<div class="da-mp-row"><span class="da-mp-title">'+esc(propTitle(p))+'</span><span class="da-mp-amt">'+fmtAmt(pUsdK(p))+'</span></div>'
+    btn.innerHTML='<div class="da-mp-row"><span class="da-mp-title">'+esc(propTitle(p))+'</span><span class="da-mp-amt">'+fmtAmt(pUsdK(p),pAdaK(p))+'</span></div>'
       +'<div class="da-mp-row da-mp-row-sub"><span class="da-mp-fund" style="background:transparent;color:var(--muted);font-weight:600">F'+p.fund+'</span><span class="da-mp-by">'+esc(secName({ja:p.sectorJa,label:p.sectorLabel}))+'</span></div>';
     btn.addEventListener('click',function(e){e.stopPropagation();openSheet(p)});
     canvas.appendChild(btn);
@@ -1045,7 +1050,7 @@ function _mobileMakeProposalRow(p){
   head.innerHTML='<span style="display:inline-block;width:18px;height:18px;border-radius:3px;background:'+stCol+';color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+stLbl+'</span>'
     +'<div style="flex:1;min-width:0">'
     +'<div style="font-size:12px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.labelJa||p.label)+_mobileFlagChips(p)+'</div>'
-    +'<div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">F'+(p.fund||'?')+' · '+esc(p.by||'未確認')+' · '+fmtAmt(pUsdK(p))+'</div>'
+    +'<div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">F'+(p.fund||'?')+' · '+esc(p.by||'未確認')+' · '+fmtAmt(pUsdK(p),pAdaK(p))+'</div>'
     +'</div>';
   row.appendChild(head);
   var expanded=null;
@@ -2191,7 +2196,7 @@ function _updateRelSelection(){
   b+='<div class="da-relnet-section-label">'+(LANG==='ja'?'関連する提案':'Proposals')+' <em>· '+selProps.length+'</em></div><div class="da-relnet-props">';
   selProps.forEach(function(p){
     b+='<button class="da-relnet-prop" data-pid="'+p.id+'"><span class="da-rnp-bar" style="background:'+stColor(p.st)+'"></span>'
-      +'<span class="da-rnp-title">'+esc(propTitle(p))+'</span><span class="da-rnp-amt">'+fmtAmt(pUsdK(p))+'</span></button>';
+      +'<span class="da-rnp-title">'+esc(propTitle(p))+'</span><span class="da-rnp-amt">'+fmtAmt(pUsdK(p),pAdaK(p))+'</span></button>';
   });
   b+='</div>';
   bodyDiv.innerHTML=b;
@@ -2239,7 +2244,7 @@ function buildRow(p){
     +'<div class="da-row-title">'+esc(propTitle(p))+'</div>'
     +'<div class="da-row-meta">'+by+cls+fund+'</div>'
     +'</div>'
-    +'<div class="da-row-amt"><div class="da-row-amt-big">'+fmtAmt(pUsdK(p))+'</div></div>';
+    +'<div class="da-row-amt"><div class="da-row-amt-big">'+fmtAmt(pUsdK(p),pAdaK(p))+'</div></div>';
   btn.addEventListener('click',function(e){
     e.stopPropagation();
     openSheet(p);
@@ -2400,7 +2405,7 @@ function openSheet(p){
   var amtMain=p.u==='ada'?p.amt+(p.amt>=1000?'K':'')+'K ₳':fmtAmt(pUsdK(p),'usd');
   var amtSub=fmtAmt(pUsdK(p),CURRENCY==='ada'?'usd':'ada');
   var amts='<div class="cj-d-amts">'
-    +'<span class="cj-d-amt-big">'+fmtAmt(pUsdK(p))+'</span>'
+    +'<span class="cj-d-amt-big">'+fmtAmt(pUsdK(p),pAdaK(p))+'</span>'
     +'<span class="cj-d-amt-sub">'+amtSub+'</span>'
     +'</div>';
 
