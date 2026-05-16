@@ -1105,9 +1105,36 @@ function _mobileMakeProposalRow(p){
     var MS=window.CJ_MILESTONES||{};
     var ms=MS[p.id];
     if(!ms||!ms.length){
+      /* Pre-MS proposals (F2-F9): show estimated lump-sum payment at fund result date */
+      if(p.fund<10){
+        var FRD=(D&&D.FUND_RESULT_DATES)||{};
+        var frdStr=FRD[p.fund];
+        var adaK=Math.round(p.u==='ada'?p.amt:p.amt/(p.adaPrice||0.5));
+        expanded=document.createElement('div');
+        expanded.style.cssText='display:flex;align-items:center;gap:8px;padding:4px 4px 10px';
+        var dateLbl='—';
+        if(frdStr){
+          var fp=frdStr.split('-'); /* DD-MM-YYYY */
+          dateLbl=fp[2].substring(2)+'/'+fp[1];
+        }
+        var stIsComplete=p.st==='complete';
+        var tile=document.createElement('div');
+        tile.style.cssText='flex:0 0 auto;min-width:64px;padding:4px 8px;background:'+(stIsComplete?'rgba(91,138,240,0.15)':'var(--dim)')+';border:1px dashed '+(stIsComplete?'rgba(91,138,240,0.5)':'var(--border)')+';border-radius:5px;text-align:center';
+        tile.innerHTML=
+          '<div style="font-size:14px;font-weight:600;color:'+(stIsComplete?'#5b8af0':'var(--muted)')+';line-height:1.1">①</div>'
+          +'<div style="font-family:var(--mono);font-size:9px;color:var(--ink);margin-top:2px;font-weight:500">₳'+adaK+'K</div>'
+          +'<div style="font-size:8px;color:var(--muted);margin-top:1px">'+dateLbl+'</div>';
+        expanded.appendChild(tile);
+        var note=document.createElement('div');
+        note.style.cssText='font-family:var(--mono);font-size:8px;color:var(--muted);opacity:0.6;letter-spacing:0.04em';
+        note.textContent=LANG==='ja'?'推定 (F2-F9 MS制度前 / 採択時一括)':'Estimate (pre-MS lump-sum at result)';
+        expanded.appendChild(note);
+        row.appendChild(expanded);
+        return;
+      }
       expanded=document.createElement('div');
       expanded.style.cssText='padding:4px 8px 8px;font-family:var(--mono);font-size:9px;color:var(--muted)';
-      expanded.textContent=p.fund<10?'MS制度前 (F2-F9)':'MS データなし';
+      expanded.textContent='MS データなし';
       row.appendChild(expanded);
       return;
     }
