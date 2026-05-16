@@ -287,6 +287,7 @@ html.night .da-relnet-prop{background:#0c0d10}
 </head>
 <body>
 <script src="data.js"></script>
+<script src="descriptions.js"></script>
 <script>
 'use strict';
 /* ================================================================
@@ -347,7 +348,17 @@ function t(k){
     searchPh:{ja:'タイトル・提案者・分野…',en:'Title, proposer, sector…'},
     noResults:{ja:'該当なし',en:'No results'},
     challenge:{ja:'チャレンジ',en:'Challenge'},
-    fund:{ja:'Fund',en:'Fund'}
+    fund:{ja:'Fund',en:'Fund'},
+    proposalInfo:{ja:'提案情報',en:'Proposal Info'},
+    problem:{ja:'課題',en:'Problem'},
+    solutionLabel:{ja:'解決策',en:'Solution'},
+    propCount:{ja:'提案',en:'Props'},
+    totalLabel:{ja:'総額',en:'Total'},
+    soloLabel:{ja:'単独',en:'Solo'},
+    coLabel:{ja:'共同',en:'Co'},
+    otherProps:{ja:'他の提案',en:'Other Proposals'},
+    openInExplorer:{ja:'Catalyst Explorer で詳細を見る',en:'View on Catalyst Explorer'},
+    disclaimer:{ja:'※ データは Catalyst Explorer / projectcatalyst.io に基づく事実の記録です。投資助言ではありません。本サイトは非公式コミュニティプロジェクトで、IOG・Cardano Foundation・EMURGO とは無関係です。',en:'* Data based on Catalyst Explorer / projectcatalyst.io. Not investment advice. Unofficial community project, not affiliated with IOG, Cardano Foundation, or EMURGO.'}
   };
   return dict[k]?dict[k][LANG==='ja'?'ja':'en']:k;
 }
@@ -2466,27 +2477,86 @@ function openSheet(p){
   var body=document.createElement('div');
   body.className='cj-sheet-body';
 
-  /* Proposer */
+  /* Challenge */
+  if(p.ch){
+    body.innerHTML+='<div class="cj-d-section">'
+      +'<div class="cj-d-label">'+t('challenge')+'</div>'
+      +'<div style="font-size:13px;line-height:1.5;color:var(--ink)">'+esc(p.ch)+'</div>'
+      +'</div>';
+  }
+
+  /* Proposer + stats + other proposals (compact) */
   if(p.by){
     var initial=p.by.charAt(0).toUpperCase();
     var hue=nameHue(p.by);
+    /* compute stats from INDUSTRIES */
+    var pAllCount=0,pTotalUsd=0,pSolo=0,pCo=0,otherProps=[];
+    D.INDUSTRIES.forEach(function(ind){
+      ind.children.forEach(function(op){
+        if(op.by===p.by){
+          pAllCount++;
+          var adaP2=op.adaPrice||0.5;
+          pTotalUsd+=(op.u==='ada'?op.amt*adaP2:op.amt);
+          if(op.cls==='co') pCo++; else pSolo++;
+          if(op.id!==p.id) otherProps.push(op);
+        }
+      });
+    });
+    var statsLine='';
+    if(pAllCount>1){
+      statsLine='<div style="margin-top:6px;font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.6">'
+        +t('propCount')+' <b style="color:var(--ink)">'+pAllCount+'</b>'
+        +' · '+t('totalLabel')+' <b style="color:var(--ink)">'+fmtAmt(pTotalUsd,pTotalUsd/(ADA_USD||0.5))+'</b>';
+      if(pSolo>0) statsLine+=' · '+t('soloLabel')+' <b style="color:var(--ink)">'+pSolo+'</b>';
+      if(pCo>0) statsLine+=' · '+t('coLabel')+' <b style="color:var(--ink)">'+pCo+'</b>';
+      statsLine+='</div>';
+    }
     body.innerHTML+='<div class="cj-d-section">'
       +'<div class="cj-d-label">'+t('proposer')+'</div>'
       +'<div class="cj-d-by">'
       +'<div class="cj-avatar" style="background:hsl('+hue+' 30% '+(NIGHT?25:90)+'%);color:hsl('+hue+' 50% '+(NIGHT?70:40)+'%)">'+initial+'</div>'
-      +'<div><div class="cj-d-by-name">'+esc(p.by)+'</div>'
+      +'<div style="flex:1;min-width:0"><div class="cj-d-by-name">'+esc(p.by)+'</div>'
       +'<div class="cj-d-by-role">'+(p.role||t('proposer'))+'</div></div>'
-      +'</div></div>';
+      +'</div>'+statsLine
+      +'</div>';
+    /* Other proposals (compact list, max 4) */
+    if(otherProps.length>0){
+      var oHtml='<div class="cj-d-section" style="margin-top:-6px"><div class="cj-d-label">'+t('otherProps')+' ('+otherProps.length+')</div>'
+        +'<div style="max-height:140px;overflow-y:auto;display:flex;flex-direction:column;gap:4px">';
+      otherProps.slice(0,8).forEach(function(op){
+        var stCol=op.st==='complete'?'#3d8b6e':op.st==='progress'?'#c49b2a':'#b85450';
+        oHtml+='<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;background:var(--dim);border-radius:4px;font-size:11px">'
+          +'<span style="width:5px;height:5px;border-radius:50%;background:'+stCol+';flex-shrink:0"></span>'
+          +'<span style="flex:1;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(op.label||'')+'</span>'
+          +'<span style="font-family:var(--mono);font-size:9px;color:var(--muted);flex-shrink:0">F'+(op.fund||'?')+'</span>'
+          +'</div>';
+      });
+      oHtml+='</div></div>';
+      body.innerHTML+=oHtml;
+    }
   }
 
   /* Team */
   if(p.team&&p.team.length){
-    var teamHtml='<div class="cj-d-section"><div class="cj-d-label">'+t('team')+'</div><div class="cj-team-tags">';
+    var teamHtml='<div class="cj-d-section"><div class="cj-d-label">'+t('team')+' ('+p.team.length+')</div><div class="cj-team-tags">';
     p.team.forEach(function(tm){
       teamHtml+='<span class="cj-team-tag"><b>'+esc(tm.name)+'</b><em>'+esc(tm.role)+'</em></span>';
     });
     teamHtml+='</div></div>';
     body.innerHTML+=teamHtml;
+  }
+
+  /* Problem / Solution from PDESC */
+  var pd=(window.PDESC&&window.PDESC[p.id])?window.PDESC[p.id]:null;
+  if(pd){
+    if(pd.p){
+      body.innerHTML+='<div class="cj-d-section"><div class="cj-d-label">'+t('problem')+'</div>'
+        +'<div style="font-size:12px;line-height:1.55;color:var(--ink)">'+esc(pd.p)+'</div></div>';
+    }
+    if(pd.s){
+      body.innerHTML+='<div class="cj-d-section"><div class="cj-d-label">'+t('solutionLabel')+'</div>'
+        +'<div style="font-size:12px;line-height:1.55;color:var(--ink)">'+esc(pd.s)+'</div></div>';
+    }
   }
 
   /* Links */
@@ -2496,27 +2566,27 @@ function openSheet(p){
     if(p.url) linkHtml+='<a class="cj-link-pill" href="'+p.url+'" target="_blank" rel="noopener">› Web</a>';
     if(p.x) linkHtml+='<a class="cj-link-pill" href="'+p.x+'" target="_blank" rel="noopener">› X</a>';
     if(p.yt) linkHtml+='<a class="cj-link-pill" href="'+p.yt+'" target="_blank" rel="noopener">› YouTube</a>';
-    if(p.report){
-      var ceUrl='https://catalystexplorer.com/proposals?search='+encodeURIComponent(p.label);
-      linkHtml+='<a class="cj-link-pill" href="'+ceUrl+'" target="_blank" rel="noopener">› Explorer</a>';
-    }
     linkHtml+='</div></div>';
     body.innerHTML+=linkHtml;
   }
+
+  /* Disclaimer */
+  body.innerHTML+='<div style="margin-top:8px;font-size:9px;color:var(--muted);opacity:0.55;line-height:1.5">'+t('disclaimer')+'</div>';
+
   sheet.appendChild(body);
 
-  /* Footer */
+  /* Footer — Catalyst Explorer link (replaces LENS) */
   var foot=document.createElement('div');
   foot.className='cj-sheet-foot';
-  var askBtn=document.createElement('button');
-  askBtn.className='cj-ask-btn';
-  askBtn.innerHTML='✨ '+t('askLens');
-  askBtn.addEventListener('click',function(){
-    /* AI Lens placeholder — could link to external service */
-    var ceUrl='https://catalystexplorer.com/proposals?search='+encodeURIComponent(p.label);
-    window.open(ceUrl,'_blank');
-  });
-  foot.appendChild(askBtn);
+  var explorerBtn=document.createElement('a');
+  explorerBtn.className='cj-ask-btn';
+  explorerBtn.style.textDecoration='none';
+  var ceUrl=(pd&&pd.u)?pd.u:('https://catalystexplorer.com/proposals?search='+encodeURIComponent(p.label||''));
+  explorerBtn.href=ceUrl;
+  explorerBtn.target='_blank';
+  explorerBtn.rel='noopener';
+  explorerBtn.innerHTML='→ '+t('openInExplorer');
+  foot.appendChild(explorerBtn);
   sheet.appendChild(foot);
 
   backdrop.appendChild(sheet);
