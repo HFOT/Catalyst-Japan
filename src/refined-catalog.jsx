@@ -3242,10 +3242,10 @@ function PosterListItem({ p, onOpenPanelView }) {
       onClick={handleClick}
       style={{
         display: 'grid',
-        /* thumb | title (flex) | team | status+fund | links (incl. report icon) | amount | PANEL VIEW
-           — rightmost column is the prominent white pulsing panel-view trigger,
-           visually unified with the grid card's bottom-right CTA. */
-        gridTemplateColumns: '176px minmax(0, 1fr) 90px 140px 230px 110px 86px',
+        /* thumb | title (flex) | team | status+fund | links | amount | REPORT | PANEL VIEW
+           — completion report keeps its own column with the prominent green badge,
+           and the panel-view trigger sits as the very rightmost CTA (pulsing white). */
+        gridTemplateColumns: '176px minmax(0, 1fr) 90px 140px 210px 110px 130px 86px',
         gap: 0, alignItems: 'stretch',
         padding: '10px 14px 10px 10px',
         borderRadius: 10,
@@ -3347,13 +3347,13 @@ function PosterListItem({ p, onOpenPanelView }) {
         </div>
       </Cell>
 
-      {/* === COL: Links (now includes the completion report icon — no more separate column) === */}
-      <Cell width={230} align="flex-start">
+      {/* === COL: Links (report stays in its own dedicated column to the right) === */}
+      <Cell width={210} align="flex-start">
         <div
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 26 }}
           onClick={(e) => e.stopPropagation()}
         >
-          <LinkIconStrip p={p} />
+          <LinkIconStrip p={p} hideReport />
         </div>
       </Cell>
 
@@ -3372,8 +3372,41 @@ function PosterListItem({ p, onOpenPanelView }) {
         </div>
       </Cell>
 
+      {/* === COL: Completion report — dedicated column with the prominent green badge ===
+          Stable position across rows; the column shows a "—" placeholder when no report,
+          so the panel-view CTA to the right always lines up. */}
+      <Cell width={130} align="flex-end">
+        {p.report && p.s === '完了' ? (
+          <a
+            href={p.report.url}
+            target="_blank" rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            title={lang === 'en' ? 'Completion Report' : '完了レポート'}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              height: 26, padding: '0 11px',
+              background: t.green ? (t.green + '22') : 'rgba(125,214,163,0.18)',
+              border: `1px solid ${t.green ? (t.green + '55') : 'rgba(125,214,163,0.42)'}`,
+              borderRadius: 999,
+              fontFamily: t.body, fontSize: 10, fontWeight: 700,
+              letterSpacing: '0.1em', textTransform: 'uppercase',
+              color: t.green || '#7dd6a3',
+              textDecoration: 'none',
+              whiteSpace: 'nowrap',
+            }}>
+            <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+              <path d="M2.5 1h4l2 2v5.5a.5.5 0 0 1-.5.5h-5.5a.5.5 0 0 1-.5-.5V1.5a.5.5 0 0 1 .5-.5Z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/>
+              <path d="M6 1v2.5h2.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span>{lang === 'en' ? 'Report' : '完了レポート'}</span>
+          </a>
+        ) : (
+          <span style={{ fontFamily: t.mono, fontSize: 10, color: t.inkMuted, opacity: 0.4 }}>—</span>
+        )}
+      </Cell>
+
       {/* === COL: BIG Panel-View trigger — white pulsing button, matches the grid card's CTA ===
-          Visually unifies the catalog's "open one proposal across every view" affordance. */}
+          Sits as the absolute rightmost cell, AFTER the report column. */}
       <Cell width={86} align="center" last noDivider>
         <button
           onClick={(e) => { e.stopPropagation(); if (onOpenPanelView) onOpenPanelView(p.id); }}
