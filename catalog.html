@@ -4,6 +4,12 @@
 <meta charset="utf-8" />
 <title>Catalyst Japan Catalog — Refined</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+<!-- Cache directives: ensure the HTML itself is always re-fetched so reloads land on
+     the latest deploy without users having to hard-refresh. GH Pages can't set HTTP
+     headers, so the meta tags + per-asset cache-bust below are our only lever. -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Serif+JP:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -36,11 +42,20 @@
   ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 </style>
 
-<!-- Real data (built by the existing Catalyst Japan pipeline) -->
-<script src="data.js"></script>
-<script src="descriptions.js"></script>
-<script src="proposal-meta.js"></script>
-<script src="unlisted.js"></script>
+<!-- Cache-bust: every page load gets a fresh ?v=<ts> appended to every LOCAL script.
+     The browser sees a never-before-seen URL each time and bypasses its disk cache —
+     so reloads always pull the freshest data.js / *.jsx / unlisted.js without any
+     manual hard-refresh. document.write keeps the original execution order intact
+     (PROPOSALS depends on data.js loading first, refined-catalog.jsx depends on
+     catalog-data.jsx, etc.). CDN libs (React, Babel) keep their normal caching
+     since their URLs are already version-pinned. -->
+<script>window.__V='?v='+Date.now();</script>
+<script>
+  document.write('<script src="data.js'+__V+'"><\/script>');
+  document.write('<script src="descriptions.js'+__V+'"><\/script>');
+  document.write('<script src="proposal-meta.js'+__V+'"><\/script>');
+  document.write('<script src="unlisted.js'+__V+'"><\/script>');
+</script>
 
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
@@ -49,9 +64,11 @@
 <body>
 <div id="root"></div>
 
-<!-- catalog-data.jsx — adapted to read real data and expose PROPOSALS / FUND_ORDER / FUND_COUNTS / atoms -->
-<script type="text/babel" src="src/catalog-data.jsx"></script>
-<script type="text/babel" src="src/refined-catalog.jsx"></script>
+<!-- JSX sources get the same cache-bust treatment so design iterations always show on reload -->
+<script>
+  document.write('<script type="text/babel" src="src/catalog-data.jsx'+__V+'"><\/script>');
+  document.write('<script type="text/babel" src="src/refined-catalog.jsx'+__V+'"><\/script>');
+</script>
 
 <script type="text/babel">
   const root = ReactDOM.createRoot(document.getElementById('root'));
