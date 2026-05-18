@@ -217,6 +217,10 @@ function buildProposals() {
         proposer: p.by || '—',
         initials: makeInitials(p.by || sectorPrefix),
         amount: formatAdaK(adaK),
+        /* Reference to the raw INDUSTRIES proposal — keeps .amt/.u/.adaPrice live so the
+           catalog's amount component can reformat in JPY/USD/ADA and pick up host's
+           price-mode mutations (recalcAll() updates adaPrice on the same object). */
+        _raw: p,
         media: !!(meta && (_hasVideo || meta.slides && meta.slides.length || meta.pdf && meta.pdf.length || meta.site)),
         hasVideo: _hasVideo,
         /* Unlisted videos: keep the URL but skip the thumbnail so we can show a notice instead */

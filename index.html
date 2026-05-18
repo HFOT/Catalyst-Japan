@@ -3090,8 +3090,9 @@ function renderCatalog(){
   var f=document.getElementById('catalog-frame');
   if(!f)return;
   if(!f.getAttribute('src')){
-    /* Lazy load with current theme + lang baked into the URL so first render matches host */
-    var initSrc='catalog.html?embed=1&theme='+(typeof NIGHT!=='undefined'&&NIGHT?'dark':'light')+'&lang='+(typeof _lang!=='undefined'?_lang:'ja');
+    /* Lazy load with current theme + lang + currency baked into the URL so first render matches host */
+    var _initCur=(typeof _curMode==='function'?_curMode():'ada');
+    var initSrc='catalog.html?embed=1&theme='+(typeof NIGHT!=='undefined'&&NIGHT?'dark':'light')+'&lang='+(typeof _lang!=='undefined'?_lang:'ja')+'&currency='+_initCur;
     f.setAttribute('src',initSrc);
   }
   f.style.display='block';
@@ -3895,6 +3896,8 @@ function buildShell(){
       cl.onclick=function(e){
         e.stopPropagation();
         _amtMode=mode;
+        /* Sync to embedded catalog iframe — its AAdaAmount reformats live. */
+        postToCatalog({type:'currency-change',value:mode});
         buildShell();if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else if(viewMode==='chart')renderChart();else render();
       };
       curTog.appendChild(cl);
@@ -8150,6 +8153,9 @@ function recalcAll(){
 /* 価格モード切替 */
 function setPriceMode(mode){
   _priceMode=mode;recalcAll();buildShell();
+  /* recalcAll() has mutated INDUSTRIES (p.adaPrice on each proposal). Notify the catalog
+     iframe so its amount components re-read from p._raw and reflect the new prices. */
+  postToCatalog({type:'price-mode-change',value:mode});
   if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else if(viewMode==='chart')renderChart();else render();
 }
 

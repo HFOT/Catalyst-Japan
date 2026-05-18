@@ -268,8 +268,57 @@ function AAvatar({ initials, hue, size = 22 }) {
   );
 }
 
-function AAdaAmount({ amount, size = 14, color }) {
+/* ---------- Currency + price-mode contexts ----------
+   Host's view-bar (index.html) posts {type:'currency-change'} and
+   {type:'price-mode-change'} messages; the App listens, updates these
+   contexts, and AAdaAmount reformats on the fly. */
+const CurrencyContext = createCtx('ada');  // 'ada' | 'usd' | 'jpy'
+const useCurrency = () => useCtx(CurrencyContext);
+/* Bumped on price-mode change to force AAdaAmount to re-read p._raw.adaPrice
+   (which the host mutates via recalcAll() before posting the message). */
+const PriceTickContext = createCtx(0);
+const usePriceTick = () => useCtx(PriceTickContext);
+
+const USD_JPY = 150;  // rough conversion for display; host uses the same constant
+
+function _fmtUsdK(usdK) {
+  if (!usdK || usdK <= 0) return '—';
+  if (usdK >= 1000) return ((usdK/1000).toFixed(usdK >= 10000 ? 0 : 1).replace(/\.0$/, '')) + 'M';
+  if (usdK >= 100)  return Math.round(usdK) + 'K';
+  return usdK.toFixed(usdK >= 10 ? 0 : 1).replace(/\.0$/, '') + 'K';
+}
+function _fmtJpyFromUsdK(usdK) {
+  if (!usdK || usdK <= 0) return '—';
+  const yen = usdK * 1000 * USD_JPY;
+  if (yen >= 1e8) return (yen / 1e8).toFixed(yen >= 1e9 ? 0 : 1).replace(/\.0$/, '') + '億';
+  if (yen >= 1e4) return Math.round(yen / 1e4) + '万';
+  return Math.round(yen).toLocaleString();
+}
+function _fmtAdaK(adaK) {
+  if (!adaK || adaK <= 0) return '—';
+  if (adaK >= 1000) return (adaK / 1000).toFixed(adaK >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'M';
+  if (adaK >= 100)  return Math.round(adaK) + 'K';
+  return adaK.toFixed(adaK >= 10 ? 0 : 1).replace(/\.0$/, '') + 'K';
+}
+
+function AAdaAmount({ raw, amount, size = 14, color }) {
   const t = useT();
+  const currency = useCurrency();
+  /* eslint-disable-next-line no-unused-vars */
+  const _tick = usePriceTick();  // dep only — re-reads raw.adaPrice on host price-mode change
+  let symbol = '₳', display;
+  if (raw) {
+    /* Live-read amt/u/adaPrice from the INDUSTRIES reference so price-mode mutations show through */
+    const adaPrice = raw.adaPrice || 0.5;
+    const adaK = raw.u === 'ada' ? raw.amt : raw.amt / adaPrice;
+    const usdK = raw.u === 'ada' ? raw.amt * adaPrice : raw.amt;
+    if (currency === 'usd')      { symbol = '$'; display = _fmtUsdK(usdK); }
+    else if (currency === 'jpy') { symbol = '¥'; display = _fmtJpyFromUsdK(usdK); }
+    else                          { symbol = '₳'; display = _fmtAdaK(adaK); }
+  } else {
+    /* Legacy fallback: caller didn't pass raw → just render the pre-formatted ADA string */
+    display = amount;
+  }
   return (
     <span style={{
       fontFamily: t.mono, fontSize: size, fontWeight: 500,
@@ -277,7 +326,7 @@ function AAdaAmount({ amount, size = 14, color }) {
       letterSpacing: '-0.01em',
       display: 'inline-flex', alignItems: 'baseline', gap: 3,
     }}>
-      <span style={{ color: color === '#fff' ? 'rgba(255,255,255,0.8)' : t.inkDim, fontSize: size * 0.78 }}>₳</span>{amount}
+      <span style={{ color: color === '#fff' ? 'rgba(255,255,255,0.8)' : t.inkDim, fontSize: size * 0.78 }}>{symbol}</span>{display}
     </span>
   );
 }
@@ -2866,7 +2915,7 @@ function HeroCard({ p }) {
             <AStatusDot status={p.s} size={6} />
             <span style={{ fontWeight: 500 }}>{p.s}</span>
             <span style={{ opacity: 0.5 }}>·</span>
-            <AAdaAmount amount={p.amount} size={14} color="#fff" />
+            <AAdaAmount raw={p._raw} amount={p.amount} size={14} color="#fff" />
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
@@ -3121,7 +3170,7 @@ function PosterCard({ p, size = 'md', fluid = false, onOpenPanelView }) {
             fontFamily: t.mono, fontSize: 10, color: t.inkMuted,
             letterSpacing: '0.12em', textTransform: 'uppercase',
           }}>{lang === 'en' ? 'Awarded' : '採択額'}</span>
-          <AAdaAmount amount={p.amount} size={14} color={t.ink} />
+          <AAdaAmount raw={p._raw} amount={p.amount} size={14} color={t.ink} />
         </div>
 
         {/* Team avatars + related count */}
@@ -3365,7 +3414,7 @@ function PosterListItem({ p, onOpenPanelView }) {
             letterSpacing: '0.14em', textTransform: 'uppercase',
             color: t.inkMuted, lineHeight: 1,
           }}>{lang === 'en' ? 'Awarded' : '採択額'}</span>
-          <AAdaAmount amount={p.amount} size={14} color={t.ink} />
+          <AAdaAmount raw={p._raw} amount={p.amount} size={14} color={t.ink} />
         </div>
       </Cell>
 
@@ -6261,23 +6310,30 @@ function FundEras() {
 // ---------- App ----------
 
 function RefinedCatalogApp() {
-  /* Pick up theme + lang from URL params when launched embedded inside index.html.
-     Falls back to dark / ja when standalone. */
+  /* Pick up theme + lang + currency from URL params when launched embedded inside index.html.
+     Falls back to dark / ja / ada when standalone. */
   const initParams = (() => {
     try {
       const p = new URLSearchParams(window.location.search);
+      const cur = p.get('currency');
       return {
         theme: p.get('theme') === 'light' ? 'light' : 'dark',
         lang:  p.get('lang')  === 'en'    ? 'en'    : 'ja',
+        currency: cur === 'usd' ? 'usd' : cur === 'jpy' ? 'jpy' : 'ada',
       };
-    } catch (e) { return { theme: 'dark', lang: 'ja' }; }
+    } catch (e) { return { theme: 'dark', lang: 'ja', currency: 'ada' }; }
   })();
 
   const [themeMode, setThemeMode] = useStateR(initParams.theme);
   const [lang, setLang] = useStateR(initParams.lang);
+  /* Currency mode for amount display — synced from host's ¥/$/₳ toggle via postMessage.
+     priceTick bumps whenever the host posts a price-mode-change message: AAdaAmount reads
+     it as a context value so it re-renders and picks up the freshly-mutated p._raw.adaPrice. */
+  const [currency, setCurrency] = useStateR(initParams.currency);  // 'ada' | 'usd' | 'jpy'
+  const [priceTick, setPriceTick] = useStateR(0);
   const t = themeMode === 'light' ? LIGHT : DARK;
 
-  /* Listen for theme / lang changes sent from the host (index.html) via postMessage */
+  /* Listen for theme / lang / currency / price-mode changes sent from the host via postMessage */
   React.useEffect(() => {
     function onMsg(e) {
       if (!e || !e.data || typeof e.data !== 'object') return;
@@ -6285,6 +6341,13 @@ function RefinedCatalogApp() {
         setThemeMode(e.data.dark ? 'dark' : 'light');
       } else if (e.data.type === 'lang-change') {
         setLang(e.data.lang === 'en' ? 'en' : 'ja');
+      } else if (e.data.type === 'currency-change') {
+        const v = e.data.value;
+        setCurrency(v === 'usd' ? 'usd' : v === 'jpy' ? 'jpy' : 'ada');
+      } else if (e.data.type === 'price-mode-change') {
+        /* Host has already mutated INDUSTRIES (recalcAll updates p.adaPrice on each proposal
+           in place). Bumping the tick re-runs AAdaAmount which reads adaPrice live from p._raw. */
+        setPriceTick(t => t + 1);
       }
     }
     window.addEventListener('message', onMsg);
@@ -6343,6 +6406,8 @@ function RefinedCatalogApp() {
   return (
     <ThemeContext.Provider value={t}>
     <LangContext.Provider value={lang}>
+    <CurrencyContext.Provider value={currency}>
+    <PriceTickContext.Provider value={priceTick}>
       <div style={{
         /* Use 100% of parent (#root). catalog.html sizes #root to 125vw × 125vh and scales it
            by 0.8 — so #root visually fills the viewport. Anchoring this div with 100vh would
@@ -6433,6 +6498,8 @@ function RefinedCatalogApp() {
       <GuideWalkthroughModal show={showGuide} onClose={() => setShowGuide(false)} lang={lang} />
       {/* Panel view — 5 live iframes of every view at once, opened from FindInViewMenu */}
       <PanelViewModal show={!!panelProposal} proposal={panelProposal} onClose={() => setPanelProposalId(null)} lang={lang} />
+    </PriceTickContext.Provider>
+    </CurrencyContext.Provider>
     </LangContext.Provider>
     </ThemeContext.Provider>
   );
