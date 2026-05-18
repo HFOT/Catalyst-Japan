@@ -1894,7 +1894,9 @@ function openInLens(p){
   panel.style.setProperty('--c',c);
   document.getElementById('ct-d-dot').style.background=c;
   document.getElementById('ct-d-ent').textContent=(p.by||'').toUpperCase();
-  document.getElementById('ct-d-title').textContent=pLabel(p)||'';
+  /* Title + per-proposal status flags inline (END/💧/⚠️/⏳/↔️/⌚/2-3-4) so the lens
+     surface mirrors what the chart's left list shows. */
+  document.getElementById('ct-d-title').innerHTML=esc(pLabel(p)||'')+_renderMiniFlags(p);
   document.getElementById('ct-d-amt').innerHTML=fmtDual(p.amt,p.u,p.adaPrice);
   document.getElementById('ct-d-usd').textContent='';
 
@@ -4594,9 +4596,13 @@ function renderChart(){
       stDot.style.cssText='width:8px;height:8px;border-radius:50%;background:'+stColor(c.st);
       row.appendChild(stDot);
       var info=document.createElement('div');info.className='ch-list-info';
-      var nm=document.createElement('div');nm.className='ch-list-name';nm.textContent=pLabel(c);
+      /* Name + per-proposal status flags inline (END/💧/⚠️/⏳/↔️/⌚/2-3-4) */
+      var nm=document.createElement('div');nm.className='ch-list-name';
+      nm.innerHTML=esc(pLabel(c))+_renderMiniFlags(c);
+      /* Sub line uses innerHTML because fmtDual() returns <span class="amt-sub">…</span>
+         markup; textContent would escape the tags (caused raw HTML to show in the list). */
       var sub=document.createElement('div');sub.className='ch-list-sub';
-      sub.textContent='F'+(c.fund||'?')+' · '+fmtDual(c.amt,c.u,c.adaPrice);
+      sub.innerHTML='F'+(c.fund||'?')+' · '+fmtDual(c.amt,c.u,c.adaPrice);
       info.appendChild(nm);info.appendChild(sub);row.appendChild(info);
       row.onclick=function(){
         _chartSelectedProposal=pr;
