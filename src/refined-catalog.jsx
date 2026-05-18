@@ -3242,10 +3242,10 @@ function PosterListItem({ p, onOpenPanelView }) {
       onClick={handleClick}
       style={{
         display: 'grid',
-        /* thumb | title (flex) | team | status+fund | links | amount | REPORT | PANEL VIEW
-           — completion report keeps its own column with the prominent green badge,
-           and the panel-view trigger sits as the very rightmost CTA (pulsing white). */
-        gridTemplateColumns: '176px minmax(0, 1fr) 90px 140px 210px 110px 130px 86px',
+        /* thumb | title-block (flex) | team | links | amount | REPORT | PANEL VIEW
+           — status pill + fund chip moved INTO the title block (above the title),
+           freeing horizontal space and pairing them with the proposal context. */
+        gridTemplateColumns: '176px minmax(0, 1fr) 90px 210px 110px 130px 86px',
         gap: 0, alignItems: 'stretch',
         padding: '10px 14px 10px 10px',
         borderRadius: 10,
@@ -3297,12 +3297,17 @@ function PosterListItem({ p, onOpenPanelView }) {
         )}
       </div>
 
-      {/* Title + proposer + category — bumped to be the row's primary read */}
+      {/* Title block — status pill + fund chip on top, then big title, then category · proposer */}
       <div style={{
         minWidth: 0, display: 'flex', flexDirection: 'column', gap: 5,
         justifyContent: 'center',
         padding: '0 12px 0 14px',
       }}>
+        {/* Status + Fund — sit above the title for at-a-glance triage */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <AStatusPill status={p.s} />
+          <AFundChip fund={p.f} />
+        </div>
         <div style={{
           fontFamily: t.display, fontSize: 17, fontWeight: 700,
           color: t.ink, letterSpacing: '-0.02em', lineHeight: 1.25,
@@ -3337,14 +3342,6 @@ function PosterListItem({ p, onOpenPanelView }) {
         ) : (
           <span style={{ fontFamily: t.mono, fontSize: 10, color: t.inkMuted, opacity: 0.5 }}>—</span>
         )}
-      </Cell>
-
-      {/* === COL: Status + Fund === */}
-      <Cell width={140} align="flex-start">
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <AStatusPill status={p.s} />
-          <AFundChip fund={p.f} />
-        </div>
       </Cell>
 
       {/* === COL: Links (report stays in its own dedicated column to the right) === */}
