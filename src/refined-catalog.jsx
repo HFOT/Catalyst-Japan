@@ -3229,12 +3229,12 @@ function PosterListItem({ p, onOpenPanelView }) {
   };
   /* Cell wrapper used by the right-side columns — stretches to row height so the
      left-side divider line spans full height (table-style), content vertically centered. */
-  const Cell = ({ children, width, align = 'flex-start', last = false }) => (
+  const Cell = ({ children, width, align = 'flex-start', last = false, noDivider = false }) => (
     <div style={{
       width, flexShrink: 0, alignSelf: 'stretch',
       display: 'flex', alignItems: 'center', justifyContent: align,
       padding: last ? '0 0 0 12px' : '0 12px',
-      borderLeft: `1px solid ${t.hairline}`,
+      borderLeft: noDivider ? 'none' : `1px solid ${t.hairline}`,
     }}>{children}</div>
   );
   return (
@@ -3242,9 +3242,10 @@ function PosterListItem({ p, onOpenPanelView }) {
       onClick={handleClick}
       style={{
         display: 'grid',
-        /* thumb | title (flex) | team | status+fund | links | amount | report
-           — all right cells are fixed-width so columns line up across rows */
-        gridTemplateColumns: '176px minmax(0, 1fr) 78px 140px 210px 110px 130px',
+        /* thumb | title (flex) | team | status+fund | links (incl. report icon) | amount | PANEL VIEW
+           — rightmost column is the prominent white pulsing panel-view trigger,
+           visually unified with the grid card's bottom-right CTA. */
+        gridTemplateColumns: '176px minmax(0, 1fr) 90px 140px 230px 110px 86px',
         gap: 0, alignItems: 'stretch',
         padding: '10px 14px 10px 10px',
         borderRadius: 10,
@@ -3296,24 +3297,24 @@ function PosterListItem({ p, onOpenPanelView }) {
         )}
       </div>
 
-      {/* Title + proposer + category (team avatars now have their own column) */}
+      {/* Title + proposer + category — bumped to be the row's primary read */}
       <div style={{
-        minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4,
+        minWidth: 0, display: 'flex', flexDirection: 'column', gap: 5,
         justifyContent: 'center',
         padding: '0 12px 0 14px',
       }}>
         <div style={{
-          fontFamily: t.display, fontSize: 14.5, fontWeight: 700,
-          color: t.ink, letterSpacing: '-0.015em', lineHeight: 1.3,
+          fontFamily: t.display, fontSize: 17, fontWeight: 700,
+          color: t.ink, letterSpacing: '-0.02em', lineHeight: 1.25,
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>{displayTitle}</div>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 8,
-          fontFamily: t.body, fontSize: 11.5, color: t.inkDim,
+          fontFamily: t.body, fontSize: 12, color: t.inkDim,
           minWidth: 0,
         }}>
           <span style={{
-            fontFamily: t.body, fontSize: 9.5, fontWeight: 700,
+            fontFamily: t.body, fontSize: 10, fontWeight: 700,
             letterSpacing: '0.1em', textTransform: 'uppercase',
             color: (t.cat && t.cat[p.cat]) || t.inkMuted,
             flexShrink: 0,
@@ -3323,13 +3324,13 @@ function PosterListItem({ p, onOpenPanelView }) {
         </div>
       </div>
 
-      {/* === COL: Team (avatars + count) === */}
-      <Cell width={78} align="flex-start">
+      {/* === COL: Team — bigger avatars (22px) within the same row height === */}
+      <Cell width={90} align="flex-start">
         {p.team && p.team.length > 1 ? (
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-            <ATeamStack people={p.team} size={18} max={3} />
+            <ATeamStack people={p.team} size={22} max={3} />
             <span style={{
-              fontFamily: t.mono, fontSize: 10, fontWeight: 600,
+              fontFamily: t.mono, fontSize: 11, fontWeight: 600,
               color: t.inkMuted, letterSpacing: '0.02em',
             }}>+{p.team.length - 1}</span>
           </div>
@@ -3346,14 +3347,13 @@ function PosterListItem({ p, onOpenPanelView }) {
         </div>
       </Cell>
 
-      {/* === COL: Links === */}
-      <Cell width={210} align="flex-start">
+      {/* === COL: Links (now includes the completion report icon — no more separate column) === */}
+      <Cell width={230} align="flex-start">
         <div
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, minWidth: 26 }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 26 }}
           onClick={(e) => e.stopPropagation()}
         >
-          <LinkIconStrip p={p} hideReport />
-          <FindInViewMenu proposalId={p.id} lang={lang} onOpenPanelView={onOpenPanelView} />
+          <LinkIconStrip p={p} />
         </div>
       </Cell>
 
@@ -3372,35 +3372,34 @@ function PosterListItem({ p, onOpenPanelView }) {
         </div>
       </Cell>
 
-      {/* === COL: Completion report (always present so the column position is stable) === */}
-      <Cell width={130} align="flex-end" last>
-        {p.report && p.s === '完了' ? (
-          <a
-            href={p.report.url}
-            target="_blank" rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            title={lang === 'en' ? 'Completion Report' : '完了レポート'}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              height: 26, padding: '0 11px',
-              background: t.green ? (t.green + '22') : 'rgba(125,214,163,0.18)',
-              border: `1px solid ${t.green ? (t.green + '55') : 'rgba(125,214,163,0.42)'}`,
-              borderRadius: 999,
-              fontFamily: t.body, fontSize: 10, fontWeight: 700,
-              letterSpacing: '0.1em', textTransform: 'uppercase',
-              color: t.green || '#7dd6a3',
-              textDecoration: 'none',
-              whiteSpace: 'nowrap',
-            }}>
-            <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
-              <path d="M2.5 1h4l2 2v5.5a.5.5 0 0 1-.5.5h-5.5a.5.5 0 0 1-.5-.5V1.5a.5.5 0 0 1 .5-.5Z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/>
-              <path d="M6 1v2.5h2.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span>{lang === 'en' ? 'Report' : '完了レポート'}</span>
-          </a>
-        ) : (
-          <span style={{ fontFamily: t.mono, fontSize: 10, color: t.inkMuted, opacity: 0.4 }}>—</span>
-        )}
+      {/* === COL: BIG Panel-View trigger — white pulsing button, matches the grid card's CTA ===
+          Visually unifies the catalog's "open one proposal across every view" affordance. */}
+      <Cell width={86} align="center" last noDivider>
+        <button
+          onClick={(e) => { e.stopPropagation(); if (onOpenPanelView) onOpenPanelView(p.id); }}
+          title={lang === 'en' ? 'Open in panel view (1 proposal across all views)' : 'パネルビューで開く (1提案を全ビュー同時表示)'}
+          style={{
+            width: 56, height: 44,
+            padding: 0,
+            background: '#fff',
+            border: 'none',
+            borderRadius: 8,
+            color: '#0a0a0c',
+            cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            animation: 'pv-trigger-pulse 1.8s ease-in-out infinite',
+            transition: 'transform .15s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.06)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; }}
+        >
+          <svg width="20" height="20" viewBox="0 0 12 12" fill="none">
+            <rect x="1.2" y="1.2" width="4" height="4" rx="0.7" stroke="currentColor" strokeWidth="1.4"/>
+            <rect x="6.8" y="1.2" width="4" height="4" rx="0.7" stroke="currentColor" strokeWidth="1.4"/>
+            <rect x="1.2" y="6.8" width="4" height="4" rx="0.7" stroke="currentColor" strokeWidth="1.4"/>
+            <rect x="6.8" y="6.8" width="4" height="4" rx="0.7" stroke="currentColor" strokeWidth="1.4"/>
+          </svg>
+        </button>
       </Cell>
     </div>
   );
