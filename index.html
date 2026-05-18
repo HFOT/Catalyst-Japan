@@ -3058,7 +3058,10 @@ var PROPOSER_STATS=(function(){
 var vis=new Set(['root']);  // expanded node IDs — start with L1 open
 var filterSec=null; // sector filter
 var filterBy=null;  // proposer filter
-var viewMode='sector'; // 'sector' | 'proposer' | 'timeline' | 'network' | 'chart' | 'catalog'
+/* Default view = catalog: the catalog is the recommended entry point — the cinematic
+   hero and proposal cards give first-time visitors the most context-rich landing.
+   ?view=<sector|account|timeline|network|chart|catalog> in the URL overrides this default. */
+var viewMode='catalog'; // 'sector' | 'proposer' | 'timeline' | 'network' | 'chart' | 'catalog'
 /* DEV mode: enable ?dev=1 in URL to unlock in-development features (currently: カタログ tab) */
 var DEV_MODE=false;
 try{ DEV_MODE=new URLSearchParams(location.search).get('dev')==='1'; }catch(e){}
