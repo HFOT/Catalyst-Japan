@@ -1,3 +1,4 @@
-
-catalog.html
-src/
+# Old src drafts not referenced by catalog.html in production.
+# (catalog.html only loads src/catalog-data.jsx + src/refined-catalog.jsx.)
+src/catalog-shell.jsx
+src/catalog-views.jsx

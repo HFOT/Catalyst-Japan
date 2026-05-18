@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<title>Catalyst Japan Catalog — Refined</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Serif+JP:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  html { background: #000; margin: 0; padding: 0; height: 100%; overflow-y: hidden; overflow-x: auto; }
+  body { background: #000; margin: 0; padding: 0; height: 100%; overflow-y: hidden; overflow-x: auto; }
+  /* The catalog was originally designed at ~80% browser zoom. We lock the visual scale to 80%
+     using transform:scale on the root wrapper. transform (unlike `zoom`) creates a containing
+     block for position:fixed descendants — so the Panel View modal and other fixed overlays
+     still cover the full visible area instead of being clipped to 80%. Width/height are 125%
+     so that after the 0.8 scale the wrapper visually fills the viewport exactly. */
+  #root {
+    position: absolute;
+    top: 0; left: 0;
+    width: 125vw;
+    height: 125vh;
+    transform: scale(0.8);
+    transform-origin: top left;
+    min-width: 1350px;  /* 1080 / 0.8 — preserves the design's 1080px minimum visually */
+    font-family: 'Geist', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    color: #fff;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  * { box-sizing: border-box; }
+  button { font-family: inherit; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+</style>
+
+<!-- Real data (built by the existing Catalyst Japan pipeline) -->
+<script src="data.js"></script>
+<script src="descriptions.js"></script>
+<script src="proposal-meta.js"></script>
+<script src="unlisted.js"></script>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- catalog-data.jsx — adapted to read real data and expose PROPOSALS / FUND_ORDER / FUND_COUNTS / atoms -->
+<script type="text/babel" src="src/catalog-data.jsx"></script>
+<script type="text/babel" src="src/refined-catalog.jsx"></script>
+
+<script type="text/babel">
+  const root = ReactDOM.createRoot(document.getElementById('root'));
+  root.render(<RefinedCatalogApp />);
+</script>
+</body>
+</html>
