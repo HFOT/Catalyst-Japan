@@ -410,6 +410,206 @@ html.night .sort-hl{color:#fff!important;font-weight:500;text-shadow:none}
 }
 .pm-toggle-label.active{color:var(--bar-text-a);font-weight:700;background:rgba(255,255,255,0.1)}
 
+/* ============================================================
+   UNIFIED DOCK SKIN — matches catalog.html RemoteBar exactly.
+   Dark single-capsule with white-on-black active pills.
+   Override block — uses !important to win over per-component rules.
+   ============================================================ */
+.view-bar{
+  background:#0d0d10 !important;
+  border:1px solid rgba(255,245,225,0.07) !important;
+  border-radius:12px !important;
+  padding:3px 6px !important;
+  box-shadow:0 6px 24px rgba(0,0,0,0.45),0 0 0 1px rgba(0,0,0,0.4) !important;
+  backdrop-filter:none !important;
+}
+.view-bar-main{
+  display:flex !important;align-items:center !important;
+  gap:5px !important;
+  /* Ensure consistent vertical rhythm across all children */
+  min-height:32px !important;
+}
+.view-modes{display:inline-flex !important;align-items:center !important;gap:2px !important;width:auto !important}
+
+/* === Primary view tabs (incl. catalog) === */
+.view-modes .view-bar-btn,
+.view-bar-btn{
+  display:inline-flex !important;align-items:center !important;justify-content:center !important;
+  padding:5px 12px !important;
+  height:24px !important;
+  border-radius:999px !important;
+  font-family:'Inter','Noto Sans JP',sans-serif !important;
+  font-size:12px !important;
+  letter-spacing:0.005em !important;
+  font-weight:500 !important;
+  line-height:1 !important;
+  color:#85827b !important;
+  background:transparent !important;
+  white-space:nowrap !important;
+  transition:background .15s,color .15s !important;
+}
+.view-bar-btn:hover{color:#f5f1e8 !important;background:transparent !important}
+.view-bar-btn.active{
+  color:#0a0a0c !important;
+  background:#f5f1e8 !important;
+  font-weight:700 !important;
+}
+.view-bar-sep{
+  width:1px !important;height:16px !important;
+  background:rgba(255,245,225,0.10) !important;
+  margin:0 5px !important;
+}
+
+/* === Toggle groups (currency / language / price-mode) === */
+.cur-toggle,
+.lang-toggle,
+.price-mode-toggle{
+  display:inline-flex !important;align-items:center !important;
+  height:26px !important;
+  background:#1c1c1f !important;
+  border:none !important;
+  border-radius:999px !important;
+  padding:2px !important;
+  margin-left:0 !important;
+  gap:2px !important;
+  position:relative !important;
+}
+/* Hide the legacy sliding-pill backdrop — active label gets its own background */
+.cur-toggle-pill,
+.lang-toggle-pill{display:none !important}
+
+.cur-toggle-label,
+.lang-toggle-label,
+.pm-toggle-label{
+  display:inline-flex !important;align-items:center !important;justify-content:center !important;
+  height:22px !important;
+  padding:0 11px !important;
+  border-radius:999px !important;
+  font-family:'Inter','Noto Sans JP',sans-serif !important;
+  font-size:11.5px !important;
+  font-weight:500 !important;
+  letter-spacing:0.005em !important;
+  line-height:1 !important;
+  color:#85827b !important;
+  background:transparent !important;
+  transition:background .15s,color .15s !important;
+  min-width:auto !important;
+  cursor:pointer !important;
+}
+.cur-toggle-label{font-family:'JetBrains Mono',monospace !important;font-size:12.5px !important;padding:0 11px !important;min-width:26px !important}
+.lang-toggle-label{font-family:'JetBrains Mono',monospace !important;font-size:10.5px !important;letter-spacing:0.06em !important;min-width:28px !important}
+.pm-toggle-label{font-size:11.5px !important;padding:0 10px !important}
+.cur-toggle-label.active,
+.lang-toggle-label.active,
+.pm-toggle-label.active{
+  color:#0a0a0c !important;
+  background:#f5f1e8 !important;
+  font-weight:700 !important;
+}
+.cur-toggle-label:hover,
+.lang-toggle-label:hover,
+.pm-toggle-label:hover{color:#f5f1e8 !important}
+.cur-toggle-label.active:hover,
+.lang-toggle-label.active:hover,
+.pm-toggle-label.active:hover{color:#0a0a0c !important}
+
+/* === Zoom controls — circular ± + thin slider + label === */
+.zoom-ctrl{
+  display:inline-flex !important;align-items:center !important;
+  gap:5px !important;margin-left:2px !important;padding:0 3px !important;
+}
+.zoom-btn{
+  width:20px !important;height:20px !important;
+  border-radius:50% !important;
+  color:#85827b !important;
+  background:transparent !important;
+  font-size:14px !important;font-weight:600 !important;line-height:1 !important;
+  display:inline-flex !important;align-items:center !important;justify-content:center !important;
+  transition:background .15s,color .15s !important;
+  border:none !important;cursor:pointer !important;
+}
+.zoom-btn:hover{color:#f5f1e8 !important;background:#2a2a2f !important}
+.zoom-range{
+  width:70px !important;height:3px !important;
+  background:#1c1c1f !important;
+  border-radius:2px !important;
+  -webkit-appearance:none !important;appearance:none !important;
+  outline:none !important;cursor:pointer !important;margin:0 !important;
+}
+.zoom-range::-webkit-slider-thumb{
+  -webkit-appearance:none !important;
+  width:9px !important;height:9px !important;border-radius:50% !important;
+  background:#f5f1e8 !important;
+  border:2px solid #0d0d10 !important;
+  box-shadow:0 1px 3px rgba(0,0,0,0.5) !important;
+}
+.zoom-note{
+  font-family:'JetBrains Mono',monospace !important;
+  font-size:9px !important;
+  color:#5a5852 !important;
+  letter-spacing:0.05em !important;
+  margin-left:3px !important;opacity:1 !important;
+  white-space:nowrap !important;
+}
+
+/* === Theme + Settings — circular icon buttons matching the catalog's RemoteBar === */
+/* Shared style: theme toggle (.rb-icon-btn) and legacy gear (.api-gear) — same look */
+.api-gear,
+.rb-icon-btn{
+  width:26px !important;height:26px !important;
+  padding:0 !important;
+  border-radius:50% !important;
+  border:none !important;
+  background:transparent !important;
+  color:#85827b !important;
+  font-size:13px !important;
+  margin-left:2px !important;
+  cursor:pointer !important;
+  display:inline-flex !important;align-items:center !important;justify-content:center !important;
+  transition:background .15s,color .15s !important;
+}
+.api-gear:hover,
+.rb-icon-btn:hover{
+  color:#f5f1e8 !important;
+  background:#2a2a2f !important;
+  border-color:transparent !important;
+}
+
+/* === Sort row beneath the main row (timeline/network secondary controls) === */
+.view-bar-sort{
+  border-top:1px solid rgba(255,245,225,0.07) !important;
+  margin-top:6px !important;padding-top:6px !important;
+}
+.view-bar-sort-label{
+  color:#5a5852 !important;
+  font-family:'JetBrains Mono',monospace !important;
+  font-size:9.5px !important;letter-spacing:0.06em !important;opacity:1 !important;
+}
+.sort-group{
+  background:#1c1c1f !important;
+  border:none !important;
+  border-radius:999px !important;
+  padding:3px !important;
+}
+.sort-btn{
+  padding:4px 11px !important;
+  border-radius:999px !important;
+  color:#85827b !important;
+  background:transparent !important;
+  font-family:'JetBrains Mono',monospace !important;
+  font-size:10.5px !important;
+  line-height:1 !important;
+}
+.sort-btn:hover{color:#f5f1e8 !important}
+.sort-btn.active{color:#0a0a0c !important;background:#f5f1e8 !important;font-weight:700 !important}
+
+/* === Catalog mode — no sidebar, so re-center the floating view-bar to the full viewport === */
+body.mode-catalog .view-bar{
+  left:50% !important;
+  transform:translateX(-50%) !important;
+}
+body.mode-catalog .disc-bar{display:none !important}
+
 /* Nodes */
 .node{
   position:absolute;left:0;top:0;
@@ -1040,7 +1240,12 @@ html.night .cls-bridge{background:hsl(30 35% 22%);color:hsl(30 55% 75%);border:n
 .nw-node-g.hi .nw-nc{stroke-width:2.8;filter:drop-shadow(0 0 16px var(--c,var(--accent)))}
 .nw-node-g.hi .nw-halo{opacity:0.25}
 .nw-node-g.hi .nw-label,.nw-node-g.hi .nw-sub{opacity:1}
-.nw-node-g.sel .nw-nc{stroke-width:3.2;filter:drop-shadow(0 0 20px var(--c,var(--accent)))}
+.nw-node-g.sel .nw-nc{
+  stroke-width:4;
+  filter:drop-shadow(0 0 28px var(--c,var(--accent))) drop-shadow(0 0 14px rgba(255,255,255,0.4));
+}
+.nw-node-g.sel .nw-halo{opacity:0.55}
+.nw-node-g.sel .nw-label,.nw-node-g.sel .nw-sub{opacity:1;font-weight:700}
 .nw-node-g.sel .nw-halo{opacity:0.35}
 .nw-nc{
   fill:var(--paper,#161A21);stroke:var(--c,var(--border));stroke-width:2;
@@ -1391,6 +1596,10 @@ html.night .cls-bridge{background:hsl(30 35% 22%);color:hsl(30 55% 75%);border:n
   </div>
 </div>
 <div id="root"></div>
+<!-- Catalog view (integrated as iframe; hidden until viewMode='catalog')
+     Starts below the floating view-bar so the dock stays fully visible. -->
+<iframe id="catalog-frame" title="Catalog"
+  style="display:none;position:fixed;top:60px;left:0;width:100%;height:calc(100% - 60px);border:0;background:#000;z-index:80"></iframe>
 <div class="disc-bar" id="disc-bar"></div>
 <script>
 /* ================================================================
@@ -1401,6 +1610,13 @@ var COL=520, ROW=52, GAP=3, DUR=350;
 
 /* ---- Night mode ---- */
 var NIGHT=(function(){
+  /* URL param wins over everything — lets the catalog deep-link into a specific theme
+     (e.g. catalog tabs / panel-view iframes pass ?theme=light when the user is in light mode) */
+  try{
+    var qp=new URLSearchParams(location.search).get('theme');
+    if(qp==='light') return false;
+    if(qp==='dark')  return true;
+  }catch(e){}
   /* User's explicit preference takes priority */
   try{
     var pref=localStorage.getItem('cj-theme');
@@ -1473,7 +1689,15 @@ function fmtDual(v,u,adaP){
   return main+'<span class="amt-sub">'+sub+'</span>';
 }
 /* ---- i18n ---- */
-var _lang='jp';
+/* URL ?lang= wins on first load so deep-links from the catalog land in the right language. */
+var _lang=(function(){
+  try{
+    var qp=new URLSearchParams(location.search).get('lang');
+    if(qp==='en') return 'en';
+    if(qp==='jp'||qp==='ja') return 'jp';
+  }catch(e){}
+  return 'jp';
+})();
 var _i18n={
   complete:{ja:'完了',en:'Completed'},progress:{ja:'進行中',en:'In Progress'},dnf:{ja:'中止',en:'Discontinued'},
   main:{ja:'メイン',en:'Main'},co:{ja:'共同提案者',en:'Co-proposer'},bridge:{ja:'仲介',en:'Bridge'},
@@ -2808,7 +3032,327 @@ var PROPOSER_STATS=(function(){
 var vis=new Set(['root']);  // expanded node IDs — start with L1 open
 var filterSec=null; // sector filter
 var filterBy=null;  // proposer filter
-var viewMode='sector'; // 'sector' or 'proposer'
+var viewMode='sector'; // 'sector' | 'proposer' | 'timeline' | 'network' | 'chart' | 'catalog'
+/* DEV mode: enable ?dev=1 in URL to unlock in-development features (currently: カタログ tab) */
+var DEV_MODE=false;
+try{ DEV_MODE=new URLSearchParams(location.search).get('dev')==='1'; }catch(e){}
+/* PANEL mode: ?panel=1 — slim chrome (no dock, no disc-bar). Used when this page is loaded as
+   one of the 5 iframes inside the catalog's PanelView. */
+var PANEL_MODE=false;
+try{ PANEL_MODE=new URLSearchParams(location.search).get('panel')==='1'; }catch(e){}
+if(PANEL_MODE){
+  document.documentElement.classList.add('panel-mode');
+  /* Inject CSS to suppress chrome */
+  var __pms=document.createElement('style');
+  __pms.textContent='html.panel-mode .view-bar{display:none !important}'+
+    'html.panel-mode .disc-bar{display:none !important}'+
+    'html.panel-mode #api-modal-overlay{display:none !important}';
+  document.head.appendChild(__pms);
+}
+/* URL deeplink: ?view=sector|proposer|timeline|network|chart|catalog */
+try{
+  var _qv=new URLSearchParams(location.search).get('view');
+  var _viewMap={sector:'sector',account:'proposer',proposer:'proposer',timeline:'timeline',network:'network',chart:'chart',catalog:'catalog'};
+  if(_qv&&_viewMap[_qv])viewMode=_viewMap[_qv];
+}catch(e){}
+
+/* ---- Catalog view (integrated iframe) ---- */
+function renderCatalog(){
+  var f=document.getElementById('catalog-frame');
+  if(!f)return;
+  if(!f.getAttribute('src')){
+    /* Lazy load with current theme + lang baked into the URL so first render matches host */
+    var initSrc='catalog.html?embed=1&theme='+(typeof NIGHT!=='undefined'&&NIGHT?'dark':'light')+'&lang='+(typeof _lang!=='undefined'?_lang:'ja');
+    f.setAttribute('src',initSrc);
+  }
+  f.style.display='block';
+  document.getElementById('root').style.visibility='hidden'; /* hide the SPA canvas underneath */
+  /* Hide the bottom disclaimer bar — the catalog has its own clean footer */
+  var db=document.getElementById('disc-bar'); if(db)db.style.display='none';
+  /* Catalog has no sidebar — re-center the floating view-bar over the full viewport */
+  document.body.classList.add('mode-catalog');
+  try{document.body.style.overflow='hidden';}catch(e){}
+}
+function hideCatalog(){
+  var f=document.getElementById('catalog-frame');
+  if(f)f.style.display='none';
+  document.getElementById('root').style.visibility='';
+  var db=document.getElementById('disc-bar'); if(db)db.style.display='';
+  document.body.classList.remove('mode-catalog');
+  try{document.body.style.overflow='';}catch(e){}
+}
+/* Send a message to the embedded catalog iframe (no-op if not loaded yet) */
+function postToCatalog(msg){
+  try{
+    var f=document.getElementById('catalog-frame');
+    if(f&&f.contentWindow)f.contentWindow.postMessage(msg,'*');
+  }catch(e){}
+}
+
+/* === Catalog → host: "find this proposal in another view" === */
+var _catalogHighlightId=null; /* set when navigating from catalog with a target proposal */
+window.addEventListener('message', function(e){
+  if(!e||!e.data||typeof e.data!=='object') return;
+  var d=e.data;
+
+  /* === Shared controls broadcast from PanelView — only respond in PANEL_MODE === */
+  if(PANEL_MODE){
+    var rerender=false;
+    if(d.type==='panel-set-currency' && d.value){
+      try{ if(typeof _amtMode!=='undefined') _amtMode=d.value; }catch(err){}
+      rerender=true;
+    } else if(d.type==='panel-set-price-mode' && d.value){
+      try{ if(typeof setPriceMode==='function'){ setPriceMode(d.value); return; } }catch(err){}
+      try{ _priceMode=d.value; }catch(err){}
+      rerender=true;
+    } else if(d.type==='panel-set-lang' && d.value){
+      try{ _lang=(d.value==='en'?'en':'jp'); }catch(err){}
+      rerender=true;
+    } else if(d.type==='panel-set-theme'){
+      try{
+        NIGHT=!!d.dark;
+        if(NIGHT) document.documentElement.classList.add('night');
+        else document.documentElement.classList.remove('night');
+      }catch(err){}
+      rerender=true;
+    }
+    if(rerender){
+      try{
+        buildShell();
+        if(viewMode==='catalog')renderCatalog();
+        else if(viewMode==='network')renderNetwork();
+        else if(viewMode==='timeline')renderTimeline();
+        else if(viewMode==='chart')renderChart();
+        else render();
+        /* re-apply highlight after re-render */
+        if(_catalogHighlightId) setTimeout(function(){ try{ focusOnProposal(_catalogHighlightId); }catch(e){} }, 200);
+      }catch(err){}
+      return;
+    }
+  }
+
+  if(d.type==='navigate-to-view'){
+    var v=d.view, hid=d.highlightId;
+    var map={sector:'sector',account:'proposer',proposer:'proposer',timeline:'timeline',network:'network',chart:'chart'};
+    var target=map[v]; if(!target) return;
+    _catalogHighlightId=hid||null;
+    viewMode=target;
+    filterSec=null; filterBy=null;
+    /* Restore host chrome in case we're leaving Panel View — defensive: navigate-to-view
+       may fire from within the Panel View modal (e.g. via a deep link). */
+    var _vb=document.getElementById('view-bar'); if(_vb) _vb.style.display='';
+    var _f=document.getElementById('catalog-frame'); if(_f){ _f.style.top='60px'; _f.style.height='calc(100% - 60px)'; }
+    hideCatalog();
+    buildShell();
+    if(target==='network')renderNetwork();
+    else if(target==='timeline')renderTimeline();
+    else if(target==='chart')renderChart();
+    else{render(); centerView();}
+    showBackToCatalog();
+    /* Focus the view on the target (expand trees, select network node) then pulse */
+    setTimeout(function(){ try{ focusOnProposal(hid); }catch(err){} }, 350);
+  }
+
+  /* === Panel View takeover: when the catalog opens its Panel View modal it asks the host to
+     hide the view-bar and expand the iframe to full viewport. Panel View has its own controls
+     dock, so the host chrome would be redundant clutter on top of it. === */
+  if(d.type==='panel-view-open'){
+    var vb=document.getElementById('view-bar'); if(vb) vb.style.display='none';
+    var f=document.getElementById('catalog-frame'); if(f){ f.style.top='0'; f.style.height='100%'; }
+  } else if(d.type==='panel-view-close'){
+    var vb2=document.getElementById('view-bar'); if(vb2) vb2.style.display='';
+    var f2=document.getElementById('catalog-frame'); if(f2){ f2.style.top='60px'; f2.style.height='calc(100% - 60px)'; }
+  }
+});
+
+/* Floating "← back to catalog" button that appears after a navigate-to-view jump */
+function showBackToCatalog(){
+  var existing=document.getElementById('back-to-catalog-btn');
+  if(existing) return;
+  var btn=document.createElement('button');
+  btn.id='back-to-catalog-btn';
+  btn.textContent=(_lang!=='en'?'← カタログに戻る':'← Back to Catalog');
+  btn.style.cssText='position:fixed;top:62px;right:18px;z-index:200;'+
+    'padding:8px 14px;border:1px solid rgba(255,245,225,0.22);'+
+    'background:#0d0d10;color:#f5f1e8;border-radius:999px;cursor:pointer;'+
+    "font-family:'Inter','Noto Sans JP',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.02em;"+
+    'box-shadow:0 6px 22px rgba(0,0,0,0.5);transition:background .15s,border-color .15s;';
+  btn.onmouseenter=function(){btn.style.background='#1c1c1f';btn.style.borderColor='rgba(255,245,225,0.4)';};
+  btn.onmouseleave=function(){btn.style.background='#0d0d10';btn.style.borderColor='rgba(255,245,225,0.22)';};
+  btn.onclick=function(){
+    _catalogHighlightId=null;
+    viewMode='catalog';
+    filterSec=null;filterBy=null;
+    buildShell();
+    renderCatalog();
+    var b=document.getElementById('back-to-catalog-btn'); if(b)b.remove();
+  };
+  document.body.appendChild(btn);
+}
+
+/* Look up a proposal's context (sector id + proposer name).
+   Tries multiple sources because the local `INDUSTRIES` is what this page actually uses. */
+function _findProposalCtx(pid){
+  if(!pid) return null;
+  /* 1. Local INDUSTRIES (defined inline in this file) */
+  try{
+    if(typeof INDUSTRIES!=='undefined'&&INDUSTRIES){
+      for(var i=0;i<INDUSTRIES.length;i++){
+        for(var j=0;j<INDUSTRIES[i].children.length;j++){
+          var p=INDUSTRIES[i].children[j];
+          if(p.id===pid) return {sectorId:INDUSTRIES[i].id, proposer:p.by, fund:p.fund, p:p};
+        }
+      }
+    }
+  }catch(e){}
+  /* 2. Fall back to window.CJ_DATA if the host has it (e.g. catalog page) */
+  try{
+    if(window.CJ_DATA&&window.CJ_DATA.INDUSTRIES){
+      var ind=window.CJ_DATA.INDUSTRIES;
+      for(var i=0;i<ind.length;i++){
+        for(var j=0;j<ind[i].children.length;j++){
+          var p=ind[i].children[j];
+          if(p.id===pid) return {sectorId:ind[i].id, proposer:p.by, fund:p.fund, p:p};
+        }
+      }
+    }
+  }catch(e){}
+  return null;
+}
+
+/* Focus a specific view on a target proposal: pre-expand trees, select network node, etc.
+   Then trigger the pulse highlight via highlightCatalogTarget. */
+function focusOnProposal(pid){
+  var ctx=_findProposalCtx(pid);
+  if(!ctx){ highlightCatalogTarget(pid); return; }
+
+  if(viewMode==='sector'){
+    /* Expand the parent sector so the proposal leaf is visible, then pulse. */
+    try{
+      vis.add('root');
+      vis.add(ctx.sectorId);
+      render();
+      /* Wait for DOM to settle before centering on the new leaf */
+      setTimeout(function(){
+        var el=document.querySelector('[data-id="'+pid+'"]');
+        if(el){
+          /* Compute pan to bring leaf into view */
+          try{
+            var stage=document.getElementById('canvas-stage')||document.querySelector('.stage');
+            if(stage){
+              var r=el.getBoundingClientRect();
+              var sr=stage.getBoundingClientRect();
+              panX -= (r.left + r.width/2 - sr.left - sr.width/2);
+              panY -= (r.top  + r.height/2 - sr.top  - sr.height/2);
+              setTfm();
+            }
+          }catch(e){}
+          highlightCatalogTarget(pid);
+        }
+      }, 300);
+    }catch(e){ highlightCatalogTarget(pid); }
+  } else if(viewMode==='proposer'){
+    /* Two-step: first render with root expanded to populate by-X nodes,
+       then find the matching one by data-name attribute, expand it, render again. */
+    try{
+      vis.add('root');
+      render();
+      setTimeout(function(){
+        try{
+          var byNodes=document.querySelectorAll('.node[data-id^="by-"]');
+          var byId=null;
+          for(var k=0;k<byNodes.length;k++){
+            if(byNodes[k].getAttribute('data-name')===ctx.proposer){
+              byId=byNodes[k].getAttribute('data-id');
+              break;
+            }
+          }
+          if(byId){
+            vis.add(byId);
+            render();
+            setTimeout(function(){
+              var el=document.querySelector('[data-id="'+pid+'"]');
+              if(el){
+                try{
+                  var stage=document.getElementById('canvas-stage')||document.querySelector('.stage');
+                  if(stage){
+                    var r=el.getBoundingClientRect();
+                    var sr=stage.getBoundingClientRect();
+                    panX -= (r.left + r.width/2 - sr.left - sr.width/2);
+                    panY -= (r.top  + r.height/2 - sr.top  - sr.height/2);
+                    setTfm();
+                  }
+                }catch(e){}
+              }
+              highlightCatalogTarget(pid);
+            }, 250);
+          } else {
+            highlightCatalogTarget(pid);
+          }
+        }catch(e){ highlightCatalogTarget(pid); }
+      }, 200);
+    }catch(e){ highlightCatalogTarget(pid); }
+  } else if(viewMode==='network'){
+    /* Use the helper exposed by renderNetwork — selects the node + highlights its edges + dims the rest */
+    try{
+      if(typeof window._nwSelectByName==='function'){
+        /* Try a few times in case renderNetwork hasn't finished wiring up yet */
+        var tries=0;
+        var iv=setInterval(function(){
+          tries++;
+          if(typeof window._nwSelectByName==='function'){
+            window._nwSelectByName(ctx.proposer);
+            clearInterval(iv);
+          } else if(tries>10){ clearInterval(iv); }
+        }, 150);
+      }
+    }catch(e){}
+  } else if(viewMode==='timeline'){
+    /* Timeline cells carry data-pid; just scroll and pulse */
+    setTimeout(function(){ highlightCatalogTarget(pid); }, 200);
+  } else if(viewMode==='chart'){
+    /* Chart: nothing to pre-expand for MVP */
+    setTimeout(function(){ highlightCatalogTarget(pid); }, 200);
+  }
+}
+
+/* Best-effort: find the DOM element matching the proposal id and pulse it.
+   Pulse runs forever; cleared by the document click listener below. */
+function highlightCatalogTarget(hid){
+  if(!hid) return;
+  var sels=['[data-pid="'+hid+'"]','[data-id="'+hid+'"]','[data-proposal-id="'+hid+'"]'];
+  var el=null;
+  for(var i=0;i<sels.length;i++){ el=document.querySelector(sels[i]); if(el) break; }
+  if(!el) return;
+  el.scrollIntoView({behavior:'smooth', block:'center', inline:'center'});
+  if(!document.getElementById('catalog-pulse-style')){
+    var s=document.createElement('style'); s.id='catalog-pulse-style';
+    s.textContent='@keyframes catalog-pulse{0%,100%{box-shadow:0 0 0 0 rgba(212,160,74,0);outline:1px solid rgba(212,160,74,0);}50%{box-shadow:0 0 0 8px rgba(212,160,74,0.45),0 0 32px rgba(212,160,74,0.6);outline:3px solid rgba(212,160,74,0.95);}}';
+    document.head.appendChild(s);
+  }
+  el.classList.add('catalog-pulsing');
+  el.style.animation='catalog-pulse 1.4s ease-in-out infinite';
+}
+
+/* Stop all running highlight pulses (catalog / chart-row / nw-extra) on first user click.
+   Capture phase so it runs before bubble-phase handlers consume the click. */
+if(!window.__pulseStopWired){
+  window.__pulseStopWired=true;
+  document.addEventListener('click', function(){
+    try{
+      var sel=document.querySelectorAll('.catalog-pulsing, [style*="catalog-pulse"], [style*="chart-row-pulse"], [style*="nw-extra-pulse"]');
+      sel.forEach(function(n){ n.style.animation=''; n.classList.remove('catalog-pulsing'); });
+    }catch(e){}
+  }, true);
+}
+/* Rebuild iframe src with current theme/lang — forces a clean reload of the catalog.
+   Used as a fallback when the iframe might hold a stale build that lacks the message listener. */
+function refreshCatalogSrc(){
+  var f=document.getElementById('catalog-frame');
+  if(!f||!f.getAttribute('src'))return; /* not yet activated */
+  var newSrc='catalog.html?embed=1&theme='+(typeof NIGHT!=='undefined'&&NIGHT?'dark':'light')+'&lang='+(typeof _lang!=='undefined'?_lang:'ja');
+  f.setAttribute('src',newSrc);
+}
 var sortMode='';  // '' (default) | 'count' | 'solo' | 'co' | 'named' | 'total'
 var _igReturnTo=null; // {viewMode, filterBy, sortMode} — return point when toggling from tree to network
 var panX=0,panY=0,zoom=1;
@@ -2995,6 +3539,8 @@ function render(){
     el.className='node'+(n.depth===0?' root':n.depth===1?' l1':' l2')+clsCls;
     el.style.cssText='left:'+n.x+'px;top:'+n.y+'px;';
     el.setAttribute('data-id',n.id);
+    /* Expose label (e.g. proposer name for by-X nodes) as a queryable attribute */
+    if(n.label) el.setAttribute('data-name', n.label);
 
     var card=document.createElement('div');
     card.className='node-card'+(n.expanded?' expanded':'');
@@ -3249,11 +3795,62 @@ function buildShell(){
       var btn=document.createElement('button');
       btn.className='view-bar-btn'+(viewMode===m.key?' active':'');
       btn.textContent=_lang!=='en'?m.ja:m.en;
-      btn.onclick=function(){viewMode=m.key;filterSec=null;filterBy=null;vis.clear();vis.add('root');buildShell();
+      btn.onclick=function(){viewMode=m.key;filterSec=null;filterBy=null;vis.clear();vis.add('root');hideCatalog();buildShell();
         if(m.key==='network')renderNetwork();else if(m.key==='timeline')renderTimeline();else if(m.key==='chart')renderChart();else{render();centerView();}};
       modesWrap.appendChild(btn);
     })(modes[mi]);
   }
+  /* 6th view: カタログ — now public (no DEV gate).
+     Visually emphasized as the recommended view: blue→purple gradient ring + slow attention pulse,
+     so it stands out among the plain monochrome sibling tabs. */
+  (function(){
+    /* Inject the keyframes + gradient styles once (idempotent — guarded by an id).
+       The button uses a double-background trick (padding-box + border-box) to draw a
+       bright blue → purple gradient border that respects the rounded shape — plain
+       border-image breaks border-radius, and a single-color box-shadow can't gradient. */
+    if(!document.getElementById('catalog-recommend-style')){
+      var style=document.createElement('style');
+      style.id='catalog-recommend-style';
+      style.textContent=
+        '@keyframes catalog-recommend-pulse{'+
+        '  0%,100%{box-shadow:0 0 12px rgba(96,140,255,0.30),0 0 6px  rgba(170,100,255,0.20)}'+
+        '  50%   {box-shadow:0 0 26px rgba(96,140,255,0.55),0 0 14px rgba(170,100,255,0.45)}'+
+        '}'+
+        '.view-bar-btn.catalog-recommend{'+
+        '  position:relative;'+
+        '  box-sizing:border-box !important;'+ /* keep the same outer height as sibling tabs */
+        '  background:transparent !important;'+
+        '  background-image:linear-gradient(#0d0d10,#0d0d10),linear-gradient(135deg,#4d9fff,#b366ff) !important;'+
+        '  background-origin:border-box !important;'+
+        '  background-clip:padding-box,border-box !important;'+
+        '  border:1.5px solid transparent !important;'+
+        '  color:#f5f1e8 !important;'+
+        '  animation:catalog-recommend-pulse 2.4s ease-in-out infinite;'+
+        '}'+
+        '.view-bar-btn.catalog-recommend.active{'+
+        '  box-sizing:border-box !important;'+
+        '  background-image:linear-gradient(#f5f1e8,#f5f1e8),linear-gradient(135deg,#4d9fff,#b366ff) !important;'+
+        '  background-origin:border-box !important;'+
+        '  background-clip:padding-box,border-box !important;'+
+        '  border:1.5px solid transparent !important;'+
+        '  color:#0a0a0c !important;'+
+        '  animation:none;'+ /* stop pulsing once user is already there */
+        '}';
+      document.head.appendChild(style);
+    }
+    var catBtn=document.createElement('button');
+    catBtn.className='view-bar-btn catalog-recommend'+(viewMode==='catalog'?' active':'');
+    catBtn.title=_lang!=='en'?'カタログ（おすすめ）':'Catalog (recommended)';
+    var label=_lang!=='en'?'カタログ':'Catalog';
+    catBtn.textContent=label;
+    catBtn.onclick=function(){
+        viewMode='catalog';
+        filterSec=null;filterBy=null;
+        buildShell();
+        renderCatalog();
+      };
+      modesWrap.appendChild(catBtn);
+    })();
   mainRow.appendChild(modesWrap);
   /* currency toggle — pill style, inside bar */
   var curTog=document.createElement('div');curTog.className='cur-toggle';
@@ -3306,7 +3903,16 @@ function buildShell(){
       lbl.textContent=_langLabels[_langModes.indexOf(mode)];
       lbl.onclick=function(e){
         e.stopPropagation();
-        _lang=mode;buildShell();if(viewMode==='network')renderNetwork();else if(viewMode==='timeline')renderTimeline();else if(viewMode==='chart')renderChart();else render();
+        _lang=mode;
+        /* Sync to embedded catalog iframe via message — the catalog has a stable onMsg listener
+           that flips lang instantly without reloading (which would restart the 7-second cinema). */
+        postToCatalog({type:'lang-change',lang:mode==='jp'?'ja':'en'});
+        buildShell();
+        if(viewMode==='catalog'){/* iframe handles its own lang switch via the message above */}
+        else if(viewMode==='network')renderNetwork();
+        else if(viewMode==='timeline')renderTimeline();
+        else if(viewMode==='chart')renderChart();
+        else render();
       };
       toggle.appendChild(lbl);
     })(_langModes[li]);
@@ -3314,17 +3920,24 @@ function buildShell(){
   toggle.insertBefore(pill,toggle.firstChild);
   mainRow.appendChild(toggle);
   var nightBtn=document.createElement('button');
-  nightBtn.className='view-bar-btn';
-  nightBtn.style.cssText='font-size:13px;padding:4px 8px;min-width:28px';
-  nightBtn.textContent=NIGHT?'☀':'☾';
+  nightBtn.className='rb-icon-btn';
   nightBtn.title=NIGHT?'Light mode':'Dark mode';
+  nightBtn.setAttribute('aria-label','Toggle theme');
+  /* SVG icon matching the catalog's RemoteBar — sun when dark, moon when light. */
+  nightBtn.innerHTML=NIGHT
+    ?'<svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="pointer-events:none"><circle cx="7" cy="7" r="2.8" fill="currentColor"/><g stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><line x1="7" y1="1.5" x2="7" y2="3"/><line x1="7" y1="11" x2="7" y2="12.5"/><line x1="1.5" y1="7" x2="3" y2="7"/><line x1="11" y1="7" x2="12.5" y2="7"/></g></svg>'
+    :'<svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="pointer-events:none"><path d="M11 9C8 9 5 6 5 3a4 4 0 1 0 6 6Z" fill="currentColor"/></svg>';
   nightBtn.onclick=function(){
     NIGHT=!NIGHT;
     if(NIGHT)document.documentElement.classList.add('night');
     else document.documentElement.classList.remove('night');
     try{localStorage.setItem('cj-theme', NIGHT?'dark':'light');}catch(e){}
+    /* Sync to embedded catalog iframe via message — the catalog has a stable onMsg listener
+       that flips theme instantly without reloading (which would restart the 7-second cinema). */
+    postToCatalog({type:'theme-change',dark:NIGHT});
     buildShell();
-    if(viewMode==='network')renderNetwork();
+    if(viewMode==='catalog'){/* iframe handles its own theme switch via the message above */}
+    else if(viewMode==='network')renderNetwork();
     else if(viewMode==='timeline')renderTimeline();
     else if(viewMode==='chart')renderChart();
     else render();
@@ -3337,7 +3950,7 @@ function buildShell(){
   var zoomSlider=document.createElement('input');zoomSlider.type='range';zoomSlider.className='zoom-range';
   zoomSlider.min='20';zoomSlider.max='300';zoomSlider.value=String(Math.round(zoom*100));
   var zoomIn=document.createElement('button');zoomIn.className='zoom-btn';zoomIn.textContent='+';zoomIn.title='Zoom in';
-  var zoomNote=document.createElement('span');zoomNote.className='zoom-note';zoomNote.textContent='※wheel';
+  /* Default label removed — keeps the bar tighter; the slider position already conveys "default" visually */
   function syncSlider(){
     var pct;
     if(viewMode==='network'&&window._nwVB){pct=Math.round(1200/window._nwVB.w*100);}
@@ -3361,10 +3974,13 @@ function buildShell(){
   zoomOut.onclick=function(e){e.stopPropagation();var cur=parseInt(zoomSlider.value);applyZoom(Math.max(20,cur-10));};
   zoomIn.onclick=function(e){e.stopPropagation();var cur=parseInt(zoomSlider.value);applyZoom(Math.min(300,cur+10));};
   zoomSlider.oninput=function(){applyZoom(parseInt(this.value));};
-  zoomCtrl.appendChild(zoomOut);zoomCtrl.appendChild(zoomSlider);zoomCtrl.appendChild(zoomIn);zoomCtrl.appendChild(zoomNote);
+  zoomCtrl.appendChild(zoomOut);zoomCtrl.appendChild(zoomSlider);zoomCtrl.appendChild(zoomIn);
   mainRow.appendChild(zoomCtrl);
   var gearBtn=document.createElement('button');
-  gearBtn.className='api-gear';gearBtn.id='api-gear-btn';gearBtn.title='API Settings';gearBtn.innerHTML='&#9881;';
+  gearBtn.className='rb-icon-btn';gearBtn.id='api-gear-btn';gearBtn.title='Settings';
+  gearBtn.setAttribute('aria-label','Settings');
+  /* SVG gear icon matching the catalog's RemoteBar */
+  gearBtn.innerHTML='<svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="pointer-events:none"><circle cx="7" cy="7" r="1.6" fill="currentColor"/><path d="M7 1.5v1.8M7 10.7v1.8M2.6 2.6l1.3 1.3M10.1 10.1l1.3 1.3M1.5 7h1.8M10.7 7h1.8M2.6 11.4l1.3-1.3M10.1 3.9l1.3-1.3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>';
   mainRow.appendChild(gearBtn);
   bar.appendChild(mainRow);
   /* Row 2: sort options (only in proposer mode) */
@@ -3781,6 +4397,7 @@ function renderTimeline(){
           var p=proposals[pk];
           var pip=document.createElement('div');
           pip.className='tl-pip';
+          pip.setAttribute('data-pid', p.id);
           pip.style.borderLeft='3px solid '+stColor(p.st);
           pip.innerHTML='<div class="tl-pip-title">'+esc(trunc(pLabel(p),30))+'</div>'
             +'<div class="tl-pip-meta">'+stBadge(p.st)
@@ -7295,9 +7912,119 @@ function centerView(){
   zoom=1;setTfm();
 }
 
-buildShell();
-render();
-centerView();
+/* === Bootstrap with focused start (when ?highlight=<id> is present) ===
+   Goal: the very first paint already shows the target proposal in view + highlighted,
+   no animation from a default state. */
+(function(){
+  var _initHl=null, _initCtx=null;
+  try{
+    _initHl=new URLSearchParams(location.search).get('highlight');
+    if(_initHl) _initCtx=_findProposalCtx(_initHl);
+  }catch(e){}
+
+  /* Pre-expand vis for sector view BEFORE the initial render */
+  if(_initCtx && viewMode==='sector'){
+    vis.add(_initCtx.sectorId);
+  }
+
+  buildShell();
+  if(viewMode==='catalog'){renderCatalog();}
+  else if(viewMode==='network'){renderNetwork();}
+  else if(viewMode==='timeline'){renderTimeline();}
+  else if(viewMode==='chart'){renderChart();}
+  else{render();centerView();}
+
+  if(!_initHl) return;
+  _catalogHighlightId=_initHl;
+
+  /* For proposer view, the by-X node id is only known after the first render —
+     so do the find + expand + re-render synchronously (browser paints only once).
+     We match by the data-name attribute (now set on every node by render()). */
+  if(_initCtx && viewMode==='proposer'){
+    try{
+      var byNodes=document.querySelectorAll('.node[data-id^="by-"]');
+      for(var k=0;k<byNodes.length;k++){
+        if(byNodes[k].getAttribute('data-name')===_initCtx.proposer){
+          vis.add(byNodes[k].getAttribute('data-id'));
+          render();
+          break;
+        }
+      }
+    }catch(e){}
+  }
+
+  /* For tree views, pan the layer so the target leaf sits in the center */
+  if(viewMode==='sector'||viewMode==='proposer'){
+    try{
+      var el=document.querySelector('[data-id="'+_initHl+'"]');
+      var stage=document.querySelector('.stage');
+      if(el&&stage){
+        var r=el.getBoundingClientRect();
+        var sr=stage.getBoundingClientRect();
+        panX -= (r.left + r.width/2 - sr.left - sr.width/2);
+        panY -= (r.top  + r.height/2 - sr.top  - sr.height/2);
+        setTfm();
+      }
+    }catch(e){}
+  }
+
+  /* For network view, select the proposer node so edges/related nodes light up.
+     Plus add a strong extra-pulse on the selected node itself. */
+  if(viewMode==='network' && _initCtx){
+    /* renderNetwork exposes _nwSelectByName synchronously */
+    try{
+      if(typeof window._nwSelectByName==='function') window._nwSelectByName(_initCtx.proposer);
+      /* Extra glow on the selected bubble */
+      setTimeout(function(){
+        try{
+          var selNode=document.querySelector('.nw-node-g.sel');
+          if(selNode){
+            if(!document.getElementById('nw-extra-pulse-style')){
+              var s=document.createElement('style'); s.id='nw-extra-pulse-style';
+              s.textContent='@keyframes nw-extra-pulse{0%,100%{filter:drop-shadow(0 0 12px var(--c,#d4a04a)) drop-shadow(0 0 0 rgba(212,160,74,0));}50%{filter:drop-shadow(0 0 28px var(--c,#d4a04a)) drop-shadow(0 0 12px rgba(255,255,255,0.6));}}';
+              document.head.appendChild(s);
+            }
+            selNode.style.animation='nw-extra-pulse 1.6s ease-in-out infinite';
+          }
+        }catch(e){}
+      }, 200);
+    }catch(e){}
+  }
+
+  /* For chart view: switch to account mode, find + click the proposer's row */
+  if(viewMode==='chart' && _initCtx){
+    setTimeout(function(){
+      try{
+        /* Switch left list to account mode */
+        var togs=document.querySelectorAll('.ch-tog-btn');
+        if(togs.length>=2 && !togs[1].classList.contains('active')) togs[1].click();
+        /* After a tick, find the row matching the proposer name */
+        setTimeout(function(){
+          var rows=document.querySelectorAll('.ch-list-card');
+          for(var i=0;i<rows.length;i++){
+            var nameEl=rows[i].querySelector('.ch-list-name');
+            if(nameEl && (nameEl.textContent||'').indexOf(_initCtx.proposer)>=0){
+              rows[i].scrollIntoView({block:'center'});
+              rows[i].click();
+              /* Add strong pulse outline on the selected row so it stands out */
+              if(!document.getElementById('chart-pulse-style')){
+                var s=document.createElement('style'); s.id='chart-pulse-style';
+                s.textContent='@keyframes chart-row-pulse{0%,100%{box-shadow:0 0 0 0 rgba(212,160,74,0);outline:2px solid rgba(212,160,74,0);}50%{box-shadow:0 0 0 6px rgba(212,160,74,0.3),0 0 24px rgba(212,160,74,0.5);outline:2px solid rgba(212,160,74,0.95);}}';
+                document.head.appendChild(s);
+              }
+              rows[i].style.animation='chart-row-pulse 1.4s ease-in-out infinite';
+              rows[i].classList.add('catalog-pulsing');
+              break;
+            }
+          }
+        }, 120);
+      }catch(e){}
+    }, 200);
+  }
+
+  /* Pulse the matching element (short delay for any layout settle) */
+  setTimeout(function(){ try{ highlightCatalogTarget(_initHl); }catch(e){} }, 60);
+})();
 
 window.addEventListener('message',function(e){
   if(e.data&&e.data.type==='theme-change'){
