@@ -2942,6 +2942,30 @@ function _renderStatusFlags(ps){
   }
   return out;
 }
+/* Aggregate the same status flags _renderStatusFlags() draws for accounts, but for an
+   entire sector. Walks every proposal in `ind.children`, applies the per-proposal flag
+   detection from PROPOSER_STATS' addFlags(), and returns an object shaped like a
+   PROPOSER_STATS entry — so it can be passed straight to _renderStatusFlags. */
+function _sectorStatusFlags(ind){
+  var entry={dnfList:[],unfundedDnfList:[],overdueList:[],gapList:[],longGapList:[],pastOverdueList:[],oldList:[]};
+  if(!ind||!ind.children) return entry;
+  for(var j=0;j<ind.children.length;j++){
+    var p=ind.children[j];
+    var ps=_proposalStatus(p);
+    if(p.st==='dnf'){
+      if(_dnfReceivedFunds(p)) entry.dnfList.push({label:p.label,fund:p.fund||0,id:p.id});
+      else entry.unfundedDnfList.push({label:p.label,fund:p.fund||0,id:p.id});
+    }
+    if(ps.overdue) entry.overdueList.push({label:p.label,fund:p.fund||0,id:p.id,detail:ps.overdueDetail||null});
+    if(ps.gap) entry.gapList.push({label:p.label,fund:p.fund||0,id:p.id,gapMonths:Math.round(ps.maxGapMonths)});
+    if(ps.longGap) entry.longGapList.push({label:p.label,fund:p.fund||0,id:p.id,gapMonths:Math.round(ps.maxGapMonths)});
+    if(ps.pastOverdue) entry.pastOverdueList.push({label:p.label,fund:p.fund||0,id:p.id,detail:ps.pastOverdueDetail});
+    /* Duration flag mirrors addFlags(): only meaningful when MS data exists */
+    var hasMs=(window.CJ_MILESTONES||{})[p.id];
+    if(ps.years>=2 && hasMs) entry.oldList.push({label:p.label,fund:p.fund||0,id:p.id,years:Math.floor(ps.years),st:p.st,planned:ps.plannedMonths,ratio:ps.overrunRatio});
+  }
+  return entry;
+}
 /* Did this dnf proposal actually receive funds?
    Pre-MS (F2-F9): lump-sum at adoption → assume funded
    F10+: check distributed from MS data → only count as funded if dist > 0 */
@@ -4597,7 +4621,10 @@ function renderChart(){
     var fl=filter.toLowerCase();
 
     if(_chLeftMode==='sector'){
-      /* sector cards — same style as main sidebar */
+      /* sector cards — same style as main sidebar, plus aggregated status flags
+         (END/💧/⚠️/⏳/↔️/⌚/2-3-4) summed across all proposals in the sector.
+         Flags sit on their own row below the count so the sector name keeps its
+         clean nowrap + ellipsis behaviour and the flags can wrap if numerous. */
       for(var i=0;i<INDUSTRIES.length;i++){(function(ind){
         var name=secName(ind);
         if(fl&&name.toLowerCase().indexOf(fl)<0)return;
@@ -4605,11 +4632,14 @@ function renderChart(){
         var okP=tot?(ind._ok/tot*100).toFixed(0):'0';
         var wiP=tot?(ind._wip/tot*100).toFixed(0):'0';
         var dnP=tot?(ind._dnf/tot*100).toFixed(0):'0';
+        var sectorFlags=_renderStatusFlags(_sectorStatusFlags(ind));
+        var flagsRow=sectorFlags?'<div class="ch-list-flags" style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px;line-height:1.4">'+sectorFlags+'</div>':'';
         var row=document.createElement('div');row.className='ch-list-item ch-list-card';
         row.innerHTML='<div class="ch-list-ava" style="background:'+hsl(ind.hue)+'">'+name.charAt(0)+'</div>'
           +'<div class="ch-list-info">'
           +'<div class="ch-list-name">'+esc(name)+'</div>'
           +'<div class="ch-list-sub">'+tot+' · '+fmtJpy(ind._usdK)+'</div>'
+          +flagsRow
           +'<div class="ch-list-bar"><div style="width:'+okP+'%;background:var(--st-ok)"></div><div style="width:'+wiP+'%;background:var(--st-wip)"></div><div style="width:'+dnP+'%;background:var(--st-dnf)"></div></div>'
           +'</div>';
         row.onclick=function(){
