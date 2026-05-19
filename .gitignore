@@ -2,3 +2,8 @@
 # (catalog.html only loads src/catalog-data.jsx + src/refined-catalog.jsx.)
 src/catalog-shell.jsx
 src/catalog-views.jsx
+
+# Mobile catalog (DEV) — kept local-only while iterating; will be folded into
+# the public mobile experience later. Don't ship it via GitHub Pages yet.
+catalog-mobile.html
+src/catalog-mobile.jsx
