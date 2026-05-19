@@ -79,7 +79,7 @@ function FundChip({ fund }) {
 }
 
 // ---------- Header ----------
-function Header({ devBadge = true }) {
+function Header({ devBadge = true, heroHidden = false, onReshowHero }) {
   return (
     <header style={{
       position: 'sticky', top: 0, zIndex: 10,
@@ -107,6 +107,22 @@ function Header({ devBadge = true }) {
         )}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        {/* Re-show hint button — appears once the rotating hero has been dismissed.
+            Lets the user pull the tips back without having to clear sessionStorage. */}
+        {heroHidden && onReshowHero && (
+          <button onClick={onReshowHero} title="ヒントを再表示" style={{
+            width: 26, height: 26, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.08)', border: `1px solid ${M.hairline}`,
+            color: M.inkDim,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer',
+          }}>
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+              <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2"/>
+              <path d="M7 4v3M7 9.5v.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+            </svg>
+          </button>
+        )}
         <span style={{
           fontFamily: M.mono, fontSize: 10, color: M.inkMuted, letterSpacing: '0.06em',
         }}>{(window.TOTAL_COUNT || 0)} {' '}件</span>
@@ -594,6 +610,339 @@ function linkBtnStyle(accent) {
   };
 }
 
+// ============================================================
+// HERO ROTATOR — 3 compact cards (welcome / panel-view promo / filter guide)
+// auto-cycle, dots to switch, × to dismiss for the session
+// ============================================================
+function HeroRotator({ onClose, onJumpToList }) {
+  const [idx, setIdx] = useStateM(0);
+  const [paused, setPaused] = useStateM(false);
+  const cards = [
+    <WelcomeCard key="w" onCTA={onJumpToList} />,
+    <PanelViewPromoCard key="p" />,
+    <FilterGuideCard key="f" />,
+  ];
+  useEffectM(() => {
+    if (paused) return;
+    const t = setInterval(() => setIdx(i => (i + 1) % cards.length), 5500);
+    return () => clearInterval(t);
+  }, [paused]);
+  return (
+    <div style={{
+      position: 'relative',
+      margin: '0 12px 10px',
+      borderRadius: 14, overflow: 'hidden',
+      border: `1px solid ${M.hairline}`,
+      background: '#0a0a0e',
+      minHeight: 168,
+    }}
+      onTouchStart={() => setPaused(true)}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}>
+      {/* Active card */}
+      <div style={{ animation: 'cm-cardfade .4s ease', minHeight: 168, display: 'flex' }}>
+        {cards[idx]}
+      </div>
+      {/* Top-right dismiss */}
+      <button onClick={onClose} aria-label="ヒントを隠す" style={{
+        position: 'absolute', top: 6, right: 6, zIndex: 5,
+        width: 26, height: 26, borderRadius: '50%',
+        background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.18)',
+        color: '#fff', backdropFilter: 'blur(4px)',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+          <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      </button>
+      {/* Bottom dots */}
+      <div style={{
+        position: 'absolute', bottom: 8, left: 0, right: 0,
+        display: 'flex', justifyContent: 'center', gap: 5,
+        zIndex: 4,
+      }}>
+        {cards.map((_, i) => (
+          <button key={i} onClick={() => setIdx(i)} aria-label={'スライド ' + (i+1)}
+            style={{
+              width: i === idx ? 18 : 6, height: 6, padding: 0,
+              borderRadius: 3, border: 'none',
+              background: i === idx ? '#fff' : 'rgba(255,255,255,0.32)',
+              transition: 'width .2s, background .2s',
+            }} />
+        ))}
+      </div>
+      <style>{`
+        @keyframes cm-cardfade { 0% { opacity: 0; transform: translateY(4px); } 100% { opacity: 1; transform: translateY(0); } }
+      `}</style>
+    </div>
+  );
+}
+
+/* Compact card primitive — left/right split, used as the base layout for all 3 hero cards */
+function HeroCard({ left, right, bg }) {
+  return (
+    <div style={{
+      position: 'relative', flex: 1, display: 'flex',
+      padding: '14px 14px 24px',
+      gap: 12,
+      background: bg || M.panel,
+      overflow: 'hidden',
+    }}>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        {left}
+      </div>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {right}
+      </div>
+    </div>
+  );
+}
+
+// --- Card 1: Welcome / stats / "始めよう" CTA ---
+function WelcomeCard({ onCTA }) {
+  const total = window.TOTAL_COUNT || 130;
+  const adaDisplay = window.TOTAL_ADA_DISPLAY || '21.6M';
+  return (
+    <HeroCard
+      bg="radial-gradient(120% 100% at 20% 30%, oklch(35% 0.14 280) 0%, transparent 60%), linear-gradient(135deg, #0a0a14 0%, #14141c 100%)"
+      left={
+        <div>
+          <div style={{
+            fontFamily: M.mono, fontSize: 9, fontWeight: 700,
+            letterSpacing: '0.22em', textTransform: 'uppercase',
+            color: M.accent, marginBottom: 6,
+          }}>Catalyst · Japan</div>
+          <div style={{
+            fontFamily: M.display, fontSize: 16, fontWeight: 700,
+            color: M.ink, letterSpacing: '-0.015em', lineHeight: 1.25,
+            marginBottom: 6,
+          }}>探求する、<br/><span style={{ fontFamily: M.serif, fontStyle: 'italic', fontWeight: 400, color: M.inkDim }}>日本の</span>エコシステム。</div>
+          <button onClick={onCTA} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            padding: '6px 12px',
+            background: '#fff', color: '#0a0a0c',
+            border: 'none', borderRadius: 999,
+            fontFamily: M.body, fontSize: 11, fontWeight: 700,
+            letterSpacing: '0.04em',
+            cursor: 'pointer',
+          }}>始めよう <span>→</span></button>
+        </div>
+      }
+      right={
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8,
+          width: '100%', maxWidth: 200,
+        }}>
+          <Stat n={total} label="提案" />
+          <Stat n={adaDisplay} label="₳" mono />
+          <Stat n="13" label="ラウンド" />
+        </div>
+      }
+    />
+  );
+}
+function Stat({ n, label, mono }) {
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <div style={{
+        fontFamily: mono ? M.mono : M.display, fontSize: 18, fontWeight: 700,
+        color: M.ink, letterSpacing: '-0.02em', lineHeight: 1,
+      }}>{n}</div>
+      <div style={{
+        fontFamily: M.mono, fontSize: 8, color: M.inkMuted,
+        letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 3,
+      }}>{label}</div>
+    </div>
+  );
+}
+
+// --- Card 2: Panel-view promo (the user's left/right base) ---
+function PanelViewPromoCard() {
+  const panels = [
+    { hue: 28,  label: '業界' },
+    { hue: 210, label: 'アカ' },
+    { hue: 320, label: '時系列' },
+    { hue: 140, label: '関係' },
+    { hue: 50,  label: 'チャート' },
+  ];
+  return (
+    <HeroCard
+      bg="radial-gradient(120% 100% at 80% 30%, oklch(30% 0.12 230) 0%, transparent 60%), linear-gradient(135deg, #0a0e14 0%, #14181c 100%)"
+      left={
+        <div>
+          <div style={{
+            fontFamily: M.display, fontSize: 15, fontWeight: 700,
+            color: M.ink, letterSpacing: '-0.015em', lineHeight: 1.25,
+            marginBottom: 8,
+          }}>1つの提案を、<br/><span style={{ fontFamily: M.serif, fontStyle: 'italic', fontWeight: 400, color: M.inkDim }}>6</span>つの視点で。</div>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '4px 8px 4px 5px',
+            background: 'rgba(255,255,255,0.10)',
+            border: '1px solid rgba(255,255,255,0.18)',
+            borderRadius: 8,
+            fontFamily: M.body, fontSize: 10, fontWeight: 600,
+            color: '#fff',
+          }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: 22, height: 22, borderRadius: 4, background: '#fff', color: '#0a0a0c',
+            }}>
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                <rect x="1.2" y="1.2" width="4" height="4" rx="0.7" stroke="currentColor" strokeWidth="1.4"/>
+                <rect x="6.8" y="1.2" width="4" height="4" rx="0.7" stroke="currentColor" strokeWidth="1.4"/>
+                <rect x="1.2" y="6.8" width="4" height="4" rx="0.7" stroke="currentColor" strokeWidth="1.4"/>
+                <rect x="6.8" y="6.8" width="4" height="4" rx="0.7" stroke="currentColor" strokeWidth="1.4"/>
+              </svg>
+            </span>
+            <span>カード右下のアイコン</span>
+          </div>
+        </div>
+      }
+      right={
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 3,
+          width: '100%', maxWidth: 180,
+        }}>
+          {panels.map((p, i) => (
+            <div key={i} style={{
+              aspectRatio: '1 / 1.4',
+              borderRadius: 4, overflow: 'hidden',
+              background: `radial-gradient(120% 110% at 30% 20%, oklch(55% 0.22 ${p.hue}) 0%, transparent 60%), linear-gradient(135deg, oklch(20% 0.10 ${p.hue}) 0%, oklch(12% 0.06 ${(p.hue + 30) % 360}) 100%)`,
+              display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+              padding: '0 0 4px',
+              fontFamily: M.body, fontSize: 7.5, fontWeight: 700,
+              color: '#fff',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
+            }}>{p.label}</div>
+          ))}
+        </div>
+      }
+    />
+  );
+}
+
+// --- Card 3: Filter guide ---
+function FilterGuideCard() {
+  return (
+    <HeroCard
+      bg="radial-gradient(120% 100% at 50% 20%, oklch(30% 0.10 30) 0%, transparent 60%), linear-gradient(135deg, #100d08 0%, #1a1610 100%)"
+      left={
+        <div>
+          <div style={{
+            fontFamily: M.display, fontSize: 15, fontWeight: 700,
+            color: M.ink, letterSpacing: '-0.015em', lineHeight: 1.25,
+            marginBottom: 8,
+          }}>見たいものに<br/><span style={{ fontFamily: M.serif, fontStyle: 'italic', fontWeight: 400, color: M.accent }}>絞り込む。</span></div>
+          <div style={{
+            fontFamily: M.body, fontSize: 10.5, color: M.inkDim,
+            lineHeight: 1.45,
+          }}>STATUS / FUND / CATEGORY の 3 段フィルタ。<br/>自由に組み合わせて。</div>
+        </div>
+      }
+      right={
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, width: '100%', maxWidth: 160 }}>
+          {[
+            { label: 'STATUS', items: ['すべて', '進行中', '完了'], activeIdx: 1 },
+            { label: 'FUND',   items: ['ALL', 'F12', 'F13', 'F14'], activeIdx: 2 },
+            { label: 'CAT.',   items: ['ALL', 'COMMUNITY', 'REAL'],  activeIdx: 1 },
+          ].map((row, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{
+                fontFamily: M.mono, fontSize: 7, fontWeight: 700,
+                letterSpacing: '0.14em', color: M.inkMuted,
+                width: 36, flexShrink: 0,
+              }}>{row.label}</span>
+              <div style={{ display: 'flex', gap: 2, overflow: 'hidden' }}>
+                {row.items.map((it, j) => (
+                  <span key={j} style={{
+                    padding: '2px 5px',
+                    background: j === row.activeIdx ? '#fff' : 'rgba(255,255,255,0.08)',
+                    color: j === row.activeIdx ? '#0a0a0c' : '#fff',
+                    borderRadius: 999,
+                    fontFamily: M.body, fontSize: 8, fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                  }}>{it}</span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      }
+    />
+  );
+}
+
+// ============================================================
+// MOBILE DOCK — bottom control bar (currency / price mode / lang / theme)
+// matches mobile.html's da-dock pattern for visual consistency across the
+// future unified mobile experience
+// ============================================================
+function MobileDock({ currency, setCurrency, priceMode, setPriceMode, lang, setLang, theme, setTheme }) {
+  const btn = (active, extra = {}) => ({
+    minWidth: 28, height: 26,
+    padding: '0 7px',
+    border: 'none', borderRadius: 6,
+    background: active ? '#fff' : 'transparent',
+    color: active ? '#0a0a0c' : M.inkDim,
+    fontFamily: M.body, fontSize: 11, fontWeight: active ? 700 : 500,
+    lineHeight: 1, cursor: 'pointer',
+    transition: 'background .12s, color .12s',
+    ...extra,
+  });
+  const sep = () => <span style={{ width: 1, height: 14, background: M.hairline, margin: '0 5px', flexShrink: 0 }} />;
+  return (
+    <div style={{
+      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 11,
+      padding: '8px 12px calc(env(safe-area-inset-bottom, 0px) + 10px)',
+      background: 'linear-gradient(180deg, rgba(0,0,0,0.85), rgba(0,0,0,0.95))',
+      backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+      borderTop: `1px solid ${M.hairline}`,
+      pointerEvents: 'auto',
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 4,
+        padding: '5px 7px',
+        background: M.panel, border: `1px solid ${M.hairline}`,
+        borderRadius: 999,
+        boxShadow: '0 4px 18px rgba(0,0,0,0.5)',
+      }}>
+        {/* Currency */}
+        {['ada', 'usd', 'jpy'].map(c => (
+          <button key={c} onClick={() => setCurrency(c)}
+            style={btn(currency === c, { fontFamily: M.mono, fontSize: 13 })}
+            title={c.toUpperCase()}>
+            {c === 'ada' ? '₳' : c === 'usd' ? '$' : '¥'}
+          </button>
+        ))}
+        {sep()}
+        {/* Price mode */}
+        {[{ id: 'submit', l: '提案時' }, { id: 'result', l: '採択時' }].map(p => (
+          <button key={p.id} onClick={() => setPriceMode(p.id)}
+            style={btn(priceMode === p.id)}>{p.l}</button>
+        ))}
+        {/* Spacer */}
+        <div style={{ flex: 1 }} />
+        {/* Lang */}
+        {[{ id: 'ja', l: '日' }, { id: 'en', l: 'EN' }].map(l => (
+          <button key={l.id} onClick={() => setLang(l.id)}
+            style={btn(lang === l.id, { fontFamily: M.mono, fontSize: 11, minWidth: 24 })}>{l.l}</button>
+        ))}
+        {/* Theme */}
+        <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          style={{
+            ...btn(false),
+            width: 28, height: 26, padding: 0,
+            color: M.inkDim,
+          }}
+          title="Toggle theme">
+          {theme === 'dark' ? '☾' : '☀'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ---------- App ----------
 function CatalogMobileApp() {
   const PROPOSALS = window.PROPOSALS || [];
@@ -602,6 +951,19 @@ function CatalogMobileApp() {
   const [fundFilter, setFundFilter] = useStateM('ALL');
   const [catFilter, setCatFilter] = useStateM('ALL');
   const [selectedId, setSelectedId] = useStateM(null);
+  /* HeroRotator: dismiss persists for the session so users aren't re-shown the
+     tips every interaction. sessionStorage clears on tab close — fresh each visit. */
+  const [heroVisible, setHeroVisible] = useStateM(() => {
+    try { return sessionStorage.getItem('cm-hero-dismissed') !== '1'; } catch (e) { return true; }
+  });
+  /* MobileDock state — local for now; wiring to actual currency/price formatting will
+     come once the mobile proposal card adopts the desktop's CurrencyContext pattern. */
+  const [currency, setCurrency]   = useStateM('ada');
+  const [priceMode, setPriceMode] = useStateM('submit');
+  const [lang, setLang]           = useStateM('ja');
+  const [theme, setTheme]         = useStateM('dark');
+
+  const listRef = useRefM(null);
 
   const cats = useMemoM(() => {
     const m = {};
@@ -625,9 +987,26 @@ function CatalogMobileApp() {
 
   const selected = selectedId ? PROPOSALS.find(p => p.id === selectedId) : null;
 
+  const dismissHero = () => {
+    setHeroVisible(false);
+    try { sessionStorage.setItem('cm-hero-dismissed', '1'); } catch (e) {}
+  };
+  const reshowHero = () => {
+    setHeroVisible(true);
+    try { sessionStorage.removeItem('cm-hero-dismissed'); } catch (e) {}
+  };
+  const jumpToList = () => {
+    if (listRef.current) listRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
-      <Header devBadge />
+    <div style={{
+      display: 'flex', flexDirection: 'column', minHeight: '100dvh',
+      /* Reserve space at the bottom for the fixed MobileDock so content + footer
+         aren't hidden behind it. Tuned to dock height + safe-area inset. */
+      paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 64px)',
+    }}>
+      <Header devBadge heroHidden={!heroVisible} onReshowHero={reshowHero} />
       <SearchAndFilters
         query={query} setQuery={setQuery}
         statusFilter={statusFilter} setStatusFilter={setStatusFilter}
@@ -635,7 +1014,9 @@ function CatalogMobileApp() {
         catFilter={catFilter} setCatFilter={setCatFilter}
         cats={cats}
       />
-      <main style={{ flex: 1, padding: '8px 12px 32px' }}>
+      {/* Rotating hero — sits below search, above the list. Compact + dismissable. */}
+      {heroVisible && <HeroRotator onClose={dismissHero} onJumpToList={jumpToList} />}
+      <main ref={listRef} style={{ flex: 1, padding: '8px 12px 32px' }}>
         {/* Result count */}
         <div style={{
           padding: '4px 4px 10px',
@@ -658,7 +1039,7 @@ function CatalogMobileApp() {
 
       {/* Footer / disclaimer — same wording family as desktop */}
       <footer style={{
-        padding: '12px 16px calc(env(safe-area-inset-bottom,0px) + 18px)',
+        padding: '12px 16px 14px',
         borderTop: `1px solid ${M.hairline}`,
         fontFamily: M.body, fontSize: 10, lineHeight: 1.55,
         color: M.inkMuted,
@@ -669,6 +1050,14 @@ function CatalogMobileApp() {
           MOBILE DEV · v.2026.05
         </div>
       </footer>
+
+      {/* Sticky bottom control dock — currency / price mode / lang / theme */}
+      <MobileDock
+        currency={currency} setCurrency={setCurrency}
+        priceMode={priceMode} setPriceMode={setPriceMode}
+        lang={lang} setLang={setLang}
+        theme={theme} setTheme={setTheme}
+      />
     </div>
   );
 }
