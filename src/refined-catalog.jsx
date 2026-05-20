@@ -4529,25 +4529,8 @@ function LinkIconStrip({ p, hideReport = false, reservedRight = 0 }) {
     />
   );
 
-  /* ── Upper row: regular icon buttons (IdeaScale → Milestones → Video → Site → GH/X/LinkedIn → Explorer) ── */
+  /* ── Upper row: small icon buttons (Site, GH, X, LinkedIn, CE, PC) ── */
   const topItems = [];
-  /* Order: IS → MS → CV → Video → Site → GH → X → LinkedIn → CE */
-  if (p.isLink) topItems.push({
-    k: 'IS', label: 'IdeaScale', url: p.isLink,
-    icon: faviconImg('ideascale.com', 'IdeaScale'),
-  });
-  if (p.ms) topItems.push({
-    k: 'MS', label: lang === 'en' ? 'Milestones' : 'マイルストーン', url: p.ms,
-    icon: faviconImg('milestones.projectcatalyst.io', 'Milestones'),
-  });
-  if (p.cv) topItems.push({
-    k: 'CV', label: lang === 'en' ? 'Closeout Video' : '完了動画', url: p.cv,
-    icon: faviconImg('youtube.com', 'Closeout Video'),
-  });
-  if (p.videoUrl && !p.unlistedVideo && !p.embedDisabledVideo) topItems.push({
-    k: 'VIDEO', label: 'YouTube', url: p.videoUrl,
-    icon: faviconImg('youtube.com', 'YouTube'),
-  });
   if (p.site) {
     const dom = (window.urlDomain && window.urlDomain(p.site)) || (p.siteDomain || 'example.com');
     topItems.push({ k: 'SITE', label: p.siteDomain || 'Site', url: p.site, icon: faviconImg(dom, 'Site') });
@@ -4568,22 +4551,47 @@ function LinkIconStrip({ p, hideReport = false, reservedRight = 0 }) {
     icon: faviconImg('linkedin.com', 'LinkedIn'),
   });
   if (p.ce || p.explorer) topItems.push({
-    k: 'EX', label: 'Catalyst Explorer', url: p.ce || p.explorer,
+    k: 'CE', label: 'Catalyst Explorer', url: p.ce || p.explorer,
     icon: faviconImg('catalystexplorer.com', 'Catalyst Explorer'),
   });
+  if (p.pc) topItems.push({
+    k: 'PC', label: 'ProjectCatalyst.io', url: p.pc,
+    icon: faviconImg('projectcatalyst.io', 'ProjectCatalyst'),
+  });
 
-  /* ── Bottom row: completion report — bordered badge with favicon (green accent) ── */
+  /* ── Bottom row: badge strip — favicon + label + bordered frame ── */
+  /* Order: IdeaScale(提案書) → Milestones → Video → 完了Report */
+  const badgeItems = [];
+  if (p.isLink) badgeItems.push({
+    k: 'IS', label: lang === 'en' ? 'Proposal' : '提案書',
+    url: p.isLink, domain: 'ideascale.com',
+  });
+  if (p.ms) badgeItems.push({
+    k: 'MS', label: lang === 'en' ? 'Milestones' : 'マイルストーン',
+    url: p.ms, domain: 'milestones.projectcatalyst.io',
+  });
+  if (p.cv) badgeItems.push({
+    k: 'CV', label: lang === 'en' ? 'Closeout Video' : '完了動画',
+    url: p.cv, domain: 'youtube.com',
+  });
+  if (p.videoUrl && !p.unlistedVideo && !p.embedDisabledVideo && !p.cv) badgeItems.push({
+    k: 'VIDEO', label: 'YouTube',
+    url: p.videoUrl, domain: 'youtube.com',
+  });
   const reportUrl = p.cr || (p.report && p.report.url) || null;
-  const hasReport = !hideReport && reportUrl;
+  if (!hideReport && reportUrl) badgeItems.push({
+    k: 'CR', label: lang === 'en' ? 'Report' : '完了レポート',
+    url: reportUrl, domain: p.cr ? 'docs.google.com' : null, accent: true,
+  });
 
-  if (!topItems.length && !hasReport) return null;
+  if (!topItems.length && !badgeItems.length) return null;
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', gap: 5,
       marginTop: 'auto', paddingTop: 4,
       paddingRight: reservedRight,
     }}>
-      {/* ── Top row: favicon icon buttons ── */}
+      {/* ── Top row: small favicon icon buttons ── */}
       {topItems.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
           {topItems.map((it, i) => (
@@ -4619,36 +4627,48 @@ function LinkIconStrip({ p, hideReport = false, reservedRight = 0 }) {
           ))}
         </div>
       )}
-      {/* ── Bottom row: completion report badge with favicon + bordered frame ── */}
-      {hasReport && (
-        <a
-          href={reportUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          title={lang === 'en' ? 'Completion Report' : '完了レポート'}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 5,
-            alignSelf: 'flex-start',
-            height: 26, padding: '0 9px',
-            background: t.green ? (t.green + '18') : 'rgba(125,214,163,0.12)',
-            border: `1px solid ${t.green ? (t.green + '50') : 'rgba(125,214,163,0.38)'}`,
-            borderRadius: 6,
-            fontFamily: t.body, fontSize: 9, fontWeight: 700,
-            letterSpacing: '0.08em', textTransform: 'uppercase',
-            color: t.green || '#7dd6a3',
-            textDecoration: 'none',
-            transition: 'background .15s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = t.green ? (t.green + '28') : 'rgba(125,214,163,0.22)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = t.green ? (t.green + '18') : 'rgba(125,214,163,0.12)'; }}
-        >
-          {p.cr
-            ? faviconImg('docs.google.com', 'Report')
-            : <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M3 1h4l2 2v7.5a.5.5 0 0 1-.5.5h-5.5a.5.5 0 0 1-.5-.5V1.5a.5.5 0 0 1 .5-.5Z" stroke="currentColor" strokeWidth="1.2"/><path d="M7 1v2.5h2" stroke="currentColor" strokeWidth="1.2"/></svg>
-          }
-          <span>{lang === 'en' ? 'Report' : '完了レポート'}</span>
-        </a>
+      {/* ── Bottom row: bordered badge strip (IS → MS → Video → CR) ── */}
+      {badgeItems.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+          {badgeItems.map((b) => {
+            const isGreen = b.accent;
+            const bg    = isGreen ? (t.green ? t.green + '18' : 'rgba(125,214,163,0.12)') : (t.hairlineStrong + '44');
+            const bgHov = isGreen ? (t.green ? t.green + '28' : 'rgba(125,214,163,0.22)') : (t.hairlineStrong + '88');
+            const bdr   = isGreen ? (t.green ? t.green + '50' : 'rgba(125,214,163,0.38)') : t.hairlineStrong;
+            const clr   = isGreen ? (t.green || '#7dd6a3') : t.inkDim;
+            return (
+              <a
+                key={b.k}
+                href={b.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                title={b.label}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  height: 24, padding: '0 8px',
+                  background: bg,
+                  border: `1px solid ${bdr}`,
+                  borderRadius: 5,
+                  fontFamily: t.body, fontSize: 8.5, fontWeight: 700,
+                  letterSpacing: '0.06em',
+                  color: clr,
+                  textDecoration: 'none',
+                  transition: 'background .15s',
+                  whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = bgHov; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = bg; }}
+              >
+                {b.domain
+                  ? faviconImg(b.domain, b.label)
+                  : <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M3 1h4l2 2v7.5a.5.5 0 0 1-.5.5h-5.5a.5.5 0 0 1-.5-.5V1.5a.5.5 0 0 1 .5-.5Z" stroke="currentColor" strokeWidth="1.2"/><path d="M7 1v2.5h2" stroke="currentColor" strokeWidth="1.2"/></svg>
+                }
+                <span>{b.label}</span>
+              </a>
+            );
+          })}
+        </div>
       )}
     </div>
   );
