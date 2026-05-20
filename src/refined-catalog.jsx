@@ -3007,23 +3007,23 @@ function PosterCard({ p, size = 'md', fluid = false, onOpenPanelView }) {
           position: 'absolute', inset: 0, pointerEvents: 'none',
           boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.18)',
         }} />
-        <div style={{ position: 'absolute', top: 10, left: 10 }}>
+        <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 3 }}>
           <AStatusPill status={p.s} />
         </div>
-        <div style={{ position: 'absolute', top: 10, right: 10 }}>
+        <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 3 }}>
           <AFundChip fund={p.f} />
         </div>
         <div style={{
-          position: 'absolute', bottom: 12, left: 12,
+          position: 'absolute', bottom: 12, left: 12, zIndex: 3,
           fontFamily: t.body, fontSize: 10.5, fontWeight: 700,
           letterSpacing: '0.12em', textTransform: 'uppercase',
           color: t.cat[p.cat] || '#fff', opacity: 0.95,
-          textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+          textShadow: '0 1px 3px rgba(0,0,0,0.6)',
         }}>{p.cat}</div>
         {/* "No video" centered overlay — same layout family as unlisted / embed-disabled for visual consistency */}
         {!p.videoUrl && !p.unlistedVideo && !p.embedDisabledVideo && (
           <div style={{
-            position: 'absolute', inset: 0,
+            position: 'absolute', inset: 0, zIndex: 2,
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             gap: 8, padding: 16,
             background: 'rgba(0,0,0,0.74)',
@@ -3077,7 +3077,7 @@ function PosterCard({ p, size = 'md', fluid = false, onOpenPanelView }) {
             : (lang === 'en' ? 'Open on YouTube' : 'YouTubeで開く');
           return (
             <div style={{
-              position: 'absolute', inset: 0,
+              position: 'absolute', inset: 0, zIndex: 2,
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               gap: 8, padding: 16,
               background: 'rgba(0,0,0,0.78)',
@@ -3127,8 +3127,8 @@ function PosterCard({ p, size = 'md', fluid = false, onOpenPanelView }) {
             </div>
           );
         })()}
-        {p.videoUrl && !p.unlistedVideo && !p.embedDisabledVideo && (
-          <div style={{ position: 'absolute', bottom: 12, right: 12 }}>
+        {p.videoUrl && (
+          <div style={{ position: 'absolute', bottom: 12, right: 12, zIndex: 3 }}>
             <APlayBadge size={36} />
           </div>
         )}
