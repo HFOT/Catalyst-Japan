@@ -3184,77 +3184,43 @@ function PosterCard({ p, size = 'md', fluid = false, onOpenPanelView }) {
           </div>
         )}
 
-        {/* Unified link strip (no Find-in-view here — it now sits as a big bottom-right button below).
-            Padding-right leaves room for the absolute panel-view trigger + report badge. */}
-        <div style={{
-          display: 'flex', alignItems: 'flex-end',
-          marginTop: 'auto',
-          paddingRight: (p.cr || p.report) && p.s === '完了' ? 158 : 48,
-        }}>
+        {/* ── Row 1: small icon buttons (all fit in one line) ── */}
+        <div style={{ marginTop: 'auto' }}>
           <LinkIconStrip p={p} hideReport />
         </div>
 
-        {/* === Completion report mark — to the LEFT of the panel-view trigger === */}
-        {(p.cr || p.report) && p.s === '完了' && (
-          <a
-            href={p.cr || (p.report && p.report.url)}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            title={lang === 'en' ? 'Completion Report' : '完了レポート'}
-            style={{
-              position: 'absolute', bottom: 10, right: 52,
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              height: 32, padding: '0 11px',
-              background: t.green ? (t.green + '22') : 'rgba(125,214,163,0.18)',
-              border: `1px solid ${t.green ? (t.green + '55') : 'rgba(125,214,163,0.42)'}`,
-              borderRadius: 7,
-              fontFamily: t.body, fontSize: 9.5, fontWeight: 700,
-              letterSpacing: '0.1em', textTransform: 'uppercase',
-              color: t.green || '#7dd6a3',
-              textDecoration: 'none',
-              transition: 'background .15s',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = t.green ? (t.green + '33') : 'rgba(125,214,163,0.26)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = t.green ? (t.green + '22') : 'rgba(125,214,163,0.18)'; }}
-          >
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-              <path d="M2.5 1h4l2 2v5.5a.5.5 0 0 1-.5.5h-5.5a.5.5 0 0 1-.5-.5V1.5a.5.5 0 0 1 .5-.5Z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/>
-              <path d="M6 1v2.5h2.5M3.5 5.5h3M3.5 7h2" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span>{lang === 'en' ? 'Report' : '完了レポート'}</span>
-          </a>
-        )}
+        {/* ── Row 2: 4 fixed-position badge slots (提案書 | MS | 動画 | 完了Report) ──
+            Empty slots keep their space so layout is consistent across all cards. */}
+        <LinkBadgeRow p={p} t={t} lang={lang} />
 
-        {/* === BIG Panel-View trigger — white pulsing button at the absolute bottom-right ===
-            Matches the promo icon style so the cinema → card link is visually obvious. */}
-        <button
-          onClick={(e) => { e.stopPropagation(); if (onOpenPanelView) onOpenPanelView(p.id); }}
-          title={lang === 'en' ? 'Open in panel view (1 proposal across all views)' : 'パネルビューで開く (1提案を全ビュー同時表示)'}
-          style={{
-            position: 'absolute', bottom: 10, right: 10,
-            width: 32, height: 32,
-            padding: 0,
-            background: '#fff',
-            border: 'none',
-            borderRadius: 7,
-            color: '#0a0a0c',
-            cursor: 'pointer',
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            animation: 'pv-trigger-pulse 1.8s ease-in-out infinite',
-            transition: 'transform .15s',
-            zIndex: 2,
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; }}
-        >
-          <svg width="15" height="15" viewBox="0 0 12 12" fill="none">
-            <rect x="1.2" y="1.2" width="4" height="4" rx="0.7" stroke="currentColor" strokeWidth="1.4"/>
-            <rect x="6.8" y="1.2" width="4" height="4" rx="0.7" stroke="currentColor" strokeWidth="1.4"/>
-            <rect x="1.2" y="6.8" width="4" height="4" rx="0.7" stroke="currentColor" strokeWidth="1.4"/>
-            <rect x="6.8" y="6.8" width="4" height="4" rx="0.7" stroke="currentColor" strokeWidth="1.4"/>
-          </svg>
-        </button>
+        {/* ── Row 3: panel view button only, right-aligned ── */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 2 }}>
+          <button
+            onClick={(e) => { e.stopPropagation(); if (onOpenPanelView) onOpenPanelView(p.id); }}
+            title={lang === 'en' ? 'Open in panel view (1 proposal across all views)' : 'パネルビューで開く (1提案を全ビュー同時表示)'}
+            style={{
+              width: 32, height: 32,
+              padding: 0,
+              background: '#fff',
+              border: 'none',
+              borderRadius: 7,
+              color: '#0a0a0c',
+              cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              animation: 'pv-trigger-pulse 1.8s ease-in-out infinite',
+              transition: 'transform .15s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; }}
+          >
+            <svg width="15" height="15" viewBox="0 0 12 12" fill="none">
+              <rect x="1.2" y="1.2" width="4" height="4" rx="0.7" stroke="currentColor" strokeWidth="1.4"/>
+              <rect x="6.8" y="1.2" width="4" height="4" rx="0.7" stroke="currentColor" strokeWidth="1.4"/>
+              <rect x="1.2" y="6.8" width="4" height="4" rx="0.7" stroke="currentColor" strokeWidth="1.4"/>
+              <rect x="6.8" y="6.8" width="4" height="4" rx="0.7" stroke="currentColor" strokeWidth="1.4"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -4512,15 +4478,12 @@ function ATeamStack({ people, size = 18, max = 4 }) {
 
 // ---------- Link icon strip (compact, theme-aware) ----------
 
-function LinkIconStrip({ p, hideReport = false, reservedRight = 0 }) {
-  const t = useT();
-  const lang = useLang();
-  /* Favicon helper — uses Google's public favicon service (already used by index.html disc-bar). */
-  const fav = (domain) => `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`;
-  const faviconImg = (domain, alt) => (
-    <img src={fav(domain)} alt={alt} width="14" height="14"
+/* Shared favicon helpers */
+const _favUrl = (domain) => `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`;
+function FavImg({ domain, alt, size = 14 }) {
+  return (
+    <img src={_favUrl(domain)} alt={alt || ''} width={size} height={size}
       style={{ display: 'block', borderRadius: 2, objectFit: 'contain' }}
-      /* fall back to a generic globe SVG if the favicon fails to load */
       onError={(e) => {
         const span = document.createElement('span');
         span.innerHTML = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 6h9M6 1.5c1.5 1.5 1.5 7.5 0 9M6 1.5c-1.5 1.5-1.5 7.5 0 9" stroke="currentColor" stroke-width="1.2"/></svg>';
@@ -4528,148 +4491,109 @@ function LinkIconStrip({ p, hideReport = false, reservedRight = 0 }) {
       }}
     />
   );
+}
 
-  /* ── Upper row: small icon buttons (Site, GH, X, LinkedIn, CE, PC) ── */
-  const topItems = [];
+/* ── Row 1: small icon buttons (Site, GH, X, LinkedIn, CE, PC) ── */
+function LinkIconStrip({ p, hideReport = false }) {
+  const t = useT();
+  const items = [];
   if (p.site) {
     const dom = (window.urlDomain && window.urlDomain(p.site)) || (p.siteDomain || 'example.com');
-    topItems.push({ k: 'SITE', label: p.siteDomain || 'Site', url: p.site, icon: faviconImg(dom, 'Site') });
+    items.push({ k: 'SITE', label: p.siteDomain || 'Site', url: p.site, domain: dom });
   }
-  if (p.links && p.links.GH) topItems.push({
-    k: 'GH', label: 'GitHub', count: p.links.GH,
-    url: window.resolveLinkUrl ? window.resolveLinkUrl(p.meta, 'GH') : null,
-    icon: faviconImg('github.com', 'GitHub'),
-  });
-  if (p.links && p.links.x) topItems.push({
-    k: 'X', label: 'X (Twitter)', count: p.links.x,
-    url: window.resolveLinkUrl ? window.resolveLinkUrl(p.meta, 'x') : null,
-    icon: faviconImg('x.com', 'X'),
-  });
-  if (p.links && p.links.in) topItems.push({
-    k: 'in', label: 'LinkedIn', count: p.links.in,
-    url: window.resolveLinkUrl ? window.resolveLinkUrl(p.meta, 'in') : null,
-    icon: faviconImg('linkedin.com', 'LinkedIn'),
-  });
-  if (p.ce || p.explorer) topItems.push({
-    k: 'CE', label: 'Catalyst Explorer', url: p.ce || p.explorer,
-    icon: faviconImg('catalystexplorer.com', 'Catalyst Explorer'),
-  });
-  if (p.pc) topItems.push({
-    k: 'PC', label: 'ProjectCatalyst.io', url: p.pc,
-    icon: faviconImg('projectcatalyst.io', 'ProjectCatalyst'),
-  });
+  if (p.links && p.links.GH) items.push({ k: 'GH', label: 'GitHub', count: p.links.GH, url: window.resolveLinkUrl ? window.resolveLinkUrl(p.meta, 'GH') : null, domain: 'github.com' });
+  if (p.links && p.links.x)  items.push({ k: 'X',  label: 'X', count: p.links.x,  url: window.resolveLinkUrl ? window.resolveLinkUrl(p.meta, 'x') : null,  domain: 'x.com' });
+  if (p.links && p.links.in) items.push({ k: 'in', label: 'LinkedIn', count: p.links.in, url: window.resolveLinkUrl ? window.resolveLinkUrl(p.meta, 'in') : null, domain: 'linkedin.com' });
+  if (p.ce || p.explorer) items.push({ k: 'CE', label: 'Catalyst Explorer', url: p.ce || p.explorer, domain: 'catalystexplorer.com' });
+  if (p.pc) items.push({ k: 'PC', label: 'ProjectCatalyst.io', url: p.pc, domain: 'projectcatalyst.io' });
+  if (!items.length) return null;
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, paddingTop: 2 }}>
+      {items.map((it, i) => (
+        <a
+          key={it.k + i}
+          href={it.url || '#'}
+          target="_blank" rel="noopener noreferrer"
+          onClick={(e) => { e.stopPropagation(); if (!it.url) e.preventDefault(); }}
+          title={it.label + (it.count ? ' ×' + it.count : '')}
+          style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+            minWidth: 26, height: 24, padding: it.count ? '0 6px' : '0',
+            background: 'transparent', border: `1px solid ${t.hairlineStrong}`, borderRadius: 5,
+            color: t.inkDim, textDecoration: 'none',
+            fontFamily: t.mono, fontSize: 10, fontWeight: 600, lineHeight: 1,
+            transition: 'all .15s',
+            opacity: it.url ? 1 : 0.45, cursor: it.url ? 'pointer' : 'default',
+          }}
+          onMouseEnter={(e) => { if (!it.url) return; e.currentTarget.style.color = t.ink; e.currentTarget.style.borderColor = t.ink; e.currentTarget.style.background = t.elevated; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = t.inkDim; e.currentTarget.style.borderColor = t.hairlineStrong; e.currentTarget.style.background = 'transparent'; }}
+        >
+          <FavImg domain={it.domain} alt={it.label} />
+          {it.count ? <span>×{it.count}</span> : null}
+        </a>
+      ))}
+    </div>
+  );
+}
 
-  /* ── Bottom row: badge strip — favicon + label + bordered frame ── */
-  /* Order: IdeaScale(提案書) → Milestones → Video → 完了Report */
-  const badgeItems = [];
-  if (p.isLink) badgeItems.push({
-    k: 'IS', label: lang === 'en' ? 'Proposal' : '提案書',
-    url: p.isLink, domain: 'ideascale.com',
-  });
-  if (p.ms) badgeItems.push({
-    k: 'MS', label: lang === 'en' ? 'Milestones' : 'マイルストーン',
-    url: p.ms, domain: 'milestones.projectcatalyst.io',
-  });
-  if (p.cv) badgeItems.push({
-    k: 'CV', label: lang === 'en' ? 'Closeout Video' : '完了動画',
-    url: p.cv, domain: 'youtube.com',
-  });
-  if (p.videoUrl && !p.unlistedVideo && !p.embedDisabledVideo && !p.cv) badgeItems.push({
-    k: 'VIDEO', label: 'YouTube',
-    url: p.videoUrl, domain: 'youtube.com',
-  });
+/* ── Row 2: fixed 4-slot badge grid (提案書 | マイルストーン | 完了動画 | 完了レポート) ──
+   Empty slots keep their space — layout is consistent across ALL cards. */
+function LinkBadgeRow({ p, t, lang }) {
   const reportUrl = p.cr || (p.report && p.report.url) || null;
-  if (!hideReport && reportUrl) badgeItems.push({
-    k: 'CR', label: lang === 'en' ? 'Report' : '完了レポート',
-    url: reportUrl, domain: p.cr ? 'docs.google.com' : null, accent: true,
-  });
-
-  if (!topItems.length && !badgeItems.length) return null;
+  /* 4 fixed slots — always rendered, visible only when data exists */
+  const slots = [
+    { k: 'IS',  url: p.isLink || null,  label: lang === 'en' ? 'Proposal'  : '提案書',       domain: 'ideascale.com' },
+    { k: 'MS',  url: p.ms || null,      label: lang === 'en' ? 'Milestones': 'マイルストーン', domain: 'milestones.projectcatalyst.io' },
+    { k: 'CV',  url: p.cv || (p.videoUrl && !p.unlistedVideo && !p.embedDisabledVideo ? p.videoUrl : null),
+                                         label: p.cv ? (lang === 'en' ? 'Closeout Video' : '完了動画') : 'YouTube',
+                                         domain: 'youtube.com' },
+    { k: 'CR',  url: reportUrl,         label: lang === 'en' ? 'Report'    : '完了レポート',   domain: p.cr ? 'docs.google.com' : null, accent: true },
+  ];
+  const anyVisible = slots.some(s => s.url);
+  if (!anyVisible) return null;
   return (
     <div style={{
-      display: 'flex', flexDirection: 'column', gap: 5,
-      marginTop: 'auto', paddingTop: 4,
-      paddingRight: reservedRight,
+      display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 3,
+      paddingTop: 2,
     }}>
-      {/* ── Top row: small favicon icon buttons ── */}
-      {topItems.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-          {topItems.map((it, i) => (
-            <a
-              key={it.k + i}
-              href={it.url || '#'}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => { e.stopPropagation(); if (!it.url) e.preventDefault(); }}
-              title={it.label + (it.count ? ' ×' + it.count : '')}
-              style={{
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                gap: 4,
-                minWidth: 26, height: 26,
-                padding: it.count ? '0 7px' : '0',
-                background: 'transparent',
-                border: `1px solid ${t.hairlineStrong}`,
-                borderRadius: 6,
-                color: t.inkDim,
-                textDecoration: 'none',
-                fontFamily: t.mono, fontSize: 10, fontWeight: 600, letterSpacing: '0.02em',
-                lineHeight: 1,
-                transition: 'all .15s',
-                opacity: it.url ? 1 : 0.45,
-                cursor: it.url ? 'pointer' : 'default',
-              }}
-              onMouseEnter={(e) => { if (!it.url) return; e.currentTarget.style.color = t.ink; e.currentTarget.style.borderColor = t.ink; e.currentTarget.style.background = t.elevated; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = t.inkDim; e.currentTarget.style.borderColor = t.hairlineStrong; e.currentTarget.style.background = 'transparent'; }}
-            >
-              {it.icon}
-              {it.count ? <span>×{it.count}</span> : null}
-            </a>
-          ))}
-        </div>
-      )}
-      {/* ── Bottom row: bordered badge strip (IS → MS → Video → CR) ── */}
-      {badgeItems.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-          {badgeItems.map((b) => {
-            const isGreen = b.accent;
-            const bg    = isGreen ? (t.green ? t.green + '18' : 'rgba(125,214,163,0.12)') : (t.hairlineStrong + '44');
-            const bgHov = isGreen ? (t.green ? t.green + '28' : 'rgba(125,214,163,0.22)') : (t.hairlineStrong + '88');
-            const bdr   = isGreen ? (t.green ? t.green + '50' : 'rgba(125,214,163,0.38)') : t.hairlineStrong;
-            const clr   = isGreen ? (t.green || '#7dd6a3') : t.inkDim;
-            return (
-              <a
-                key={b.k}
-                href={b.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                title={b.label}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 4,
-                  height: 24, padding: '0 8px',
-                  background: bg,
-                  border: `1px solid ${bdr}`,
-                  borderRadius: 5,
-                  fontFamily: t.body, fontSize: 8.5, fontWeight: 700,
-                  letterSpacing: '0.06em',
-                  color: clr,
-                  textDecoration: 'none',
-                  transition: 'background .15s',
-                  whiteSpace: 'nowrap',
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = bgHov; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = bg; }}
-              >
-                {b.domain
-                  ? faviconImg(b.domain, b.label)
-                  : <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M3 1h4l2 2v7.5a.5.5 0 0 1-.5.5h-5.5a.5.5 0 0 1-.5-.5V1.5a.5.5 0 0 1 .5-.5Z" stroke="currentColor" strokeWidth="1.2"/><path d="M7 1v2.5h2" stroke="currentColor" strokeWidth="1.2"/></svg>
-                }
-                <span>{b.label}</span>
-              </a>
-            );
-          })}
-        </div>
-      )}
+      {slots.map((s) => {
+        if (!s.url) {
+          /* Empty slot — invisible placeholder that keeps the grid position */
+          return <div key={s.k} />;
+        }
+        const isGreen = s.accent;
+        const bg    = isGreen ? (t.green ? t.green + '18' : 'rgba(125,214,163,0.12)') : (t.hairlineStrong + '44');
+        const bgHov = isGreen ? (t.green ? t.green + '28' : 'rgba(125,214,163,0.22)') : (t.hairlineStrong + '88');
+        const bdr   = isGreen ? (t.green ? t.green + '50' : 'rgba(125,214,163,0.38)') : t.hairlineStrong;
+        const clr   = isGreen ? (t.green || '#7dd6a3') : t.inkDim;
+        return (
+          <a
+            key={s.k}
+            href={s.url}
+            target="_blank" rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            title={s.label}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 3,
+              height: 22, padding: '0 5px',
+              background: bg, border: `1px solid ${bdr}`, borderRadius: 4,
+              fontFamily: t.body, fontSize: 8, fontWeight: 700,
+              letterSpacing: '0.04em',
+              color: clr, textDecoration: 'none',
+              transition: 'background .15s',
+              whiteSpace: 'nowrap', overflow: 'hidden',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = bgHov; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = bg; }}
+          >
+            {s.domain
+              ? <FavImg domain={s.domain} alt={s.label} size={12} />
+              : <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M3 1h4l2 2v7.5a.5.5 0 0 1-.5.5h-5.5a.5.5 0 0 1-.5-.5V1.5a.5.5 0 0 1 .5-.5Z" stroke="currentColor" strokeWidth="1.2"/><path d="M7 1v2.5h2" stroke="currentColor" strokeWidth="1.2"/></svg>
+            }
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.label}</span>
+          </a>
+        );
+      })}
     </div>
   );
 }
