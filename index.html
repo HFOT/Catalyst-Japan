@@ -3809,7 +3809,7 @@ function render(){
         teamTags+='<span class="role-tag '+roleClass(p.team[ti].role)+'">'+esc(p.team[ti].name)+'</span>';
       }}
       var lkIcons='';
-      if(p.is)lkIcons+='<span class="lk-icon" title="IdeaScale" data-href="'+esc(p.is)+'"><img src="https://www.google.com/s2/favicons?domain=ideascale.com&sz=32" width="12" height="12" style="vertical-align:middle"></span>';
+      /* IdeaScale(提案書) — サイト全404のため非表示 */
       if(p.ms)lkIcons+='<span class="lk-icon" title="Milestones" data-href="'+esc(p.ms)+'"><img src="https://www.google.com/s2/favicons?domain=milestones.projectcatalyst.io&sz=32" width="12" height="12" style="vertical-align:middle"></span>';
       if(p.cv)lkIcons+='<span class="lk-icon" title="完了Video" data-href="'+esc(p.cv)+'">🎬</span>';
       if(p.yt)lkIcons+='<span class="lk-icon" title="YouTube" data-href="'+esc(p.yt)+'">▶</span>';
@@ -7881,7 +7881,7 @@ function renderNetwork(){
         var rTag=myRole&&myRole!=='提案者'&&myRole!=='仲介'?roleTag(myRole):'';
         var fTag=p.fund?'<span class="cat-tag fund-tag">F'+p.fund+'</span>':'';
         var lkIcons='';
-        if(p.is)lkIcons+='<span class="lk-icon" title="IdeaScale" data-href="'+esc(p.is)+'"><img src="https://www.google.com/s2/favicons?domain=ideascale.com&sz=32" width="12" height="12" style="vertical-align:middle"></span>';
+        /* IdeaScale(提案書) — サイト全404のため非表示 */
         if(p.ms)lkIcons+='<span class="lk-icon" title="Milestones" data-href="'+esc(p.ms)+'"><img src="https://www.google.com/s2/favicons?domain=milestones.projectcatalyst.io&sz=32" width="12" height="12" style="vertical-align:middle"></span>';
         if(p.cv)lkIcons+='<span class="lk-icon" title="完了Video" data-href="'+esc(p.cv)+'">🎬</span>';
         if(p.yt)lkIcons+='<span class="lk-icon" title="YouTube" data-href="'+esc(p.yt)+'">▶</span>';
@@ -8009,7 +8009,7 @@ function showEdgePopup(edge,x,y){
     var pLk='';
     if(p.url||p.x||p.yt||p.report||p.cr||p.cv||p.is||p.ms||p.ce||p.pc){
       pLk='<span class="lk-row" style="margin-left:auto">';
-      if(p.is)pLk+='<span class="lk-icon" title="IdeaScale" data-href="'+esc(p.is)+'"><img src="https://www.google.com/s2/favicons?domain=ideascale.com&sz=32" width="12" height="12" style="vertical-align:middle"></span>';
+      /* IdeaScale(提案書) — サイト全404のため非表示 */
       if(p.ms)pLk+='<span class="lk-icon" title="Milestones" data-href="'+esc(p.ms)+'"><img src="https://www.google.com/s2/favicons?domain=milestones.projectcatalyst.io&sz=32" width="12" height="12" style="vertical-align:middle"></span>';
       if(p.cv)pLk+='<span class="lk-icon" title="完了Video" data-href="'+esc(p.cv)+'">🎬</span>';
       if(p.yt)pLk+='<span class="lk-icon" title="YouTube" data-href="'+esc(p.yt)+'">▶</span>';

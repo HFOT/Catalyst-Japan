@@ -4542,7 +4542,7 @@ function LinkBadgeRow({ p, t, lang }) {
   const reportUrl = p.cr || (p.report && p.report.url) || null;
   /* 4 fixed slots — always rendered, visible only when data exists */
   const slots = [
-    { k: 'IS',  url: p.isLink || null,  label: lang === 'en' ? 'Proposal'  : '提案書',       domain: 'ideascale.com' },
+    /* IdeaScale(提案書) — サイト全404のため非表示 */
     { k: 'MS',  url: p.ms || null,      label: lang === 'en' ? 'Milestones': 'マイルストーン', domain: 'milestones.projectcatalyst.io' },
     { k: 'CV',  url: p.cv || (p.videoUrl && !p.unlistedVideo && !p.embedDisabledVideo ? p.videoUrl : null),
                                          label: p.cv ? (lang === 'en' ? 'Closeout Video' : '完了動画') : 'YouTube',
@@ -4553,7 +4553,7 @@ function LinkBadgeRow({ p, t, lang }) {
   if (!anyVisible) return null;
   return (
     <div style={{
-      display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 3,
+      display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 3,
       paddingTop: 2,
     }}>
       {slots.map((s) => {

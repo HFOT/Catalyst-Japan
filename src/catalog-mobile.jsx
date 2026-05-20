@@ -370,7 +370,7 @@ function ProposalDetail({ p, onClose }) {
   if (p.pc)           linkItems.push({ k: 'PC',   label: 'ProjectCatalyst', url: p.pc, icon: fav('projectcatalyst.io') });
   /* Bottom row: badge strip — IS → MS → Video → CR (favicon + label + bordered frame) */
   const badgeItems = [];
-  if (p.isLink)       badgeItems.push({ k: 'IS',   label: '提案書', url: p.isLink, icon: fav('ideascale.com') });
+  /* IdeaScale(提案書) — サイト全404のため非表示 */
   if (p.ms)           badgeItems.push({ k: 'MS',   label: 'マイルストーン', url: p.ms, icon: fav('milestones.projectcatalyst.io') });
   if (p.cv)           badgeItems.push({ k: 'CV',   label: '完了動画', url: p.cv, icon: fav('youtube.com') });
   if (p.videoUrl && !p.unlistedVideo && !p.embedDisabledVideo && !p.cv)
