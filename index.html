@@ -3809,12 +3809,16 @@ function render(){
         teamTags+='<span class="role-tag '+roleClass(p.team[ti].role)+'">'+esc(p.team[ti].name)+'</span>';
       }}
       var lkIcons='';
+      if(p.is)lkIcons+='<span class="lk-icon" title="IdeaScale" data-href="'+esc(p.is)+'"><img src="https://www.google.com/s2/favicons?domain=ideascale.com&sz=32" width="12" height="12" style="vertical-align:middle"></span>';
+      if(p.ms)lkIcons+='<span class="lk-icon" title="Milestones" data-href="'+esc(p.ms)+'"><img src="https://www.google.com/s2/favicons?domain=milestones.projectcatalyst.io&sz=32" width="12" height="12" style="vertical-align:middle"></span>';
+      if(p.cv)lkIcons+='<span class="lk-icon" title="完了Video" data-href="'+esc(p.cv)+'">🎬</span>';
+      if(p.yt)lkIcons+='<span class="lk-icon" title="YouTube" data-href="'+esc(p.yt)+'">▶</span>';
       if(p.url)lkIcons+='<span class="lk-icon" title="Project" data-href="'+esc(p.url)+'">↗</span>';
       if(p.x)lkIcons+='<span class="lk-icon" title="X" data-href="'+esc(p.x)+'">𝕏</span>';
-      if(p.yt)lkIcons+='<span class="lk-icon" title="YouTube" data-href="'+esc(p.yt)+'">▶</span>';
+      if(p.ce)lkIcons+='<span class="lk-icon" title="CatalystExplorer" data-href="'+esc(p.ce)+'"><img src="https://www.google.com/s2/favicons?domain=catalystexplorer.com&sz=32" width="12" height="12" style="vertical-align:middle"></span>';
+      if(p.pc)lkIcons+='<span class="lk-icon" title="ProjectCatalyst" data-href="'+esc(p.pc)+'"><img src="https://www.google.com/s2/favicons?domain=projectcatalyst.io&sz=32" width="12" height="12" style="vertical-align:middle"></span>';
       if(p.cr)lkIcons+='<span class="lk-icon lk-cr" title="'+T('completionReport')+'" data-href="'+esc(p.cr)+'">📋</span>';
       else if(p.report)lkIcons+='<span class="lk-icon lk-cr" title="'+T('completionReport')+'" data-report="'+esc(p.id)+'">CR</span>';
-      if(p.cv)lkIcons+='<span class="lk-icon" title="完了Video" data-href="'+esc(p.cv)+'">🎬</span>';
       var lblPrefix=(viewMode==='proposer'&&myRole&&myRole!=='提案者')?(roleName(myRole)+' → '):'';
       card.innerHTML='<div class="row"><span class="st-dot" style="background:'+stColor(p.st)+'"></span>'
         +'<div class="label">'+(lblPrefix?'<span class="role-pfx">'+esc(lblPrefix)+'</span>':'')+esc(n.label)+'</div>'
@@ -7690,7 +7694,7 @@ function renderNetwork(){
     /* proposals section */
     var sec=document.createElement('div');
     sec.className='nw-detail-sec';
-    var hasLinks=node.props.some(function(p){return p.url||p.x||p.yt||p.report||p.cr||p.cv;});
+    var hasLinks=node.props.some(function(p){return p.url||p.x||p.yt||p.report||p.cr||p.cv||p.is||p.ms||p.ce||p.pc;});
     sec.innerHTML='<h4>'+T('propS')+' ('+node.props.length+')</h4>';
     for(var pi=0;pi<node.props.length;pi++){
       var pr=node.props[pi];
@@ -7877,12 +7881,16 @@ function renderNetwork(){
         var rTag=myRole&&myRole!=='提案者'&&myRole!=='仲介'?roleTag(myRole):'';
         var fTag=p.fund?'<span class="cat-tag fund-tag">F'+p.fund+'</span>':'';
         var lkIcons='';
+        if(p.is)lkIcons+='<span class="lk-icon" title="IdeaScale" data-href="'+esc(p.is)+'"><img src="https://www.google.com/s2/favicons?domain=ideascale.com&sz=32" width="12" height="12" style="vertical-align:middle"></span>';
+        if(p.ms)lkIcons+='<span class="lk-icon" title="Milestones" data-href="'+esc(p.ms)+'"><img src="https://www.google.com/s2/favicons?domain=milestones.projectcatalyst.io&sz=32" width="12" height="12" style="vertical-align:middle"></span>';
+        if(p.cv)lkIcons+='<span class="lk-icon" title="完了Video" data-href="'+esc(p.cv)+'">🎬</span>';
+        if(p.yt)lkIcons+='<span class="lk-icon" title="YouTube" data-href="'+esc(p.yt)+'">▶</span>';
         if(p.url)lkIcons+='<span class="lk-icon" title="Project" data-href="'+esc(p.url)+'">↗</span>';
         if(p.x)lkIcons+='<span class="lk-icon" title="X" data-href="'+esc(p.x)+'">𝕏</span>';
-        if(p.yt)lkIcons+='<span class="lk-icon" title="YouTube" data-href="'+esc(p.yt)+'">▶</span>';
+        if(p.ce)lkIcons+='<span class="lk-icon" title="CatalystExplorer" data-href="'+esc(p.ce)+'"><img src="https://www.google.com/s2/favicons?domain=catalystexplorer.com&sz=32" width="12" height="12" style="vertical-align:middle"></span>';
+        if(p.pc)lkIcons+='<span class="lk-icon" title="ProjectCatalyst" data-href="'+esc(p.pc)+'"><img src="https://www.google.com/s2/favicons?domain=projectcatalyst.io&sz=32" width="12" height="12" style="vertical-align:middle"></span>';
         if(p.cr)lkIcons+='<span class="lk-icon lk-cr" title="'+T('completionReport')+'" data-href="'+esc(p.cr)+'">📋</span>';
         else if(p.report)lkIcons+='<span class="lk-icon lk-cr" title="'+T('completionReport')+'" data-report="'+esc(p.id)+'">CR</span>';
-        if(p.cv)lkIcons+='<span class="lk-icon" title="完了Video" data-href="'+esc(p.cv)+'">🎬</span>';
         card.innerHTML='<div class="row"><span class="st-dot" style="background:'+stColor(p.st)+'"></span>'
           +'<div class="label">'+esc(n.label)+'</div>'
           +(lkIcons?'<span class="lk-row">'+lkIcons+'</span>':'')
@@ -7999,14 +8007,18 @@ function showEdgePopup(edge,x,y){
     var item=document.createElement('div');
     item.className='nw-popup-item';
     var pLk='';
-    if(p.url||p.x||p.yt||p.report||p.cr||p.cv){
+    if(p.url||p.x||p.yt||p.report||p.cr||p.cv||p.is||p.ms||p.ce||p.pc){
       pLk='<span class="lk-row" style="margin-left:auto">';
+      if(p.is)pLk+='<span class="lk-icon" title="IdeaScale" data-href="'+esc(p.is)+'"><img src="https://www.google.com/s2/favicons?domain=ideascale.com&sz=32" width="12" height="12" style="vertical-align:middle"></span>';
+      if(p.ms)pLk+='<span class="lk-icon" title="Milestones" data-href="'+esc(p.ms)+'"><img src="https://www.google.com/s2/favicons?domain=milestones.projectcatalyst.io&sz=32" width="12" height="12" style="vertical-align:middle"></span>';
+      if(p.cv)pLk+='<span class="lk-icon" title="完了Video" data-href="'+esc(p.cv)+'">🎬</span>';
+      if(p.yt)pLk+='<span class="lk-icon" title="YouTube" data-href="'+esc(p.yt)+'">▶</span>';
       if(p.url)pLk+='<span class="lk-icon" title="Project" data-href="'+esc(p.url)+'">↗</span>';
       if(p.x)pLk+='<span class="lk-icon" title="X" data-href="'+esc(p.x)+'">𝕏</span>';
-      if(p.yt)pLk+='<span class="lk-icon" title="YouTube" data-href="'+esc(p.yt)+'">▶</span>';
+      if(p.ce)pLk+='<span class="lk-icon" title="CatalystExplorer" data-href="'+esc(p.ce)+'"><img src="https://www.google.com/s2/favicons?domain=catalystexplorer.com&sz=32" width="12" height="12" style="vertical-align:middle"></span>';
+      if(p.pc)pLk+='<span class="lk-icon" title="ProjectCatalyst" data-href="'+esc(p.pc)+'"><img src="https://www.google.com/s2/favicons?domain=projectcatalyst.io&sz=32" width="12" height="12" style="vertical-align:middle"></span>';
       if(p.cr)pLk+='<span class="lk-icon lk-cr" title="'+T('completionReport')+'" data-href="'+esc(p.cr)+'">📋</span>';
       else if(p.report)pLk+='<span class="lk-icon lk-cr" title="'+T('completionReport')+'" data-report="'+esc(p.id)+'">CR</span>';
-      if(p.cv)pLk+='<span class="lk-icon" title="完了Video" data-href="'+esc(p.cv)+'">🎬</span>';
       pLk+='</span>';
     }
     item.innerHTML='<div style="display:flex;align-items:center;gap:4px"><div class="nw-popup-item-label" style="flex:1;min-width:0">'+esc(pLabel(p))+'</div>'+pLk+'</div>'

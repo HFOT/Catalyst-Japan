@@ -4529,98 +4529,127 @@ function LinkIconStrip({ p, hideReport = false, reservedRight = 0 }) {
     />
   );
 
-  /* Unified visual: same square icon button, same size, same border treatment.
-     Real-brand favicons used for service links; PDF/Report keeps an SVG glyph since it's a file type, not a service. */
-  const items = [];
-  if (p.site) {
-    /* Use the actual site's domain for its favicon */
-    const dom = (window.urlDomain && window.urlDomain(p.site)) || (p.siteDomain || 'example.com');
-    items.push({ k: 'SITE', label: p.siteDomain || 'Site', url: p.site, icon: faviconImg(dom, 'Site') });
-  }
-  /* Closeout report (IOG official) takes priority over generic PMETA doc links */
-  if (!hideReport && p.cr) {
-    items.push({ k: 'CR', label: lang === 'en' ? 'Closeout Report' : '完了レポート', url: p.cr, accent: p.s === '完了',
-      icon: <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M3 1h4l2 2v7.5a.5.5 0 0 1-.5.5h-5.5a.5.5 0 0 1-.5-.5V1.5a.5.5 0 0 1 .5-.5Z" stroke="currentColor" strokeWidth="1.2"/><path d="M7 1v2.5h2" stroke="currentColor" strokeWidth="1.2"/><path d="M4.5 6.5l1 1 2-2" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/></svg>
-    });
-  } else if (!hideReport && p.report) {
-    items.push({ k: 'DOC', label: p.s === '完了' ? 'Report' : 'Doc', url: p.report.url, accent: p.s === '完了',
-      icon: <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M3 1h4l2 2v7.5a.5.5 0 0 1-.5.5h-5.5a.5.5 0 0 1-.5-.5V1.5a.5.5 0 0 1 .5-.5Z" stroke="currentColor" strokeWidth="1.2"/><path d="M7 1v2.5h2" stroke="currentColor" strokeWidth="1.2"/></svg>
-    });
-  }
-  /* Closeout video (IOG official) — show alongside regular video */
-  if (p.cv) items.push({
+  /* ── Upper row: regular icon buttons (IdeaScale → Milestones → Video → Site → GH/X/LinkedIn → Explorer) ── */
+  const topItems = [];
+  /* Order: IS → MS → CV → Video → Site → GH → X → LinkedIn → CE */
+  if (p.isLink) topItems.push({
+    k: 'IS', label: 'IdeaScale', url: p.isLink,
+    icon: faviconImg('ideascale.com', 'IdeaScale'),
+  });
+  if (p.ms) topItems.push({
+    k: 'MS', label: lang === 'en' ? 'Milestones' : 'マイルストーン', url: p.ms,
+    icon: faviconImg('milestones.projectcatalyst.io', 'Milestones'),
+  });
+  if (p.cv) topItems.push({
     k: 'CV', label: lang === 'en' ? 'Closeout Video' : '完了動画', url: p.cv,
     icon: faviconImg('youtube.com', 'Closeout Video'),
   });
-  if (p.videoUrl && !p.unlistedVideo && !p.embedDisabledVideo) items.push({
+  if (p.videoUrl && !p.unlistedVideo && !p.embedDisabledVideo) topItems.push({
     k: 'VIDEO', label: 'YouTube', url: p.videoUrl,
     icon: faviconImg('youtube.com', 'YouTube'),
   });
-  if (p.links && p.links.GH) items.push({
+  if (p.site) {
+    const dom = (window.urlDomain && window.urlDomain(p.site)) || (p.siteDomain || 'example.com');
+    topItems.push({ k: 'SITE', label: p.siteDomain || 'Site', url: p.site, icon: faviconImg(dom, 'Site') });
+  }
+  if (p.links && p.links.GH) topItems.push({
     k: 'GH', label: 'GitHub', count: p.links.GH,
     url: window.resolveLinkUrl ? window.resolveLinkUrl(p.meta, 'GH') : null,
     icon: faviconImg('github.com', 'GitHub'),
   });
-  if (p.links && p.links.x) items.push({
+  if (p.links && p.links.x) topItems.push({
     k: 'X', label: 'X (Twitter)', count: p.links.x,
     url: window.resolveLinkUrl ? window.resolveLinkUrl(p.meta, 'x') : null,
     icon: faviconImg('x.com', 'X'),
   });
-  if (p.links && p.links.in) items.push({
+  if (p.links && p.links.in) topItems.push({
     k: 'in', label: 'LinkedIn', count: p.links.in,
     url: window.resolveLinkUrl ? window.resolveLinkUrl(p.meta, 'in') : null,
     icon: faviconImg('linkedin.com', 'LinkedIn'),
   });
-  if (p.ce || p.explorer) items.push({
+  if (p.ce || p.explorer) topItems.push({
     k: 'EX', label: 'Catalyst Explorer', url: p.ce || p.explorer,
     icon: faviconImg('catalystexplorer.com', 'Catalyst Explorer'),
   });
-  if (p.isLink) items.push({
-    k: 'IS', label: 'IdeaScale', url: p.isLink,
-    icon: faviconImg('ideascale.com', 'IdeaScale'),
-  });
-  if (p.ms) items.push({
-    k: 'MS', label: lang === 'en' ? 'Milestones' : 'マイルストーン', url: p.ms,
-    icon: faviconImg('milestones.projectcatalyst.io', 'Milestones'),
-  });
-  if (!items.length) return null;
+
+  /* ── Bottom row: completion report — bordered badge with favicon (green accent) ── */
+  const reportUrl = p.cr || (p.report && p.report.url) || null;
+  const hasReport = !hideReport && reportUrl;
+
+  if (!topItems.length && !hasReport) return null;
   return (
     <div style={{
-      display: 'flex', flexWrap: 'wrap', gap: 5,
+      display: 'flex', flexDirection: 'column', gap: 5,
       marginTop: 'auto', paddingTop: 4,
-      paddingRight: reservedRight,  /* leaves room for the bottom-right Report badge if present */
+      paddingRight: reservedRight,
     }}>
-      {items.map((it, i) => (
+      {/* ── Top row: favicon icon buttons ── */}
+      {topItems.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+          {topItems.map((it, i) => (
+            <a
+              key={it.k + i}
+              href={it.url || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => { e.stopPropagation(); if (!it.url) e.preventDefault(); }}
+              title={it.label + (it.count ? ' ×' + it.count : '')}
+              style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                gap: 4,
+                minWidth: 26, height: 26,
+                padding: it.count ? '0 7px' : '0',
+                background: 'transparent',
+                border: `1px solid ${t.hairlineStrong}`,
+                borderRadius: 6,
+                color: t.inkDim,
+                textDecoration: 'none',
+                fontFamily: t.mono, fontSize: 10, fontWeight: 600, letterSpacing: '0.02em',
+                lineHeight: 1,
+                transition: 'all .15s',
+                opacity: it.url ? 1 : 0.45,
+                cursor: it.url ? 'pointer' : 'default',
+              }}
+              onMouseEnter={(e) => { if (!it.url) return; e.currentTarget.style.color = t.ink; e.currentTarget.style.borderColor = t.ink; e.currentTarget.style.background = t.elevated; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = t.inkDim; e.currentTarget.style.borderColor = t.hairlineStrong; e.currentTarget.style.background = 'transparent'; }}
+            >
+              {it.icon}
+              {it.count ? <span>×{it.count}</span> : null}
+            </a>
+          ))}
+        </div>
+      )}
+      {/* ── Bottom row: completion report badge with favicon + bordered frame ── */}
+      {hasReport && (
         <a
-          key={it.k + i}
-          href={it.url || '#'}
+          href={reportUrl}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={(e) => { e.stopPropagation(); if (!it.url) e.preventDefault(); }}
-          title={it.label + (it.count ? ' ×' + it.count : '')}
+          onClick={(e) => e.stopPropagation()}
+          title={lang === 'en' ? 'Completion Report' : '完了レポート'}
           style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            gap: 4,
-            minWidth: 26, height: 26,
-            padding: it.count ? '0 7px' : '0',
-            background: 'transparent',
-            border: `1px solid ${t.hairlineStrong}`,
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            alignSelf: 'flex-start',
+            height: 26, padding: '0 9px',
+            background: t.green ? (t.green + '18') : 'rgba(125,214,163,0.12)',
+            border: `1px solid ${t.green ? (t.green + '50') : 'rgba(125,214,163,0.38)'}`,
             borderRadius: 6,
-            color: t.inkDim,
+            fontFamily: t.body, fontSize: 9, fontWeight: 700,
+            letterSpacing: '0.08em', textTransform: 'uppercase',
+            color: t.green || '#7dd6a3',
             textDecoration: 'none',
-            fontFamily: t.mono, fontSize: 10, fontWeight: 600, letterSpacing: '0.02em',
-            lineHeight: 1,
-            transition: 'all .15s',
-            opacity: it.url ? 1 : 0.45,
-            cursor: it.url ? 'pointer' : 'default',
+            transition: 'background .15s',
           }}
-          onMouseEnter={(e) => { if (!it.url) return; e.currentTarget.style.color = t.ink; e.currentTarget.style.borderColor = t.ink; e.currentTarget.style.background = t.elevated; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = t.inkDim; e.currentTarget.style.borderColor = t.hairlineStrong; e.currentTarget.style.background = 'transparent'; }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = t.green ? (t.green + '28') : 'rgba(125,214,163,0.22)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = t.green ? (t.green + '18') : 'rgba(125,214,163,0.12)'; }}
         >
-          {it.icon}
-          {it.count ? <span>×{it.count}</span> : null}
+          {p.cr
+            ? faviconImg('docs.google.com', 'Report')
+            : <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M3 1h4l2 2v7.5a.5.5 0 0 1-.5.5h-5.5a.5.5 0 0 1-.5-.5V1.5a.5.5 0 0 1 .5-.5Z" stroke="currentColor" strokeWidth="1.2"/><path d="M7 1v2.5h2" stroke="currentColor" strokeWidth="1.2"/></svg>
+          }
+          <span>{lang === 'en' ? 'Report' : '完了レポート'}</span>
         </a>
-      ))}
+      )}
     </div>
   );
 }

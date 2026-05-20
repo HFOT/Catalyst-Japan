@@ -360,19 +360,20 @@ function ProposalDetail({ p, onClose }) {
   };
   /* Build link items — favicons via Google's service, same pattern as desktop */
   const fav = (domain) => `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`;
+  /* Order: IS → MS → CV → Video → Site → GH → X → LinkedIn → CE → PC */
   const linkItems = [];
-  if (p.site)         linkItems.push({ k: 'SITE',  label: p.siteDomain || 'Site', url: p.site, icon: fav((window.urlDomain && window.urlDomain(p.site)) || p.siteDomain || 'example.com') });
-  if (p.cr)           linkItems.push({ k: 'CR',   label: '完了レポート', url: p.cr, accent: true });
-  else if (p.report)  linkItems.push({ k: 'DOC',  label: p.s === '完了' ? '完了レポート' : 'Doc', url: p.report.url, accent: p.s === '完了' });
+  if (p.isLink)       linkItems.push({ k: 'IS',   label: 'IdeaScale', url: p.isLink, icon: fav('ideascale.com') });
+  if (p.ms)           linkItems.push({ k: 'MS',   label: 'Milestones', url: p.ms, icon: fav('milestones.projectcatalyst.io') });
   if (p.cv)           linkItems.push({ k: 'CV',   label: '完了動画', url: p.cv, icon: fav('youtube.com') });
   if (p.videoUrl)     linkItems.push({ k: 'VIDEO', label: 'YouTube',   url: p.videoUrl, icon: fav('youtube.com'), onClick: playVideo });
+  if (p.site)         linkItems.push({ k: 'SITE',  label: p.siteDomain || 'Site', url: p.site, icon: fav((window.urlDomain && window.urlDomain(p.site)) || p.siteDomain || 'example.com') });
   if (p.links && p.links.GH) linkItems.push({ k: 'GH', label: 'GitHub',   count: p.links.GH, url: window.resolveLinkUrl ? window.resolveLinkUrl(p.meta, 'GH') : null, icon: fav('github.com') });
   if (p.links && p.links.x)  linkItems.push({ k: 'X',  label: 'X',        count: p.links.x,  url: window.resolveLinkUrl ? window.resolveLinkUrl(p.meta, 'x') : null,  icon: fav('x.com') });
   if (p.links && p.links.in) linkItems.push({ k: 'in', label: 'LinkedIn', count: p.links.in, url: window.resolveLinkUrl ? window.resolveLinkUrl(p.meta, 'in') : null, icon: fav('linkedin.com') });
   if (p.ce || p.explorer) linkItems.push({ k: 'CE', label: 'Explorer', url: p.ce || p.explorer, icon: fav('catalystexplorer.com') });
-  if (p.isLink)       linkItems.push({ k: 'IS',   label: 'IdeaScale', url: p.isLink, icon: fav('ideascale.com') });
   if (p.pc)           linkItems.push({ k: 'PC',   label: 'ProjectCatalyst', url: p.pc, icon: fav('projectcatalyst.io') });
-  if (p.ms)           linkItems.push({ k: 'MS',   label: 'Milestones', url: p.ms, icon: fav('milestones.projectcatalyst.io') });
+  /* Bottom badge: completion report */
+  const reportUrl = p.cr || (p.report && p.report.url) || null;
 
   return (
     <div
@@ -539,36 +540,60 @@ function ProposalDetail({ p, onClose }) {
             }}>{p.excerpt}</div>
           )}
 
-          {/* Links grid */}
-          {linkItems.length > 0 && (
+          {/* Links grid + completion report badge */}
+          {(linkItems.length > 0 || reportUrl) && (
             <div>
               <div style={{
                 fontFamily: M.mono, fontSize: 9, fontWeight: 700,
                 letterSpacing: '0.22em', textTransform: 'uppercase',
                 color: M.inkMuted, marginBottom: 8,
               }}>関連リンク</div>
-              <div style={{
-                display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 6,
-              }}>
-                {linkItems.map(it => (
-                  it.onClick ? (
-                    <button key={it.k} onClick={(e) => { e.stopPropagation(); it.onClick(); }}
-                      style={linkBtnStyle(it.accent)}>
-                      {it.icon && <img src={it.icon} alt="" width="14" height="14" style={{ display: 'block', borderRadius: 2 }} />}
-                      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.label}</span>
-                      {it.count && <span style={{ color: M.inkMuted, fontSize: 10 }}>×{it.count}</span>}
-                    </button>
-                  ) : (
-                    <a key={it.k} href={it.url || '#'} target="_blank" rel="noopener noreferrer"
-                      onClick={(e) => { e.stopPropagation(); if (!it.url) e.preventDefault(); }}
-                      style={linkBtnStyle(it.accent)}>
-                      {it.icon && <img src={it.icon} alt="" width="14" height="14" style={{ display: 'block', borderRadius: 2 }} />}
-                      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.label}</span>
-                      {it.count && <span style={{ color: M.inkMuted, fontSize: 10 }}>×{it.count}</span>}
-                    </a>
-                  )
-                ))}
-              </div>
+              {linkItems.length > 0 && (
+                <div style={{
+                  display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 6,
+                }}>
+                  {linkItems.map(it => (
+                    it.onClick ? (
+                      <button key={it.k} onClick={(e) => { e.stopPropagation(); it.onClick(); }}
+                        style={linkBtnStyle()}>
+                        {it.icon && <img src={it.icon} alt="" width="14" height="14" style={{ display: 'block', borderRadius: 2 }} />}
+                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.label}</span>
+                        {it.count && <span style={{ color: M.inkMuted, fontSize: 10 }}>×{it.count}</span>}
+                      </button>
+                    ) : (
+                      <a key={it.k} href={it.url || '#'} target="_blank" rel="noopener noreferrer"
+                        onClick={(e) => { e.stopPropagation(); if (!it.url) e.preventDefault(); }}
+                        style={linkBtnStyle()}>
+                        {it.icon && <img src={it.icon} alt="" width="14" height="14" style={{ display: 'block', borderRadius: 2 }} />}
+                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.label}</span>
+                        {it.count && <span style={{ color: M.inkMuted, fontSize: 10 }}>×{it.count}</span>}
+                      </a>
+                    )
+                  ))}
+                </div>
+              )}
+              {/* Completion report badge — bottom, green bordered */}
+              {reportUrl && (
+                <a href={reportUrl} target="_blank" rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 7,
+                    marginTop: 8, padding: '9px 14px',
+                    background: 'rgba(48,209,88,0.14)',
+                    border: '1px solid rgba(48,209,88,0.42)',
+                    borderRadius: 10,
+                    color: '#67e189',
+                    fontFamily: M.body, fontSize: 12, fontWeight: 700,
+                    letterSpacing: '0.06em',
+                    textDecoration: 'none',
+                  }}>
+                  {p.cr
+                    ? <img src={fav('docs.google.com')} alt="" width="14" height="14" style={{ display: 'block', borderRadius: 2 }} />
+                    : <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 1h4l2 2v7.5a.5.5 0 0 1-.5.5h-5.5a.5.5 0 0 1-.5-.5V1.5a.5.5 0 0 1 .5-.5Z" stroke="currentColor" strokeWidth="1.2"/><path d="M7 1v2.5h2" stroke="currentColor" strokeWidth="1.2"/></svg>
+                  }
+                  <span>完了レポート</span>
+                </a>
+              )}
             </div>
           )}
 
