@@ -236,6 +236,13 @@ function buildProposals() {
         reports,
         report: reports[0] || null,
         explorer: meta && ((meta.catalyst && meta.catalyst[0]) || (meta.explorer && meta.explorer[0])) || null,
+        /* Direct links from data.js LINKS (IOG closeout-checker + catalystexplorer + ideascale + milestones) */
+        cr: p.cr || null,       // closeout report URL
+        cv: p.cv || null,       // closeout video URL
+        ce: p.ce || null,       // CatalystExplorer URL
+        isLink: p.is || null,   // IdeaScale URL (avoid clash with JS keyword)
+        pc: p.pc || null,       // projectcatalyst.io URL
+        ms: p.ms || null,       // milestones URL
         links: buildLinkCounts(meta),
         meta,
         hue,

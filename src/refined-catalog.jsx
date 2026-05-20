@@ -3189,15 +3189,15 @@ function PosterCard({ p, size = 'md', fluid = false, onOpenPanelView }) {
         <div style={{
           display: 'flex', alignItems: 'flex-end',
           marginTop: 'auto',
-          paddingRight: p.report && p.s === '完了' ? 158 : 48,
+          paddingRight: (p.cr || p.report) && p.s === '完了' ? 158 : 48,
         }}>
           <LinkIconStrip p={p} hideReport />
         </div>
 
         {/* === Completion report mark — to the LEFT of the panel-view trigger === */}
-        {p.report && p.s === '完了' && (
+        {(p.cr || p.report) && p.s === '完了' && (
           <a
-            href={p.report.url}
+            href={p.cr || (p.report && p.report.url)}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
@@ -3422,9 +3422,9 @@ function PosterListItem({ p, onOpenPanelView }) {
           Stable position across rows; the column shows a "—" placeholder when no report,
           so the panel-view CTA to the right always lines up. */}
       <Cell width={130} align="flex-end">
-        {p.report && p.s === '完了' ? (
+        {(p.cr || p.report) && p.s === '完了' ? (
           <a
-            href={p.report.url}
+            href={p.cr || (p.report && p.report.url)}
             target="_blank" rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
             title={lang === 'en' ? 'Completion Report' : '完了レポート'}
@@ -3563,7 +3563,7 @@ function PosterCompact({ p }) {
           }}>{lang === 'en' ? 'No video' : '動画なし'}</span>
         )}
         {/* Completion report mini badge — bottom-right of thumb */}
-        {p.report && p.s === '完了' && (
+        {(p.cr || p.report) && p.s === '完了' && (
           <span style={{
             position: 'absolute', bottom: 4, right: 4,
             width: 16, height: 16, borderRadius: '50%',
@@ -4514,6 +4514,7 @@ function ATeamStack({ people, size = 18, max = 4 }) {
 
 function LinkIconStrip({ p, hideReport = false, reservedRight = 0 }) {
   const t = useT();
+  const lang = useLang();
   /* Favicon helper — uses Google's public favicon service (already used by index.html disc-bar). */
   const fav = (domain) => `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`;
   const faviconImg = (domain, alt) => (
@@ -4536,9 +4537,20 @@ function LinkIconStrip({ p, hideReport = false, reservedRight = 0 }) {
     const dom = (window.urlDomain && window.urlDomain(p.site)) || (p.siteDomain || 'example.com');
     items.push({ k: 'SITE', label: p.siteDomain || 'Site', url: p.site, icon: faviconImg(dom, 'Site') });
   }
-  if (!hideReport && p.report) items.push({ k: 'DOC', label: p.s === '完了' ? 'Report' : 'Doc', url: p.report.url, accent: p.s === '完了',
-    /* Report icon stays SVG (it's a file, not a service domain) */
-    icon: <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M3 1h4l2 2v7.5a.5.5 0 0 1-.5.5h-5.5a.5.5 0 0 1-.5-.5V1.5a.5.5 0 0 1 .5-.5Z" stroke="currentColor" strokeWidth="1.2"/><path d="M7 1v2.5h2" stroke="currentColor" strokeWidth="1.2"/></svg>
+  /* Closeout report (IOG official) takes priority over generic PMETA doc links */
+  if (!hideReport && p.cr) {
+    items.push({ k: 'CR', label: lang === 'en' ? 'Closeout Report' : '完了レポート', url: p.cr, accent: p.s === '完了',
+      icon: <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M3 1h4l2 2v7.5a.5.5 0 0 1-.5.5h-5.5a.5.5 0 0 1-.5-.5V1.5a.5.5 0 0 1 .5-.5Z" stroke="currentColor" strokeWidth="1.2"/><path d="M7 1v2.5h2" stroke="currentColor" strokeWidth="1.2"/><path d="M4.5 6.5l1 1 2-2" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    });
+  } else if (!hideReport && p.report) {
+    items.push({ k: 'DOC', label: p.s === '完了' ? 'Report' : 'Doc', url: p.report.url, accent: p.s === '完了',
+      icon: <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M3 1h4l2 2v7.5a.5.5 0 0 1-.5.5h-5.5a.5.5 0 0 1-.5-.5V1.5a.5.5 0 0 1 .5-.5Z" stroke="currentColor" strokeWidth="1.2"/><path d="M7 1v2.5h2" stroke="currentColor" strokeWidth="1.2"/></svg>
+    });
+  }
+  /* Closeout video (IOG official) — show alongside regular video */
+  if (p.cv) items.push({
+    k: 'CV', label: lang === 'en' ? 'Closeout Video' : '完了動画', url: p.cv,
+    icon: faviconImg('youtube.com', 'Closeout Video'),
   });
   if (p.videoUrl && !p.unlistedVideo && !p.embedDisabledVideo) items.push({
     k: 'VIDEO', label: 'YouTube', url: p.videoUrl,
@@ -4559,9 +4571,17 @@ function LinkIconStrip({ p, hideReport = false, reservedRight = 0 }) {
     url: window.resolveLinkUrl ? window.resolveLinkUrl(p.meta, 'in') : null,
     icon: faviconImg('linkedin.com', 'LinkedIn'),
   });
-  if (p.explorer) items.push({
-    k: 'EX', label: 'Catalyst Explorer', url: p.explorer,
+  if (p.ce || p.explorer) items.push({
+    k: 'EX', label: 'Catalyst Explorer', url: p.ce || p.explorer,
     icon: faviconImg('catalystexplorer.com', 'Catalyst Explorer'),
+  });
+  if (p.isLink) items.push({
+    k: 'IS', label: 'IdeaScale', url: p.isLink,
+    icon: faviconImg('ideascale.com', 'IdeaScale'),
+  });
+  if (p.ms) items.push({
+    k: 'MS', label: lang === 'en' ? 'Milestones' : 'マイルストーン', url: p.ms,
+    icon: faviconImg('milestones.projectcatalyst.io', 'Milestones'),
   });
   if (!items.length) return null;
   return (

@@ -362,12 +362,17 @@ function ProposalDetail({ p, onClose }) {
   const fav = (domain) => `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`;
   const linkItems = [];
   if (p.site)         linkItems.push({ k: 'SITE',  label: p.siteDomain || 'Site', url: p.site, icon: fav((window.urlDomain && window.urlDomain(p.site)) || p.siteDomain || 'example.com') });
-  if (p.report)       linkItems.push({ k: 'DOC',   label: p.s === '完了' ? '完了レポート' : 'Doc', url: p.report.url, accent: p.s === '完了' });
+  if (p.cr)           linkItems.push({ k: 'CR',   label: '完了レポート', url: p.cr, accent: true });
+  else if (p.report)  linkItems.push({ k: 'DOC',  label: p.s === '完了' ? '完了レポート' : 'Doc', url: p.report.url, accent: p.s === '完了' });
+  if (p.cv)           linkItems.push({ k: 'CV',   label: '完了動画', url: p.cv, icon: fav('youtube.com') });
   if (p.videoUrl)     linkItems.push({ k: 'VIDEO', label: 'YouTube',   url: p.videoUrl, icon: fav('youtube.com'), onClick: playVideo });
   if (p.links && p.links.GH) linkItems.push({ k: 'GH', label: 'GitHub',   count: p.links.GH, url: window.resolveLinkUrl ? window.resolveLinkUrl(p.meta, 'GH') : null, icon: fav('github.com') });
   if (p.links && p.links.x)  linkItems.push({ k: 'X',  label: 'X',        count: p.links.x,  url: window.resolveLinkUrl ? window.resolveLinkUrl(p.meta, 'x') : null,  icon: fav('x.com') });
   if (p.links && p.links.in) linkItems.push({ k: 'in', label: 'LinkedIn', count: p.links.in, url: window.resolveLinkUrl ? window.resolveLinkUrl(p.meta, 'in') : null, icon: fav('linkedin.com') });
-  if (p.explorer)     linkItems.push({ k: 'EX',  label: 'Explorer', url: p.explorer, icon: fav('catalystexplorer.com') });
+  if (p.ce || p.explorer) linkItems.push({ k: 'CE', label: 'Explorer', url: p.ce || p.explorer, icon: fav('catalystexplorer.com') });
+  if (p.isLink)       linkItems.push({ k: 'IS',   label: 'IdeaScale', url: p.isLink, icon: fav('ideascale.com') });
+  if (p.pc)           linkItems.push({ k: 'PC',   label: 'ProjectCatalyst', url: p.pc, icon: fav('projectcatalyst.io') });
+  if (p.ms)           linkItems.push({ k: 'MS',   label: 'Milestones', url: p.ms, icon: fav('milestones.projectcatalyst.io') });
 
   return (
     <div
@@ -501,8 +506,8 @@ function ProposalDetail({ p, onClose }) {
                 <span style={{ color: M.inkDim, fontSize: 13 }}>₳</span>{p.amount}
               </div>
             </div>
-            {p.report && p.s === '完了' && (
-              <a href={p.report.url} target="_blank" rel="noopener noreferrer"
+            {(p.cr || p.report) && p.s === '完了' && (
+              <a href={p.cr || (p.report && p.report.url)} target="_blank" rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 5,
