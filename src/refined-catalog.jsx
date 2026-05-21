@@ -653,37 +653,37 @@ function PanelPreview({ kind, hue, opacity = 0.4 }) {
 
 const PANEL_DEFS = [
   {
-    num: '01', title: '業界別', en: 'BY SECTOR', desc: '業種で分類',
+    num: '01', title: '業界別', title_en: 'By Sector', en: 'BY SECTOR', desc: '業種で分類', desc_en: 'Sorted by industry',
     hue: 28, href: 'sector',
     reveals: { en: 'typewriter', title: 'bigDrop',    desc: 'fadeChar' },
     emphasisIdx: 1, // 界
   },
   {
-    num: '02', title: 'アカウント別', en: 'BY ACCOUNT', desc: '提案者で見る',
+    num: '02', title: 'アカウント別', title_en: 'By Account', en: 'BY ACCOUNT', desc: '提案者で見る', desc_en: 'Browse by proposer',
     hue: 210, href: 'account',
     reveals: { en: 'fadeChar',   title: 'slideUp',    desc: 'typewriter' },
     emphasisIdx: 0, // ア
   },
   {
-    num: '03', title: '時系列', en: 'TIMELINE', desc: 'F2 から F14 まで',
+    num: '03', title: '時系列', title_en: 'Timeline', en: 'TIMELINE', desc: 'F2 から F14 まで', desc_en: 'From F2 to F14',
     hue: 320, href: 'timeline',
     reveals: { en: 'sweepMask',  title: 'splitCenter', desc: 'fadeChar' },
     emphasisIdx: 0, // 時
   },
   {
-    num: '04', title: '関係図', en: 'NETWORK', desc: '提案のつながり',
+    num: '04', title: '関係図', title_en: 'Network', en: 'NETWORK', desc: '提案のつながり', desc_en: 'Proposal connections',
     hue: 140, href: 'network',
     reveals: { en: 'typewriter', title: 'scramble',   desc: 'slideUp' },
     emphasisIdx: 2, // 図
   },
   {
-    num: '05', title: 'チャート', en: 'CHART', desc: '数字で俯瞰',
+    num: '05', title: 'チャート', title_en: 'Chart', en: 'CHART', desc: '数字で俯瞰', desc_en: 'Overview in numbers',
     hue: 50, href: 'chart',
     reveals: { en: 'slideUp',    title: 'sweepMask',  desc: 'fadeChar' },
     emphasisIdx: 0, // チ
   },
   {
-    num: '06', title: 'カタログ', en: 'CATALOG', desc: 'メディア & リンク',
+    num: '06', title: 'カタログ', title_en: 'Catalog', en: 'CATALOG', desc: 'メディア & リンク', desc_en: 'Media & links',
     hue: 280, href: 'catalog', current: true,
     reveals: { en: 'fadeChar',   title: 'splitCenter', desc: 'typewriter' },
     emphasisIdx: 1, // タ
@@ -697,18 +697,24 @@ const PANEL_DEFS = [
 const ERAS_HERO = [
   {
     label: 'F2 – F9',  period: '2020 / 06 – 2022 / 11', hue: 28,
-    title: '黎明期',  sub: 'IdeaScale 時代',
+    title: '黎明期', title_en: 'Dawn',
+    sub: 'IdeaScale 時代', sub_en: 'The IdeaScale Era',
     body: 'IdeaScale で運用。Close-Out レポートは推奨に留まり、提出形式も自由。完了済でも現存する成果物が限定的。',
+    body_en: 'Operated on IdeaScale. Close-out reports were optional with no fixed format. Even completed projects have limited surviving deliverables.',
   },
   {
     label: 'F10 – F12', period: '2023 / 04 – 2024 / 06', hue: 280,
-    title: '制度化',  sub: 'Milestone 制度導入',
+    title: '制度化', title_en: 'Formalization',
+    sub: 'Milestone 制度導入', sub_en: 'Milestone System Introduced',
     body: 'projectcatalyst.io へ移行。SoM / PoA の提出が義務化。Close-Out Report と Town Hall 動画が標準成果物に。',
+    body_en: 'Migrated to projectcatalyst.io. SoM / PoA submissions became mandatory. Close-out reports and Town Hall videos became standard deliverables.',
   },
   {
     label: 'F13 – F14', period: '2024 / 10 – 2026 / 04', hue: 350,
-    title: '混迷と停止',  sub: 'Catalyst 見直し期',
+    title: '混迷と停止', title_en: 'Turmoil & Pause',
+    sub: 'Catalyst 見直し期', sub_en: 'Catalyst Under Review',
     body: 'Constitution 制定・DRep 投票が稼働するも、ガバナンス疲弊・参加減退で 2026 年現在 Catalyst は見直しのため停止中。次の運営フェーズ検討フェーズ。',
+    body_en: 'The Constitution was ratified and DRep voting went live, but governance fatigue and declining participation led to Catalyst being paused for review as of 2026.',
   },
 ];
 const ERA_DELAY = 1100;   // ms after REVEAL_END before the first era appears
@@ -1199,11 +1205,11 @@ function CinematicHero({ onSelect, activeFund, setActiveFund, activeCategory, se
                 />
               </div>
 
-              {/* Title — Japanese, big */}
+              {/* Title — big */}
               <div style={{ minHeight: 36, color: '#fff' }}>
                 {isComplete ? (
                   <TitleChars
-                    text={panel.title}
+                    text={lang === 'en' ? (panel.title_en || panel.title) : panel.title}
                     emphasisIdx={panel.emphasisIdx}
                     popIntensity={popIntensity}
                     hue={panel.hue}
@@ -1214,7 +1220,7 @@ function CinematicHero({ onSelect, activeFund, setActiveFund, activeCategory, se
                   />
                 ) : (
                   <TextReveal
-                    text={panel.title}
+                    text={lang === 'en' ? (panel.title_en || panel.title) : panel.title}
                     style={panel.reveals.title}
                     progress={titleP}
                     fontStyle={{
@@ -1228,7 +1234,7 @@ function CinematicHero({ onSelect, activeFund, setActiveFund, activeCategory, se
               {/* Description */}
               <div style={{ minHeight: 16, color: 'rgba(255,255,255,0.85)' }}>
                 <TextReveal
-                  text={panel.desc}
+                  text={lang === 'en' ? (panel.desc_en || panel.desc) : panel.desc}
                   style={panel.reveals.desc}
                   progress={descP}
                   fontStyle={{
@@ -1392,11 +1398,11 @@ function CinematicHero({ onSelect, activeFund, setActiveFund, activeCategory, se
                   <div style={{
                     fontFamily: t.display, fontSize: 32, fontWeight: 700,
                     color: '#fff', letterSpacing: '-0.025em', lineHeight: 1.05,
-                  }}>{era.title}</div>
+                  }}>{lang === 'en' ? (era.title_en || era.title) : era.title}</div>
                   <div style={{
                     fontFamily: t.serif, fontStyle: 'italic', fontSize: 14,
                     color: accent, marginTop: -2,
-                  }}>— {era.sub}</div>
+                  }}>— {lang === 'en' ? (era.sub_en || era.sub) : era.sub}</div>
                   <div style={{
                     fontFamily: t.mono, fontSize: 10.5, color: 'rgba(255,255,255,0.55)',
                     letterSpacing: '0.06em',
@@ -1405,7 +1411,7 @@ function CinematicHero({ onSelect, activeFund, setActiveFund, activeCategory, se
                     margin: '4px 0 0',
                     fontFamily: t.body, fontSize: 12.5, lineHeight: 1.55,
                     color: 'rgba(255,255,255,0.82)',
-                  }}>{era.body}</p>
+                  }}>{lang === 'en' ? (era.body_en || era.body) : era.body}</p>
                 </div>
               );
             })}
@@ -1579,10 +1585,10 @@ function CompactHeroNav({ panels, activeFund, setActiveFund, activeCategory, set
   const totalCount = window.TOTAL_COUNT || 130;
   const totalAda = window.TOTAL_ADA_DISPLAY || '41.2M';
   const navItems = [
-    { id: 'home',     label: 'ホーム',         icon: '⌂' },
-    { id: 'featured', label: 'おすすめ',       icon: '★' },
-    { id: 'all',      label: 'すべての提案',    icon: '⊞' },
-    { id: 'recent',   label: '最近追加',       icon: '⏱' },
+    { id: 'home',     label: lang === 'en' ? 'Home'        : 'ホーム',       icon: '⌂' },
+    { id: 'featured', label: lang === 'en' ? 'Featured'    : 'おすすめ',     icon: '★' },
+    { id: 'all',      label: lang === 'en' ? 'All Proposals': 'すべての提案', icon: '⊞' },
+    { id: 'recent',   label: lang === 'en' ? 'Recent'      : '最近追加',     icon: '⏱' },
   ];
   /* Era tiles — each shows period + title + body, sized in proportion to fund-count length */
   const eraFunds = [
@@ -1768,10 +1774,30 @@ function CompactHeroNav({ panels, activeFund, setActiveFund, activeCategory, set
         display: 'flex', alignItems: 'center', gap: 14,
         padding: '0 6px',
       }}>
-        {/* Catalyst 日本 / Catalyst Japan lockup */}
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, flexShrink: 0 }}>
-          <span style={{ fontFamily: t.body, fontSize: 17, fontWeight: 700, color: t.ink, letterSpacing: '-0.01em' }}>Catalyst</span>
-          <span style={{ fontFamily: t.serif, fontStyle: 'italic', fontSize: 17, color: t.accent }}>{lang === 'en' ? 'Japan' : '日本'}</span>
+        {/* Catalyst 日本 / Catalyst Japan lockup + replay */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+            <span style={{ fontFamily: t.body, fontSize: 17, fontWeight: 700, color: t.ink, letterSpacing: '-0.01em' }}>Catalyst</span>
+            <span style={{ fontFamily: t.serif, fontStyle: 'italic', fontSize: 17, color: t.accent }}>{lang === 'en' ? 'Japan' : '日本'}</span>
+          </div>
+          <button
+            onClick={onExpand}
+            title={lang === 'en' ? 'Replay intro' : 'イントロを再生'}
+            style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: 24, height: 24, padding: 0,
+              background: 'transparent', border: `1px solid ${t.hairline}`,
+              borderRadius: 6, cursor: 'pointer', color: t.inkMuted,
+              transition: 'color .15s, border-color .15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = t.ink; e.currentTarget.style.borderColor = t.hairlineStrong; }}
+            onMouseLeave={e => { e.currentTarget.style.color = t.inkMuted; e.currentTarget.style.borderColor = t.hairline; }}
+          >
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6a4 4 0 1 0 1-2.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+              <path d="M2 2v3h3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
         </div>
 
         {/* Search pill (flex 1) */}
@@ -5770,11 +5796,12 @@ function CategoryCard({ name, count, hue }) {
 
 function ASidebar({ activeNav, setActiveNav, activeFund, setActiveFund }) {
   const t = useT();
+  const lang = useLang();
   const navItems = [
-    { id: 'home',     label: 'ホーム',         icon: '⌂' },
-    { id: 'featured', label: 'おすすめ',       icon: '★' },
-    { id: 'all',      label: 'すべての提案',   icon: '⊞' },
-    { id: 'recent',   label: '最近追加',       icon: '⏱' },
+    { id: 'home',     label: lang === 'en' ? 'Home'         : 'ホーム',       icon: '⌂' },
+    { id: 'featured', label: lang === 'en' ? 'Featured'     : 'おすすめ',     icon: '★' },
+    { id: 'all',      label: lang === 'en' ? 'All Proposals': 'すべての提案', icon: '⊞' },
+    { id: 'recent',   label: lang === 'en' ? 'Recent'       : '最近追加',     icon: '⏱' },
   ];
   return (
     <aside style={{
@@ -5936,12 +5963,12 @@ function RemoteBar({ themeMode, toggleTheme, lang: langProp, setLang: setLangPro
   const langQS  = (lang === 'en' ? 'en' : 'jp');
   const qs = (v) => `index.html?view=${v}&theme=${themeQS}&lang=${langQS}`;
   const views = [
-    { id: 'sector',   label: '業界別',     href: qs('sector') },
-    { id: 'account',  label: 'アカウント別', href: qs('account') },
-    { id: 'timeline', label: '時系列',     href: qs('timeline') },
-    { id: 'network',  label: '関係図',     href: qs('network') },
-    { id: 'chart',    label: 'チャート',   href: qs('chart') },
-    { id: 'catalog',  label: 'カタログ',   href: null, current: true },
+    { id: 'sector',   label: lang === 'en' ? 'Sector'    : '業界別',     href: qs('sector') },
+    { id: 'account',  label: lang === 'en' ? 'Accounts'  : 'アカウント別', href: qs('account') },
+    { id: 'timeline', label: lang === 'en' ? 'Timeline'  : '時系列',     href: qs('timeline') },
+    { id: 'network',  label: lang === 'en' ? 'Network'   : '関係図',     href: qs('network') },
+    { id: 'chart',    label: lang === 'en' ? 'Chart'     : 'チャート',   href: qs('chart') },
+    { id: 'catalog',  label: lang === 'en' ? 'Catalog'   : 'カタログ',   href: null, current: true },
   ];
 
   const pillBtn = (active, extraStyle = {}) => ({
@@ -6220,21 +6247,31 @@ function ATopBar({ themeMode, toggleTheme, statusFilter, setStatusFilter, result
 
 function FundEras() {
   const t = useT();
+  const lang = useLang();
   const eras = [
     {
       label: 'F2 – F9',  period: '2020 / 06 – 2022 / 11',  hue: 28,
-      title: '黎明期',  sub: 'IdeaScale 時代',
-      body: 'IdeaScale で運用。Close-Out レポートは推奨に留まり、現存する成果物が限定的。本カタログでも約 60% が「資料無し」。',
+      title: lang === 'en' ? 'Dawn' : '黎明期',
+      sub: lang === 'en' ? 'The IdeaScale Era' : 'IdeaScale 時代',
+      body: lang === 'en'
+        ? 'Operated on IdeaScale. Close-out reports were optional. About 60% of proposals in this catalog have no surviving deliverables.'
+        : 'IdeaScale で運用。Close-Out レポートは推奨に留まり、現存する成果物が限定的。本カタログでも約 60% が「資料無し」。',
     },
     {
       label: 'F10 – F12', period: '2023 / 04 – 2024 / 06', hue: 280,
-      title: '制度化',  sub: 'Milestone 制度導入',
-      body: 'projectcatalyst.io へ移行。SoM / PoA の提出が義務化。Close-Out Report と Town Hall 動画が標準成果物として整備された。',
+      title: lang === 'en' ? 'Formalization' : '制度化',
+      sub: lang === 'en' ? 'Milestone System Introduced' : 'Milestone 制度導入',
+      body: lang === 'en'
+        ? 'Migrated to projectcatalyst.io. SoM / PoA submissions became mandatory. Close-out reports and Town Hall videos became standard deliverables.'
+        : 'projectcatalyst.io へ移行。SoM / PoA の提出が義務化。Close-Out Report と Town Hall 動画が標準成果物として整備された。',
     },
     {
       label: 'F13 – F14', period: '2024 / 10 – 2026 / 04', hue: 350,
-      title: '混迷と停止',  sub: 'Catalyst 見直し期',
-      body: 'Constitution 制定・DRep 投票が稼働するも、ガバナンス疲弊・参加減退で 2026 年現在 Catalyst は見直しのため停止中。次の運営フェーズ検討フェーズ。',
+      title: lang === 'en' ? 'Turmoil & Pause' : '混迷と停止',
+      sub: lang === 'en' ? 'Catalyst Under Review' : 'Catalyst 見直し期',
+      body: lang === 'en'
+        ? 'The Constitution was ratified and DRep voting went live, but governance fatigue and declining participation led to Catalyst being paused for review as of 2026.'
+        : 'Constitution 制定・DRep 投票が稼働するも、ガバナンス疲弊・参加減退で 2026 年現在 Catalyst は見直しのため停止中。次の運営フェーズ検討フェーズ。',
     },
   ];
 
@@ -6244,11 +6281,11 @@ function FundEras() {
         <h2 style={{
           margin: 0, fontFamily: t.display, fontSize: 26, fontWeight: 700,
           color: t.ink, letterSpacing: '-0.025em',
-        }}>Funds の歩み</h2>
+        }}>{lang === 'en' ? 'Fund History' : 'Funds の歩み'}</h2>
         <span style={{
           fontFamily: t.body, fontSize: 14, fontWeight: 500, color: t.inkDim,
           whiteSpace: 'nowrap',
-        }}>F2 → F14 までの 13 ラウンド</span>
+        }}>{lang === 'en' ? '13 rounds, F2 → F14' : 'F2 → F14 までの 13 ラウンド'}</span>
       </header>
 
       <div style={{
