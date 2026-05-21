@@ -370,12 +370,14 @@ function ProposalDetail({ p, onClose }) {
   if (p.pc)           linkItems.push({ k: 'PC',   label: 'ProjectCatalyst', url: p.pc, icon: fav('projectcatalyst.io') });
   /* Bottom row: badge strip — IS → MS → Video → CR (favicon + label + bordered frame) */
   const badgeItems = [];
+  const isComplete = p.s === '完了';
   /* IdeaScale(提案書) — サイト全404のため非表示 */
   if (p.ms)           badgeItems.push({ k: 'MS',   label: 'マイルストーン', url: p.ms, icon: fav('milestones.projectcatalyst.io') });
-  if (p.cv)           badgeItems.push({ k: 'CV',   label: '完了動画', url: p.cv, icon: fav('youtube.com') });
+  /* 完了動画・完了レポートは完了した提案のみ表示 */
+  if (isComplete && p.cv) badgeItems.push({ k: 'CV',   label: '完了動画', url: p.cv, icon: fav('youtube.com') });
   if (p.videoUrl && !p.unlistedVideo && !p.embedDisabledVideo && !p.cv)
                       badgeItems.push({ k: 'VIDEO', label: 'YouTube', url: p.videoUrl, icon: fav('youtube.com'), onClick: playVideo });
-  const reportUrl = p.cr || (p.report && p.report.url) || null;
+  const reportUrl = isComplete ? (p.cr || (p.report && p.report.url) || null) : null;
   if (reportUrl)      badgeItems.push({ k: 'CR',   label: '完了レポート', url: reportUrl, icon: p.cr ? fav('docs.google.com') : null, accent: true });
 
   return (

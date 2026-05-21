@@ -4539,13 +4539,15 @@ function LinkIconStrip({ p, hideReport = false }) {
 /* ── Row 2: fixed 4-slot badge grid (提案書 | マイルストーン | 完了動画 | 完了レポート) ──
    Empty slots keep their space — layout is consistent across ALL cards. */
 function LinkBadgeRow({ p, t, lang }) {
-  const reportUrl = p.cr || (p.report && p.report.url) || null;
-  /* 4 fixed slots — always rendered, visible only when data exists */
+  const isComplete = p.s === '完了';
+  /* 完了動画・完了レポートは完了した提案のみ表示 */
+  const reportUrl = isComplete ? (p.cr || (p.report && p.report.url) || null) : null;
+  const cvUrl     = isComplete ? (p.cv || (p.videoUrl && !p.unlistedVideo && !p.embedDisabledVideo ? p.videoUrl : null)) : null;
+  /* 3 fixed slots — always rendered, visible only when data exists */
   const slots = [
     /* IdeaScale(提案書) — サイト全404のため非表示 */
     { k: 'MS',  url: p.ms || null,      label: lang === 'en' ? 'Milestones': 'マイルストーン', domain: 'milestones.projectcatalyst.io' },
-    { k: 'CV',  url: p.cv || (p.videoUrl && !p.unlistedVideo && !p.embedDisabledVideo ? p.videoUrl : null),
-                                         label: p.cv ? (lang === 'en' ? 'Closeout Video' : '完了動画') : 'YouTube',
+    { k: 'CV',  url: cvUrl,             label: p.cv ? (lang === 'en' ? 'Closeout Video' : '完了動画') : 'YouTube',
                                          domain: 'youtube.com' },
     { k: 'CR',  url: reportUrl,         label: lang === 'en' ? 'Report'    : '完了レポート',   domain: p.cr ? 'docs.google.com' : null, accent: true },
   ];
