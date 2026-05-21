@@ -1017,6 +1017,8 @@ function CinematicHero({ onSelect, activeFund, setActiveFund, activeCategory, se
 
   const replay = () => {
     startRef.current = performance.now();
+    pauseAtRef.current = 0;
+    setPaused(false);
     setNow(0);
     setHeroPhase('cinema');
   };
@@ -1042,7 +1044,7 @@ function CinematicHero({ onSelect, activeFund, setActiveFund, activeCategory, se
       statusFilter={statusFilter}
       setStatusFilter={setStatusFilter}
       visibleCount={visibleCount}
-      onExpand={() => { setHeroPhase('cinema'); replay(); }}
+      onExpand={replay}
     />;
   }
 
