@@ -973,6 +973,8 @@ function CinematicHero({ onSelect, activeFund, setActiveFund, activeCategory, se
   const [manifestoStart, setManifestoStart] = useStateR(0);
   const startRef = useRefR(performance.now());
   const pauseAtRef = useRefR(0);
+  /* replayId: incremented on replay to force the animation effect to re-run (resets lastTick) */
+  const [replayId, setReplayId] = useStateR(0);
 
   React.useEffect(() => {
     let raf;
@@ -990,7 +992,7 @@ function CinematicHero({ onSelect, activeFund, setActiveFund, activeCategory, se
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [paused]);
+  }, [paused, replayId]);
 
   /* Era overlay timing — derived from the master clock */
   const sinceReveal = now - REVEAL_END;
@@ -1021,6 +1023,7 @@ function CinematicHero({ onSelect, activeFund, setActiveFund, activeCategory, se
     setPaused(false);
     setNow(0);
     setHeroPhase('cinema');
+    setReplayId(r => r + 1);
   };
 
   const inReveal = now < REVEAL_END;
